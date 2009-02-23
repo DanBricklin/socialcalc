@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SS Ctrl Test 1</title>
+<script type="text/javascript" src="socialcalcconstants.js"></script>
+<script type="text/javascript" src="socialcalc-3.js"></script>
+<script type="text/javascript" src="socialcalctableeditor.js"></script>
+<script type="text/javascript" src="formatnumber2.js"></script>
+<script type="text/javascript" src="formula1.js"></script>
+<script type="text/javascript" src="socialcalcpopup.js"></script>
+<script type="text/javascript" src="socialcalcspreadsheetcontrol.js"></script>
+<link rel="stylesheet" type="text/css" href="socialcalc.css">
+<style>
+body
+ {font-family:verdana,helvetica,sans-serif;font-size:large;}
+.testclass {border:2px dotted red;}
+.testclass2 {background-image:url(images/sc-logo.gif);}
+</style>
+</head>
+<body onresize="doresize();">
+<form name="f0" action="" method="POST">
+<div style="padding:6px;background-color:#80A9F3;">
+<div style="font-weight:bold;color:white;">SIMPLE SYSTEM FOR EDITING PAGES WITH SPREADSHEETS AND MORE</div>
+<div style="color:#FDD;font-weight:bold;">$statusmessage &nbsp;</div>
+<div style="margin-bottom:6px;">Editing page: <span style="font-style:italic;font-weight:bold;">$pagename</span></div>
+<input type="button" name="savespreadsheet" value="Save" onclick="dosave();">
+<input type="submit" name="cancelspreadsheet" value="Cancel">
+<input type="button" value="Recalc" onclick="spreadsheet.ExecuteCommand('recalc', '');">
+<input type="button" value="Redisplay" onclick="spreadsheet.editor.ScheduleRender();">
+<input type="button" value="Settings" onclick="alert(sv=spreadsheet.editor.SaveEditorSettings());">
+<input type="button" value="Reload" onclick="doreload();">
+<input type="button" value="CellHTMLSave" onclick="alert(spreadsheet.CreateCellHTMLSave(null));">
+<input type="button" value="CellHTML A1" onclick="alert(spreadsheet.CreateCellHTML('A1'));">
+<input type="button" value="SheetHTML" onclick="alert(spreadsheet.CreateSheetHTML());">
+<input type="button" value="SheetSave" onclick="alert(spreadsheet.CreateSheetSave());">
+<input type="button" value="Attribs" onclick="doattribs();">
+<input type="button" value="From" onclick="dosetfrom();">
+<input type="button" value="Move" onclick="domove('insert');">
+<textarea id="savestr" style="display:none;"></textarea>
+<input type="hidden" name="newstr" id="newdata" value="">
+<input type="hidden" name="pagename" value="$pagename">
+<input type="hidden" name="sheetname" value="$sheetname">
+</div>
+</form>
+<div id="msg" style="position:absolute;right:15px;">
+<input type="button" style="font-size:x-small;" value="Clear" onclick="addmsg('',true);"><br>
+<textarea id="msgtext" style="margin-top:10px;width:140px;height:300px;"></textarea>
+</div>
+<div id="tableeditor" style="margin:8px 170px 10px 0px;">editor goes here</div>
+<script>
+
+document.getElementById("msgtext").value = "";
+
+function setmsg(msg) {document.getElementById("msg").innerHTML = msg;}
+function addmsg(msg, clear) {
+   var msgtextid = document.getElementById("msgtext");
+   if (!msgtextid) {
+      document.getElementById("msg").innerHTML = '<textarea id="msgtext" cols="60" rows="5"></textarea>';
+      msgtextid = document.getElementById("msgtext");
+      }
+   if (clear) msgtextid.value = "";
+   if (msgtextid.value.length>0) msgtextid.value += "\n";
+   msgtextid.value += msg;
+   }
+
+//
+// Setup code starts here:
+//
+
+//   SocialCalc.ConstantsSetClasses("");
+
+   var spreadsheet = new SocialCalc.SpreadsheetControl();
+   var savestr = document.getElementById("savestr");
+
+   spreadsheet.InitializeSpreadsheetControl("tableeditor", 0, 0, 0);
+   spreadsheet.ExecuteCommand('redisplay', '');
+
+   spreadsheet.ExportCallback = function(s) {
+      alert(SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "csv"));
+      }
+
+// Dummy loadsheet for testing:
+SocialCalc.Formula.SheetCache.LoadSheet = function(sheetname) {
+   var sfscc = SocialCalc.Formula.SheetCache.constants;
+   var doload = confirm("Loadsheet: "+sheetname+"?");
+   if (true) {
+      return {status: doload?sfscc.ok:sfscc.loading, str: "cell:A1:v:4\ncell:A2:t:Sheet\\c "+sheetname+"\ncell:A3:vtf:ndt:0:NOW()\ncell:B1:v:5\ncell:B2:v:6\nname:AONE::A1\nname:ATWO::A2\nname:RANGE::B1\\cB2\nname:TEST::A3",
+              recalc: true};
+      }
+   return null;
+   }
+
+// ExpandWiki code for testing
+
+SocialCalc.Callbacks.expand_wiki = function(displayvalue, sheetobj, linkstyle, valueformat) {
+
+   var subtype = valueformat.substring(9); // stuff after text-wiki
+   var result = "";
+
+   switch (subtype) {
+      case "":
+         result = SocialCalc.default_expand_markup(displayvalue, sheetobj, linkstyle);
+         break;
+
+      case "-link":
+         result = "link to: "+SocialCalc.special_chars(displayvalue);
+         break;
+
+      default:
+         result = SocialCalc.special_chars(valueformat+": "+displayvalue);
+         break;
+      }
+
+   return result || "&nbsp;";
+
+   }
+
+function dosave() {
+   savestr.value = spreadsheet.CreateSpreadsheetSave();
+   alert(savestr.value);
+   }
+
+function doreload() {
+
+   var parts = spreadsheet.DecodeSpreadsheetSave(savestr.value);
+   if (parts) {
+      if (parts.sheet) {
+         spreadsheet.sheet.ResetSheet();
+         spreadsheet.ParseSheetSave(savestr.value.substring(parts.sheet.start, parts.sheet.end));
+         }
+      if (parts.edit) {
+         spreadsheet.editor.LoadEditorSettings(savestr.value.substring(parts.edit.start, parts.edit.end));
+         }
+      }
+   if (spreadsheet.editor.context.sheetobj.attribs.recalc=="off") {
+      spreadsheet.ExecuteCommand('redisplay', '');
+      }
+   else {
+      spreadsheet.ExecuteCommand('recalc', '');
+      }
+   }
+
+function doresize() {
+   spreadsheet.DoOnResize();
+   }
+
+function doattribs() {
+   var attribs = spreadsheet.sheet.EncodeCellAttributes(spreadsheet.editor.ecell.coord);
+   var str = "";
+   for (var attrib in attribs) {
+      str += attrib + ":" + " def="+attribs[attrib].def+", val='"+attribs[attrib].val+"'\n";
+      }
+   str+="=====\n";
+   attribs = spreadsheet.sheet.EncodeSheetAttributes();
+   for (var attrib in attribs) {
+      str += attrib + ":" + " def="+attribs[attrib].def+", val='"+attribs[attrib].val+"'\n";
+      }
+   alert(str);
+   }
+
+var fromrange = "A1:A1";
+
+function dosetfrom() {
+   var editor = spreadsheet.editor;
+   if (editor.range.hasrange) {
+      fromrange = SocialCalc.crToCoord(editor.range.left, editor.range.top) + ":" +
+                  SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+      }
+   else {
+      fromrange = spreadsheet.editor.ecell.coord+":"+spreadsheet.editor.ecell.coord;
+      }
+   }
+
+function domove(arg) {
+   var cstr = "move"+(arg || "paste")+" "+fromrange+" "+spreadsheet.editor.ecell.coord;
+   spreadsheet.ExecuteCommand(cstr, "");
+   }
+
+</script>
+</body>
+</html>
