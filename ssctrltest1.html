@@ -25,7 +25,7 @@ body
 <div style="color:#FDD;font-weight:bold;">$statusmessage &nbsp;</div>
 <div style="margin-bottom:6px;">Editing page: <span style="font-style:italic;font-weight:bold;">$pagename</span></div>
 <input type="button" name="savespreadsheet" value="Save" onclick="dosave();">
-<input type="submit" name="cancelspreadsheet" value="Cancel">
+<input type="submit" name="newcolors" value="New Colors" onclick="document.f0.action='?4C808';">
 <input type="button" value="Recalc" onclick="spreadsheet.ExecuteCommand('recalc', '');">
 <input type="button" value="Redisplay" onclick="spreadsheet.editor.ScheduleRender();">
 <input type="button" value="Settings" onclick="alert(sv=spreadsheet.editor.SaveEditorSettings());">
@@ -69,6 +69,24 @@ function addmsg(msg, clear) {
 //
 
 //   SocialCalc.ConstantsSetClasses("");
+
+   var scc = SocialCalc.Constants;
+
+   var b1 = window.location.search.charAt(1) || "4";
+   var b2 = window.location.search.charAt(2) || "C";
+   var b3 = window.location.search.charAt(3) || "8";
+   var b4 = window.location.search.charAt(4) || "9";
+   var b5 = window.location.search.charAt(5) || "8";
+
+   scc.SCToolbarbackground = "background-color:#4040"+b1+"0;";
+   scc.SCTabbackground = "background-color:#CC"+b2+";";
+   scc.SCTabselectedCSS = "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#4040"+b1+"0;cursor:default;border-right:1px solid #CC"+b2+";";
+   scc.SCTabplainCSS = "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#8080"+b3+"0;cursor:default;border-right:1px solid #CC"+b2+";";
+   scc.SCToolbartext = "font-size:x-small;font-weight:bold;color:#FFF;padding-bottom:4px;";
+   scc.ISCButtonBorderNormal = "#4040"+b1+"0";
+   scc.ISCButtonBorderHover = "#99"+b4+"";
+   scc.ISCButtonBorderDown = "#FFF";
+   scc.ISCButtonDownBackground = "#88"+b5+"";
 
    var spreadsheet = new SocialCalc.SpreadsheetControl();
    var savestr = document.getElementById("savestr");

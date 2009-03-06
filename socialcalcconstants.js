@@ -248,6 +248,30 @@ SocialCalc.Constants = {
 
 
 //
+// SocialCalc Spreadsheet Control module, socialcalcspreadsheetcontrol.js:
+//
+
+   //*** SocialCalc.SpreadsheetControl
+
+   SCToolbarbackground: "background-color:#404040;",
+   SCTabbackground: "background-color:#CCC;",
+   SCTabselectedCSS: "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#404040;cursor:default;border-right:1px solid #CCC;",
+   SCTabplainCSS: "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#808080;cursor:default;border-right:1px solid #CCC;",
+   SCToolbartext: "font-size:x-small;font-weight:bold;color:#FFF;padding-bottom:4px;",
+
+   SCFormulabarheight: 30, // in pixels, will contain a text input box
+
+   SCStatuslineheight: 20, // in pixels
+   SCStatuslineCSS: "font-size:10px;padding:3px 0px;",
+
+   //*** SocialCalc.InitializeSpreadsheetControl
+
+   ISCButtonBorderNormal: "#404040",
+   ISCButtonBorderHover: "#999",
+   ISCButtonBorderDown: "#FFF",
+   ISCButtonDownBackground: "#888",
+
+//
 // SocialCalc Format Number module, formatnumber2.js:
 //
 

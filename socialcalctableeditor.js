@@ -3755,6 +3755,32 @@ SocialCalc.DragRegister = function(element, vertical, horizontal, functionobj) {
    }
 
 //
+// DragUnregister(element) - remove object from list
+//
+
+SocialCalc.DragUnregister = function(element) {
+
+   var draginfo = SocialCalc.DragInfo;
+
+   var i;
+   for (i=0; i<draginfo.registeredElements.length; i++) {
+      if (draginfo.registeredElements[i].element == element) {
+         draginfo.registeredElements.splice(i,1);
+         if (element.removeEventListener) { // DOM Level 2 -- Firefox, et al
+            element.removeEventListener("mousedown", SocialCalc.DragMouseDown, false);
+            }
+         else { // IE 5+
+            element.removeEvent("onmousedown", SocialCalc.DragMouseDown);
+            }
+         return;
+         }
+      }
+
+   return; // ignore if not in list
+
+   }
+
+//
 // DragMouseDown(event)
 //
 

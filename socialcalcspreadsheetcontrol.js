@@ -106,6 +106,8 @@ See the comments in the main SocialCalc code module file of the SocialCalc packa
 
 SocialCalc.SpreadsheetControl = function() {
 
+   var scc = SocialCalc.Constants;
+
    // Properties:
 
    this.parentNode = null;
@@ -177,16 +179,16 @@ SocialCalc.SpreadsheetControl = function() {
    this.multipartBoundary = "SocialCalcSpreadsheetControlSave"; // boundary used by SpreadsheetControlCreateSpreadsheetSave
    this.imagePrefix = "images/"; // prefix added to img src
 
-   this.toolbarbackground = "background-color:#404040;";
-   this.tabbackground = "background-color:#CCC;";
-   this.tabselectedCSS = "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#404040;cursor:default;border-right:1px solid #CCC;";
-   this.tabplainCSS = "font-size:small;padding:6px 30px 6px 8px;color:#FFF;background-color:#808080;cursor:default;border-right:1px solid #CCC;";
-   this.toolbartext = "font-size:x-small;font-weight:bold;color:#FFF;padding-bottom:4px;";
+   this.toolbarbackground = scc.SCToolbarbackground;
+   this.tabbackground = scc.SCTabbackground;"background-color:#CCC;";
+   this.tabselectedCSS = scc.SCTabselectedCSS;
+   this.tabplainCSS = scc.SCTabplainCSS;
+   this.toolbartext = scc.SCToolbartext;
 
-   this.formulabarheight = 30; // in pixels, will contain a text input box
+   this.formulabarheight = scc.SCFormulabarheight; // in pixels, will contain a text input box
 
-   this.statuslineheight = 20; // in pixels
-   this.statuslineCSS = "font-size:10px;padding:3px 0px;";
+   this.statuslineheight = scc.SCStatuslineheight; // in pixels
+   this.statuslineCSS = scc.SCStatuslineCSS;
 
    // Callbacks:
 
@@ -888,6 +890,8 @@ SocialCalc.SpreadsheetControl.prototype.CreateSheetSave = function() {return thi
 
 SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, width, spacebelow) {
 
+   var scc = SocialCalc.Constants;
+
    var html, child, i, vname, v, style, button, bele;
    var tabs = spreadsheet.tabs;
    var views = spreadsheet.views;
@@ -980,10 +984,12 @@ spreadsheet.Buttons = {
    for (button in spreadsheet.Buttons) {
       bele = document.getElementById(spreadsheet.idPrefix+button);
       if (!bele) {alert("Button "+(spreadsheet.idPrefix+button)+" missing"); continue;}
-      bele.style.border = "1px solid #404040";
+      bele.style.border = "1px solid "+scc.ISCButtonBorderNormal;
       SocialCalc.TooltipRegister(bele, spreadsheet.Buttons[button].tooltip, {});
       SocialCalc.ButtonRegister(bele,
-         {normalstyle: "border:1px solid #404040;backgroundColor:#404040;", hoverstyle: "border:1px solid #999;backgroundColor:#404040;", downstyle: "border:1px solid #FFF;backgroundColor:#888;"}, 
+         {normalstyle: "border:1px solid "+scc.ISCButtonBorderNormal+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
+          hoverstyle: "border:1px solid "+scc.ISCButtonBorderHover+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
+          downstyle: "border:1px solid "+scc.ISCButtonBorderDown+";backgroundColor:"+scc.ISCButtonDownBackground+";"}, 
          {MouseDown: SocialCalc.DoButtonCmd, command: spreadsheet.Buttons[button].command});
       }
 
@@ -2677,7 +2683,8 @@ SocialCalc.SettingsControls.ColorChooserInitialize = function(panelobj, ctrlname
 
    SocialCalc.Popup.Create("ColorChooser", panelobj[ctrlname].id, {});
    SocialCalc.Popup.Initialize(panelobj[ctrlname].id,
-      {attribs:{title: "&nbsp;", width: "106px", changedcallback: SocialCalc.SettingsControls.PopupChangeCallback, panelobj: panelobj}});
+      {attribs:{title: "&nbsp;", moveable: true, width: "106px",
+                changedcallback: SocialCalc.SettingsControls.PopupChangeCallback, panelobj: panelobj}});
 
    }
 

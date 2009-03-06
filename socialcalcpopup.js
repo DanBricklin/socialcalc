@@ -231,7 +231,7 @@ SocialCalc.Popup.CClick = function(id) {
    var pt = spt[type];
 
    if (sp.Current.id) {
-      pt.Hide(type, sp.Current.id);
+      spt[spc[sp.Current.id].type].Hide(type, sp.Current.id);
       if (id == sp.Current.id) { // same one - done
          sp.Current.id = null;
          return;
@@ -349,7 +349,7 @@ SocialCalc.Popup.DestroyPopupDiv = function(ele) {
 
    ele.innerHTML = "";
 
-//!!!! NEEDS TO UNREGISTER DRAGGING !!!!
+   SocialCalc.DragUnregister(ele); // OK to do this even if not registered
 
    if (ele.parentNode) {
       ele.parentNode.removeChild(ele);

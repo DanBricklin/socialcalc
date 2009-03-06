@@ -445,6 +445,12 @@ Fixed recalc off not recalculating positions in case cell got different size.
 2009-02-20:
 Created socialcalcpopup.js and changed socialcalcspreadsheetcontrol.js to use it.
 
+2009-02-24:
+Continued fixing bugs in socialcalcpopup.js and adding features.
+
+2009-02-25:
+Moved spreadsheetcontrol button and tab styles to SocialCalc.Constants to make skinning easier.
+
 
 TO DO:
 
