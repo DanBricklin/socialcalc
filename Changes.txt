@@ -451,6 +451,10 @@ Continued fixing bugs in socialcalcpopup.js and adding features.
 2009-02-25:
 Moved spreadsheetcontrol button and tab styles to SocialCalc.Constants to make skinning easier.
 
+2009-03-10:
+Made socialcalc2demo10.
+Made socialcalcserver.pl use all filenames and have settings file.
+
 
 TO DO:
 

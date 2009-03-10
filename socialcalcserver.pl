@@ -19,10 +19,13 @@
 
 #   use SocialCalcServersideUtilities;
 
+   # Defaults
 
-   my $datadir = "se2-data/";
-   my $versionstr = "0.1";
-   my $jsdir = "/sgi/scjstest/";
+   my $settingsfile = "socialcalcserversettings.txt"; # file with values for the following
+   my $datadir = "se2-data/"; # The subdirectory of where the code is that holds the socialcalc data files
+   my $versionstr = "0.2";
+   my $jsdir = "/sgi/scjs/"; # The subdirectory of the server home page (when run thru CGI)
+                                 # where the .js files are, and ./images/ subdirectory.
 
 #
 # This whole first section lets this code run either as a CGI script on a server
@@ -128,13 +131,77 @@ sub process_request {
 
    my ($statusmessage);
 
+   if (-e $settingsfile) {
+      open (SETTINGSFILE, $settingsfile);
+      while (my $line = <SETTINGSFILE>) {
+         chomp $line; $line =~ s/\r//g;
+         my @sline = split /\:/, $line;
+         $datadir = $sline[1] if ($sline[0] eq "datadir");
+         $jsdir = $sline[1] if ($sline[0] eq "jsdir");
+         }
+      close SETTINGSFILE;
+      }
+   else {
+      if ($q->param('setup')) { # got settings - do this once
+         $datadir = $q->param('datadir');
+         $jsdir = $q->param('jsdir');
+         open (SETTINGSFILE, ">$settingsfile");
+         print SETTINGSFILE <<"EOF";
+# SocialcalcServer settings
+version:1.0
+datadir:$datadir
+jsdir:$jsdir
+EOF
+         close SETTINGSFILE;
+         mkdir $datadir;
+         }
+      else {
+         $response = <<"EOF";
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SocialCalc Server $versionstr</title>
+<style>
+body, td, input, texarea
+ {font-family:verdana,helvetica,sans-serif;font-size:small;}
+ .smaller {font-size:smaller;}
+</style>
+</head>
+<body>
+<form action="" method="POST">
+<div style="padding:6px;background-color:#80A9F3;">
+<div style="font-weight:bold;color:white;">SIMPLE SYSTEM FOR EDITING SOCIALCALC FILES</div>
+<div style="color:#FDD;font-weight:bold;">Initial Setup</div>
+<div style="padding:6px;background-color:#80A9F3;">
+Name of subdirectory of where the code is to hold spreadsheet data files:
+<input name="datadir" type="text" value="scdata/"><br>
+Name of subdirectory of server home page that has the JavaScript files and the images subdirectory
+(only needed if running on Apache, etc., not when running standalone from the
+command line in Perl): <input name="jsdir" type="text" value="/sgi/scjs/"><br>
+<input type="submit" name="setup" value="Save">
+</div>
+<br>
+</form>
+</div>
+<br>
+</body>
+</html>
+EOF
+
+         return $response;
+        }
+
+      }
+
    my $pagename = $q->param('pagename');
 
    if ($q->param('newpage')) {
       $pagename = $q->param('newpagename');
       }
 
-   $pagename =~ s/[^a-zA-Z0-9_\-]*//g;
+   $pagename =~ s/[^a-zA-Z0-9_\-\.]*//g;
    if (!$pagename) {
       $pagename = "[None]";
       return do_displaypage($q, $pagename, $statusmessage);
@@ -154,7 +221,7 @@ sub process_request {
    if ($q->param('savespreadsheet')) { # save the edited spreadsheet
       my $pagestr = $q->param('newstr');
 
-      open (PAGEFILEOUT, ">$datadir$pagename.page.txt");
+      open (PAGEFILEOUT, ">$datadir$pagename");
       print PAGEFILEOUT $pagestr;
       close PAGEFILEOUT;
       $statusmessage =
@@ -211,9 +278,9 @@ function doview(p) {
 <div style="font-size:smaller;">
 EOF
 
-   my @pagefiles = glob("$datadir*.page.txt"); # Get list of all pages
+   my @pagefiles = glob("$datadir*"); # Get list of all pages
    for (my $pnum=0; $pnum <= $#pagefiles; $pnum++) {
-      $pagefiles[$pnum] =~ m/^(?:.*\/){0,1}(.*).page.txt$/;
+      $pagefiles[$pnum] =~ m/^(?:.*\/){0,1}(.*)$/;
       $response .= qq!$1 <input class="smaller" type="submit" value="Edit" onclick="doedit('$1');"> !;
       $response .= qq! <input class="smaller" type="submit" value="View" onclick="doview('$1');"><br>!;
       }
@@ -252,7 +319,7 @@ sub start_editsheet {
 
    my ($response, $sheetstr);
 
-   open (PAGEFILEIN, "$datadir$pagename.page.txt");
+   open (PAGEFILEIN, "$datadir$pagename");
 
    while (my $line = <PAGEFILEIN>) {
       $sheetstr .= $line;
@@ -291,7 +358,7 @@ body, td, input, texarea
 <input type="hidden" name="pagename" value="$pagename">
 </div>
 </form>
-<div id="tableeditor" style="margin:8px 170px 10px 0px;">editor goes here</div>
+<div id="tableeditor" style="margin:8px 0px 10px 0px;">editor goes here</div>
 <script>
 
 function dosave() {
@@ -347,7 +414,7 @@ sub start_viewsheet {
 
    my ($response, $sheetstr);
 
-   open (PAGEFILEIN, "$datadir$pagename.page.txt");
+   open (PAGEFILEIN, "$datadir$pagename");
 
    while (my $line = <PAGEFILEIN>) {
       $sheetstr .= $line;
