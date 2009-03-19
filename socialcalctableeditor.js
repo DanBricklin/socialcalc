@@ -295,6 +295,7 @@ SocialCalc.TableEditor.prototype.EditorMouseUnregister = function() {return Soci
 SocialCalc.TableEditor.prototype.EditorMouseRange = function(coord) {return SocialCalc.EditorMouseRange(this, coord);};
 
 SocialCalc.TableEditor.prototype.EditorProcessKey = function(ch, e) {return SocialCalc.EditorProcessKey(this, ch, e);};
+SocialCalc.TableEditor.prototype.EditorAddToInput = function(str, prefix) {return SocialCalc.EditorAddToInput(this, str, prefix);};
 SocialCalc.TableEditor.prototype.DisplayCellContents = function() {return SocialCalc.EditorDisplayCellContents(this);};
 SocialCalc.TableEditor.prototype.EditorSaveEdit = function() {return SocialCalc.EditorSaveEdit(this);};
 SocialCalc.TableEditor.prototype.EditorApplySetCommandsToRange = function(cmdline, type) {return SocialCalc.EditorApplySetCommandsToRange(this, cmdline, type);};
@@ -1593,6 +1594,37 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
    return false;
 
    }
+
+SocialCalc.EditorAddToInput = function(editor, str, prefix) {
+
+   var wval = editor.workingvalues;
+
+   switch (editor.state) {
+      case "start":
+         editor.state = "input";
+         editor.inputBox.ShowInputBox(true);
+         editor.inputBox.Focus();
+         editor.inputBox.SetText((prefix||"")+str);
+         editor.inputBox.Select("end");
+         wval.partialexpr = "";
+         wval.ecoord = editor.ecell.coord;
+         wval.erow = editor.ecell.row;
+         wval.ecol = editor.ecell.col;
+         editor.RangeRemove();
+         break;
+
+      case "input":
+      case "inputboxdirect":
+         editor.inputBox.element.focus();
+         editor.inputBox.SetText(editor.inputBox.GetText()+str);
+         break;
+
+      default:
+         break;
+      }
+
+   }
+
 
 SocialCalc.EditorDisplayCellContents = function(editor) {
 
@@ -2974,18 +3006,34 @@ SocialCalc.InputEcho = function(editor) {
    this.text = ""; // current value of what is displayed
    this.interval = null; // timer handle
 
-   this.main = null; // main element containing all the others
+   this.container = null; // element containing main echo as well as prompt line
+   this.main = null; // main echo area
+   this.prompt = null;
+
+   this.functionbox = null; // function chooser dialog
+
+   this.container = document.createElement("div");
+   SocialCalc.setStyles(this.container, "display:none;position:absolute;zIndex:10;");
 
    this.main = document.createElement("div");
-   SocialCalc.setStyles(this.main, "display:none;position:absolute;zIndex:10;");
    if (scc.defaultInputEchoClass) this.main.className = scc.defaultInputEchoClass;
    if (scc.defaultInputEchoStyle) SocialCalc.setStyles(this.main, scc.defaultInputEchoStyle);
-
    this.main.innerHTML = "&nbsp;";
 
-   SocialCalc.DragRegister(this.main, true, true, null);
+   this.container.appendChild(this.main);
 
-   editor.toplevel.appendChild(this.main);
+   this.prompt = document.createElement("div");
+   if (scc.defaultInputEchoPromptClass) this.prompt.className = scc.defaultInputEchoPromptClass;
+   if (scc.defaultInputEchoPromptStyle) SocialCalc.setStyles(this.prompt, scc.defaultInputEchoPromptStyle);
+   this.prompt.innerHTML = "";
+
+   this.container.appendChild(this.prompt);
+
+   SocialCalc.DragRegister(this.main, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+                  MouseUp: SocialCalc.DragFunctionPosition,
+                  Disabled: null, positionobj: this.container});
+
+   editor.toplevel.appendChild(this.container);
 
    }
 
@@ -3007,26 +3055,49 @@ SocialCalc.ShowInputEcho = function(inputecho, show) {
       cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
       if (cell) {
          position = SocialCalc.GetElementPosition(cell.element);
-         inputecho.main.style.left = (position.left-1)+"px";
-         inputecho.main.style.top = (position.top-1)+"px";
+         inputecho.container.style.left = (position.left-1)+"px";
+         inputecho.container.style.top = (position.top-1)+"px";
          }
-      inputecho.main.style.display = "block";
+      inputecho.container.style.display = "block";
       if (inputecho.interval) window.clearInterval(inputecho.interval); // just in case
       inputecho.interval = window.setInterval(SocialCalc.InputEchoHeartbeat, 50);
       }
    else {
       if (inputecho.interval) window.clearInterval(inputecho.interval);
-      inputecho.main.style.display = "none";
+      inputecho.container.style.display = "none";
       }
 
    }
 
 SocialCalc.SetInputEchoText = function(inputecho, str) {
 
+   scc = SocialCalc.Constants;
+   var fname, fstr;
    var newstr = SocialCalc.special_chars(str);
+
    if (inputecho.text != newstr) {
       inputecho.main.innerHTML = newstr;
       inputecho.text = newstr;
+      }
+
+   var parts = str.match(/.*[\+\-\*\/\&\^\<\>\=\,\(]([A-Za-z][A-ZA-z]\w*?)\([^\)]*?$/);
+   if (str.charAt(0)=="=" && parts) {
+      fname = parts[1].toUpperCase();
+      if (SocialCalc.Formula.FunctionList[fname]) {
+         SocialCalc.Formula.FillFunctionInfo(); //  make sure filled
+         fstr = SocialCalc.special_chars(fname+"("+SocialCalc.Formula.FunctionArgString(fname)+")");
+         }
+      else {
+         fstr = scc.ietUnknownFunction+fname;
+         }
+      if (inputecho.prompt.innerHTML != fstr) {
+         inputecho.prompt.innerHTML = fstr;
+         inputecho.prompt.style.display = "block";
+         }
+      }
+   else if (inputecho.prompt.style.display != "none") {
+      inputecho.prompt.innerHTML = "";
+      inputecho.prompt.style.display = "none";
       }
 
    }
@@ -3763,6 +3834,9 @@ SocialCalc.DragUnregister = function(element) {
    var draginfo = SocialCalc.DragInfo;
 
    var i;
+
+   if (!element) return;
+
    for (i=0; i<draginfo.registeredElements.length; i++) {
       if (draginfo.registeredElements[i].element == element) {
          draginfo.registeredElements.splice(i,1);
@@ -3770,7 +3844,7 @@ SocialCalc.DragUnregister = function(element) {
             element.removeEventListener("mousedown", SocialCalc.DragMouseDown, false);
             }
          else { // IE 5+
-            element.removeEvent("onmousedown", SocialCalc.DragMouseDown);
+            element.detachEvent("onmousedown", SocialCalc.DragMouseDown);
             }
          return;
          }

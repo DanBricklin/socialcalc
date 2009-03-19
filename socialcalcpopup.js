@@ -292,7 +292,7 @@ SocialCalc.Popup.Cancel = function() {
 //
 // ele = SocialCalc.Popup.CreatePopupDiv(id, attribs)
 //
-// Utility function to create the main popup div of width attris.width.
+// Utility function to create the main popup div of width attribs.width.
 // If attribs.title, create one with that text, and optionally attribs.moveable.
 //
 
@@ -327,7 +327,8 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
          '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.Popup.Cancel();">&nbsp;X&nbsp;</td></tr></table>';
 
       if (attribs.moveable) {
-         SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+         spcdata.dragregistered = main.firstChild.firstChild.firstChild.firstChild;
+         SocialCalc.DragRegister(spcdata.dragregistered, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
                      MouseUp: SocialCalc.DragFunctionPosition,
                      Disabled: null, positionobj: main});
          }
@@ -338,18 +339,18 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
    }
 
 //
-// ele = SocialCalc.Popup.DestroyPopupDiv(ele)
+// ele = SocialCalc.Popup.DestroyPopupDiv(ele, dragregistered)
 //
 // Utility function to get rid of the main popup div.
 //
 
-SocialCalc.Popup.DestroyPopupDiv = function(ele) {
+SocialCalc.Popup.DestroyPopupDiv = function(ele, dragregistered) {
 
    if (!ele) return;
 
    ele.innerHTML = "";
 
-   SocialCalc.DragUnregister(ele); // OK to do this even if not registered
+   SocialCalc.DragUnregister(dragregistered); // OK to do this even if not registered
 
    if (ele.parentNode) {
       ele.parentNode.removeChild(ele);
@@ -450,6 +451,7 @@ SocialCalc.Popup.splitRGB = function(rgb) {
 // contentele: gets element created with all the content
 // listdiv: gets div with list of items
 // customele: gets input element with custom value
+// dragregistered: gets element, if any, registered as draggable
 //
 
 SocialCalc.Popup.Types.List = {};
@@ -797,7 +799,7 @@ SocialCalc.Popup.Types.List.Hide = function(type, id) {
    var spc = sp.Controls;
    var spcdata = spc[id].data;
 
-   sp.DestroyPopupDiv(spcdata.popupele);
+   sp.DestroyPopupDiv(spcdata.popupele, spcdata.dragregistered);
    spcdata.popupele = null;
 
    if (spcdata.mainele && spcdata.mainele.firstChild) {
@@ -1071,7 +1073,7 @@ SocialCalc.Popup.Types.ColorChooser.Hide = function(type, id) {
    var spc = sp.Controls;
    var spcdata = spc[id].data;
 
-   sp.DestroyPopupDiv(spcdata.popupele);
+   sp.DestroyPopupDiv(spcdata.popupele, spcdata.dragregistered);
    spcdata.popupele = null;
 
    }

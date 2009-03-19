@@ -35,8 +35,8 @@ body
 <input type="button" value="SheetHTML" onclick="alert(spreadsheet.CreateSheetHTML());">
 <input type="button" value="SheetSave" onclick="alert(spreadsheet.CreateSheetSave());">
 <input type="button" value="Attribs" onclick="doattribs();">
-<input type="button" value="From" onclick="dosetfrom();">
-<input type="button" value="Move" onclick="domove('insert');">
+<input type="button" value="Functions" onclick="dofunctions();">
+<input type="button" value="PasteFunc" onclick="dofpaste('sum(');">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">
@@ -179,20 +179,160 @@ function doattribs() {
 
 var fromrange = "A1:A1";
 
-function dosetfrom() {
-   var editor = spreadsheet.editor;
-   if (editor.range.hasrange) {
-      fromrange = SocialCalc.crToCoord(editor.range.left, editor.range.top) + ":" +
-                  SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+function dofunctions() {
+
+   var i, cname, str, f, ele;
+
+   var scf = SocialCalc.Formula;
+   var scc = SocialCalc.Constants;
+   var fcl = scc.function_classlist;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+
+   scf.FillFunctionInfo();
+
+   str = '<table><tr><td><span style="font-size:x-small;font-weight:bold">Category</span><br>'+
+      '<select id="'+idp+'class" size="'+fcl.length+'" style="width:120px;" onchange="classchosen(this.options[this.selectedIndex].value);">';
+   for (i=0; i<fcl.length; i++) {
+      str += '<option value="'+fcl[i]+'"'+(i==0?' selected>':'>')+SocialCalc.special_chars(scf.FunctionClasses[fcl[i]].name)+'</option>';
       }
-   else {
-      fromrange = spreadsheet.editor.ecell.coord+":"+spreadsheet.editor.ecell.coord;
+   str += '</select></td><td>&nbsp;&nbsp;</td><td id="'+idp+'list"><span style="font-size:x-small;font-weight:bold">Functions</span><br>'+
+      '<select id="'+idp+'name" size="'+fcl.length+'" style="width:240px;" '+
+      'onchange="functionchosen(this.options[this.selectedIndex].value);" ondblclick="dofpaste();">';
+   str += getfunctionnamesstr("all");
+   str += '</td></tr><tr><td colspan="3">'+
+          '<div id="'+idp+'desc" style="width:380px;height:80px;overflow:auto;font-size:x-small;">'+getfunctioninfostr(scf.FunctionClasses[fcl[0]].items[0])+'</div>'+
+          '<div style="width:380px;text-align:right;padding-top:6px;font-size:small;">'+
+          '<input type="button" value="Paste" style="font-size:smaller;" onclick="dofpaste();">&nbsp;'+
+          '<input type="button" value="Cancel" style="font-size:smaller;" onclick="hidefunctions();"></div>'+
+          '</td></tr></table>';
+
+   var main = document.createElement("div");
+   main.id = idp+"dialog";
+
+   main.style.position = "absolute";
+
+   var vp = SocialCalc.GetViewportInfo();
+
+   main.style.top = (vp.height/3)+"px";
+   main.style.left = (vp.width/3)+"px";
+   main.style.zIndex = 100;
+   main.style.backgroundColor = "#FFF";
+   main.style.border = "1px solid black";
+
+   main.style.width = "400px";
+
+   main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Function List"+'</td>'+
+      '<td style="font-size:10px;cursor:default;color:#666;" onclick="hidefunctions();">&nbsp;X&nbsp;</td></tr></table>'+
+      '<div style="background-color:#DDD;">'+str+'</div>';
+
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+                  MouseUp: SocialCalc.DragFunctionPosition,
+                  Disabled: null, positionobj: main});
+
+   spreadsheet.spreadsheetDiv.appendChild(main);
+
+   ele = document.getElementById(idp+"name");
+   ele.focus();
+   SocialCalc.CmdGotFocus(ele);
+//!!! need to do keyboard handling: if esc, hide; if All, letter scrolls to there
+
+   }
+
+function getfunctionnamesstr(cname) {
+
+   var i, f;
+   var scf = SocialCalc.Formula;
+   var str = "";
+
+   f = scf.FunctionClasses[cname];
+   for (i=0; i<f.items.length; i++) {
+      str += '<option value="'+f.items[i]+'"'+(i==0?' selected>':'>')+f.items[i]+'</option>';
+      }
+
+   return str;
+
+   }
+
+function fillfunctionnames(cname, ele) {
+
+   var i, f;
+   var scf = SocialCalc.Formula;
+
+   ele.length = 0;
+   f = scf.FunctionClasses[cname];
+   for (i=0; i<f.items.length; i++) {
+      ele.options[i] = new Option(f.items[i], f.items[i]);
+      if (i==0) {
+         ele.options[i].selected = true;
+         }
       }
    }
 
-function domove(arg) {
-   var cstr = "move"+(arg || "paste")+" "+fromrange+" "+spreadsheet.editor.ecell.coord;
-   spreadsheet.ExecuteCommand(cstr, "");
+function getfunctioninfostr(fname) {
+   
+   var scf = SocialCalc.Formula;
+   var f = scf.FunctionList[fname];
+   var scsc = SocialCalc.special_chars;
+
+   var str = "<b>"+fname+"("+scsc(scf.FunctionArgString(fname))+")</b><br>";
+   str += scsc(f[3]);
+
+   return str;
+
+   }
+
+function classchosen(cname) {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+   var scf = SocialCalc.Formula;
+
+   fillfunctionnames(cname, document.getElementById(idp+"name"));
+
+   functionchosen(scf.FunctionClasses[cname].items[0]);
+
+   }
+
+function functionchosen(fname) {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+
+   document.getElementById(idp+"desc").innerHTML = getfunctioninfostr(fname);
+
+   }
+
+function hidefunctions() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"functiondialog");
+   ele.innerHTML = "";
+
+   SocialCalc.DragUnregister(ele);
+
+   SocialCalc.KeyboardFocus();
+
+   if (ele.parentNode) {
+      ele.parentNode.removeChild(ele);
+      }
+
+   }
+
+function dofpaste() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var ele = document.getElementById(spreadsheet.idPrefix+"functionname");
+
+   var text = ele.value+"(";
+
+   hidefunctions();
+   editor.EditorAddToInput(text, "=");
+
    }
 
 </script>

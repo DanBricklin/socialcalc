@@ -1498,7 +1498,7 @@ SocialCalc.Formula.DecodeRangeParts = function(sheetdata, range) {
 
 // List of functions -- Define after functions are defined
 //
-// SocialCalc.Formula.FunctionList["function_name"] = [function_subroutine, number_of_arguments]
+// SocialCalc.Formula.FunctionList["function_name"] = [function_subroutine, number_of_arguments, arg_def, func_def, func_class]
 //   function_subroutine takes arguments (fname, operand, foperand, sheet), returns
 //      errortext or null, pushing result on operand stack.
 //   number_of_arguments is:
@@ -1507,11 +1507,26 @@ SocialCalc.Formula.DecodeRangeParts = function(sheetdata, range) {
 //      <0 = that many arguments (abs value) or more
 //      100 = don't check
 //
+//   arg_def, if present, is the name of the element in SocialCalc.Formula.FunctionArgDefs.
+//   func_def, if present, is a string explaining the function. If not, looked up in SocialCalc.Constants.
+//   func_class, if present, is the comma-separated names of the elements in SocialCalc.Formula.FunctionClasses.
+//
 // To add a function, just add it to this object.
 
    if (!SocialCalc.Formula.FunctionList) { // make sure it is defined (could have been in another module)
       SocialCalc.Formula.FunctionList = {};
       }
+
+   // FunctionClasses[classname] = {name: full-name-string, items: [sorted list of function names]};
+   // filled in by SocialCalc.Formula.FillFunctionInfo
+
+   SocialCalc.Formula.FunctionClasses = null; // start null to say needs filling in
+
+   // FunctionArgDef[argname] = explicit-string-for-arg-list;
+   // filled in by SocialCalc.Formula.FillFunctionInfo
+
+   SocialCalc.Formula.FunctionArgDefs = {};
+
 
 /*
 #
@@ -1651,6 +1666,108 @@ SocialCalc.Formula.CheckForErrorValue = function(operand, v) {
       }
 
    }
+
+/////////////////////////
+//
+// FUNCTION INFORMATION ROUTINES
+//
+
+//
+// SocialCalc.Formula.FillFunctionInfo()
+//
+// Goes through function definitions and fills out FunctionArgDefs and FunctionClasses.
+// Execute this after any changes to SocialCalc.Constants but before UI is used.
+//
+
+SocialCalc.Formula.FillFunctionInfo = function() {
+
+   var scf = SocialCalc.Formula;
+   var scc = SocialCalc.Constants;
+
+   var fname, f, classes, cname, i;
+
+   if (scf.FunctionClasses) { // only do once
+      return;
+      }
+
+   for (fname in scf.FunctionList) {
+      f = scf.FunctionList[fname];
+      if (f[2]) { // has an arg def
+         scf.FunctionArgDefs[f[2]] = scc["s_farg_"+f[2]] || ""; // get it from constants
+         }
+      if (!f[3]) { // no text def, see if in constants
+         if (scc["s_fdef_"+fname]) {
+            scf.FunctionList[fname][3] = scc["s_fdef_"+fname];
+            }
+         }
+      }
+
+   scf.FunctionClasses = {};
+ 
+   for (i=0; i<scc.function_classlist.length; i++) {
+      cname = scc.function_classlist[i];
+      scf.FunctionClasses[cname] = {name: scc["s_fclass_"+cname], items: []};
+      }
+
+   for (fname in scf.FunctionList) {
+      f = scf.FunctionList[fname];
+      classes = f[4] ? f[4].split(",") : []; // get classes
+      classes.push("all");
+      for (i=0; i<classes.length; i++) {
+         cname = classes[i];
+         scf.FunctionClasses[cname].items.push(fname);
+         }
+      }
+   for (cname in scf.FunctionClasses) {
+      scf.FunctionClasses[cname].items.sort();
+      }
+
+   }
+
+//
+// str = SocialCalc.Formula.FunctionArgString(fname)
+//
+// Returns a string representing the arguments to function fname.
+//
+
+SocialCalc.Formula.FunctionArgString = function(fname) {
+
+   var scf = SocialCalc.Formula;
+   var fdata = scf.FunctionList[fname];
+   var nargs, i, str;
+
+   var adef = fdata[2];
+
+   if (!adef) {
+      nargs = fdata[1];
+      if (nargs == 0) {
+         adef = " ";
+         }
+      else if (nargs > 0) {
+         str = "v1";
+         for (i=2; i<=nargs; i++) {
+            str += ", v"+i;
+            }
+         return str;
+         }
+      else if (nargs < 0) {
+         str = "v1";
+         for (i=2; i<-nargs; i++) {
+            str += ", v"+i;
+            }
+         return str+", ...";
+         }
+      else {
+         return "nargs: "+nargs;
+         }
+      }
+
+   str = scf.FunctionArgDefs[adef] || adef;
+
+   return str;
+
+   }
+
 
 /////////////////////////
 //
@@ -1815,18 +1932,18 @@ SocialCalc.Formula.SeriesFunctions = function(fname, operand, foperand, sheet) {
    }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["AVERAGE"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["COUNT"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["COUNTA"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["COUNTBLANK"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["MAX"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["MIN"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["PRODUCT"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["STDEV"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["STDEVP"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["SUM"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["VAR"] = [SocialCalc.Formula.SeriesFunctions, -1];
-SocialCalc.Formula.FunctionList["VARP"] = [SocialCalc.Formula.SeriesFunctions, -1];
+SocialCalc.Formula.FunctionList["AVERAGE"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["COUNT"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["COUNTA"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["COUNTBLANK"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["MAX"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["MIN"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["PRODUCT"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["STDEV"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["STDEVP"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["SUM"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["VAR"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
+SocialCalc.Formula.FunctionList["VARP"] = [SocialCalc.Formula.SeriesFunctions, -1, "vn", null, "stat"];
 
 /*
 #
@@ -2051,18 +2168,18 @@ CRITERIAROW:
 
    }
 
-SocialCalc.Formula.FunctionList["DAVERAGE"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DCOUNT"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DCOUNTA"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DGET"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DMAX"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DMIN"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DPRODUCT"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DSTDEV"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DSTDEVP"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DSUM"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DVAR"] = [SocialCalc.Formula.DSeriesFunctions, 3];
-SocialCalc.Formula.FunctionList["DVARP"] = [SocialCalc.Formula.DSeriesFunctions, 3];
+SocialCalc.Formula.FunctionList["DAVERAGE"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DCOUNT"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DCOUNTA"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DGET"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DMAX"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DMIN"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DPRODUCT"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DSTDEV"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DSTDEVP"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DSUM"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DVAR"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
+SocialCalc.Formula.FunctionList["DVARP"] = [SocialCalc.Formula.DSeriesFunctions, 3, "dfunc", "", "stat"];
 
 /*
 #
@@ -2313,9 +2430,9 @@ SocialCalc.Formula.LookupFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["HLOOKUP"] = [SocialCalc.Formula.LookupFunctions, -3];
-SocialCalc.Formula.FunctionList["MATCH"] = [SocialCalc.Formula.LookupFunctions, -2];
-SocialCalc.Formula.FunctionList["VLOOKUP"] = [SocialCalc.Formula.LookupFunctions, -3];
+SocialCalc.Formula.FunctionList["HLOOKUP"] = [SocialCalc.Formula.LookupFunctions, -3, "hlookup", "", "lookup"];
+SocialCalc.Formula.FunctionList["MATCH"] = [SocialCalc.Formula.LookupFunctions, -2, "match", "", "lookup"];
+SocialCalc.Formula.FunctionList["VLOOKUP"] = [SocialCalc.Formula.LookupFunctions, -3, "vhlookup", "", "lookup"];
 
 /*
 #
@@ -2424,7 +2541,7 @@ SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["INDEX"] = [SocialCalc.Formula.IndexFunction, -1];
+SocialCalc.Formula.FunctionList["INDEX"] = [SocialCalc.Formula.IndexFunction, -1, "index", "", "lookup"];
 
 /*
 #
@@ -2521,8 +2638,8 @@ SocialCalc.Formula.CountifSumifFunctions = function(fname, operand, foperand, sh
 
    }
 
-SocialCalc.Formula.FunctionList["COUNTIF"] = [SocialCalc.Formula.CountifSumifFunctions, 2];
-SocialCalc.Formula.FunctionList["SUMIF"] = [SocialCalc.Formula.CountifSumifFunctions, -2];
+SocialCalc.Formula.FunctionList["COUNTIF"] = [SocialCalc.Formula.CountifSumifFunctions, 2, "rangec", "", "stat"];
+SocialCalc.Formula.FunctionList["SUMIF"] = [SocialCalc.Formula.CountifSumifFunctions, -2, "sumif", "", "stat"];
 
 /*
 #
@@ -2550,7 +2667,7 @@ SocialCalc.Formula.IfFunction = function(fname, operand, foperand, sheet) {
    }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["IF"] = [SocialCalc.Formula.IfFunction, 3];
+SocialCalc.Formula.FunctionList["IF"] = [SocialCalc.Formula.IfFunction, 3, "iffunc", "", "test"];
 
 /*
 #
@@ -2578,7 +2695,7 @@ SocialCalc.Formula.DateFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["DATE"] = [SocialCalc.Formula.DateFunction, 3];
+SocialCalc.Formula.FunctionList["DATE"] = [SocialCalc.Formula.DateFunction, 3, "date", "", "datetime"];
 
 /*
 #
@@ -2604,7 +2721,7 @@ SocialCalc.Formula.TimeFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["TIME"] = [SocialCalc.Formula.TimeFunction, 3];
+SocialCalc.Formula.FunctionList["TIME"] = [SocialCalc.Formula.TimeFunction, 3, "hms", "", "datetime"];
 
 /*
 #
@@ -2667,10 +2784,10 @@ SocialCalc.Formula.DMYFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["DAY"] = [SocialCalc.Formula.DMYFunctions, 1];
-SocialCalc.Formula.FunctionList["MONTH"] = [SocialCalc.Formula.DMYFunctions, 1];
-SocialCalc.Formula.FunctionList["YEAR"] = [SocialCalc.Formula.DMYFunctions, 1];
-SocialCalc.Formula.FunctionList["WEEKDAY"] = [SocialCalc.Formula.DMYFunctions, -1];
+SocialCalc.Formula.FunctionList["DAY"] = [SocialCalc.Formula.DMYFunctions, 1, "v", "", "datetime"];
+SocialCalc.Formula.FunctionList["MONTH"] = [SocialCalc.Formula.DMYFunctions, 1, "v", "", "datetime"];
+SocialCalc.Formula.FunctionList["YEAR"] = [SocialCalc.Formula.DMYFunctions, 1, "v", "", "datetime"];
+SocialCalc.Formula.FunctionList["WEEKDAY"] = [SocialCalc.Formula.DMYFunctions, -1, "weekday", "", "datetime"];
 
 /*
 #
@@ -2719,9 +2836,9 @@ SocialCalc.Formula.HMSFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["HOUR"] = [SocialCalc.Formula.HMSFunctions, 1];
-SocialCalc.Formula.FunctionList["MINUTE"] = [SocialCalc.Formula.HMSFunctions, 1];
-SocialCalc.Formula.FunctionList["SECOND"] = [SocialCalc.Formula.HMSFunctions, 1];
+SocialCalc.Formula.FunctionList["HOUR"] = [SocialCalc.Formula.HMSFunctions, 1, "v", "", "datetime"];
+SocialCalc.Formula.FunctionList["MINUTE"] = [SocialCalc.Formula.HMSFunctions, 1, "v", "", "datetime"];
+SocialCalc.Formula.FunctionList["SECOND"] = [SocialCalc.Formula.HMSFunctions, 1, "v", "", "datetime"];
 
 /*
 #
@@ -2804,7 +2921,7 @@ SocialCalc.Formula.ExactFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["EXACT"] = [SocialCalc.Formula.ExactFunction, 2];
+SocialCalc.Formula.FunctionList["EXACT"] = [SocialCalc.Formula.ExactFunction, 2, "", "", "text"];
 
 /*
 #
@@ -3036,18 +3153,18 @@ SocialCalc.Formula.StringFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["FIND"] = [SocialCalc.Formula.StringFunctions, -2];
-SocialCalc.Formula.FunctionList["LEFT"] = [SocialCalc.Formula.StringFunctions, -2];
-SocialCalc.Formula.FunctionList["LEN"] = [SocialCalc.Formula.StringFunctions, 1];
-SocialCalc.Formula.FunctionList["LOWER"] = [SocialCalc.Formula.StringFunctions, 1];
-SocialCalc.Formula.FunctionList["MID"] = [SocialCalc.Formula.StringFunctions, 3];
-SocialCalc.Formula.FunctionList["PROPER"] = [SocialCalc.Formula.StringFunctions, 1];
-SocialCalc.Formula.FunctionList["REPLACE"] = [SocialCalc.Formula.StringFunctions, 4];
-SocialCalc.Formula.FunctionList["REPT"] = [SocialCalc.Formula.StringFunctions, 2];
-SocialCalc.Formula.FunctionList["RIGHT"] = [SocialCalc.Formula.StringFunctions, -1];
-SocialCalc.Formula.FunctionList["SUBSTITUTE"] = [SocialCalc.Formula.StringFunctions, -3];
-SocialCalc.Formula.FunctionList["TRIM"] = [SocialCalc.Formula.StringFunctions, 1];
-SocialCalc.Formula.FunctionList["UPPER"] = [SocialCalc.Formula.StringFunctions, 1];
+SocialCalc.Formula.FunctionList["FIND"] = [SocialCalc.Formula.StringFunctions, -2, "find", "", "text"];
+SocialCalc.Formula.FunctionList["LEFT"] = [SocialCalc.Formula.StringFunctions, -2, "tc", "", "text"];
+SocialCalc.Formula.FunctionList["LEN"] = [SocialCalc.Formula.StringFunctions, 1, "txt", "", "text"];
+SocialCalc.Formula.FunctionList["LOWER"] = [SocialCalc.Formula.StringFunctions, 1, "txt", "", "text"];
+SocialCalc.Formula.FunctionList["MID"] = [SocialCalc.Formula.StringFunctions, 3, "mid", "", "text"];
+SocialCalc.Formula.FunctionList["PROPER"] = [SocialCalc.Formula.StringFunctions, 1, "v", "", "text"];
+SocialCalc.Formula.FunctionList["REPLACE"] = [SocialCalc.Formula.StringFunctions, 4, "replace", "", "text"];
+SocialCalc.Formula.FunctionList["REPT"] = [SocialCalc.Formula.StringFunctions, 2, "tc", "", "text"];
+SocialCalc.Formula.FunctionList["RIGHT"] = [SocialCalc.Formula.StringFunctions, -1, "tc", "", "text"];
+SocialCalc.Formula.FunctionList["SUBSTITUTE"] = [SocialCalc.Formula.StringFunctions, -3, "subs", "", "text"];
+SocialCalc.Formula.FunctionList["TRIM"] = [SocialCalc.Formula.StringFunctions, 1, "v", "", "text"];
+SocialCalc.Formula.FunctionList["UPPER"] = [SocialCalc.Formula.StringFunctions, 1, "v", "", "text"];
 
 /*
 #
@@ -3114,14 +3231,14 @@ SocialCalc.Formula.IsFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["ISBLANK"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISERR"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISERROR"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISLOGICAL"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISNA"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISNONTEXT"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISNUMBER"] = [SocialCalc.Formula.IsFunctions, 1];
-SocialCalc.Formula.FunctionList["ISTEXT"] = [SocialCalc.Formula.IsFunctions, 1];
+SocialCalc.Formula.FunctionList["ISBLANK"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISERR"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISERROR"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISLOGICAL"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISNA"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISNONTEXT"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISNUMBER"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
+SocialCalc.Formula.FunctionList["ISTEXT"] = [SocialCalc.Formula.IsFunctions, 1, "v", "", "test"];
 
 /*
 #
@@ -3183,9 +3300,9 @@ SocialCalc.Formula.NTVFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["N"] = [SocialCalc.Formula.NTVFunctions, 1];
-SocialCalc.Formula.FunctionList["T"] = [SocialCalc.Formula.NTVFunctions, 1];
-SocialCalc.Formula.FunctionList["VALUE"] = [SocialCalc.Formula.NTVFunctions, 1];
+SocialCalc.Formula.FunctionList["N"] = [SocialCalc.Formula.NTVFunctions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["T"] = [SocialCalc.Formula.NTVFunctions, 1, "v", "", "text"];
+SocialCalc.Formula.FunctionList["VALUE"] = [SocialCalc.Formula.NTVFunctions, 1, "v", "", "text"];
 
 /*
 #
@@ -3347,23 +3464,23 @@ SocialCalc.Formula.Math1Functions = function(fname, operand, foperand, sheet) {
    }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["ABS"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["ACOS"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["ASIN"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["ATAN"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["COS"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["DEGREES"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["EVEN"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["EXP"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["FACT"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["INT"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["LN"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["LOG10"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["ODD"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["RADIANS"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["SIN"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["SQRT"] = [SocialCalc.Formula.Math1Functions, 1];
-SocialCalc.Formula.FunctionList["TAN"] = [SocialCalc.Formula.Math1Functions, 1];
+SocialCalc.Formula.FunctionList["ABS"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["ACOS"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["ASIN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["ATAN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["COS"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["DEGREES"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["EVEN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["EXP"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["FACT"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["INT"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["LN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["LOG10"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["ODD"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["RADIANS"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["SIN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["SQRT"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
+SocialCalc.Formula.FunctionList["TAN"] = [SocialCalc.Formula.Math1Functions, 1, "v", "", "math"];
 
 
 /*
@@ -3446,10 +3563,10 @@ SocialCalc.Formula.Math2Functions = function(fname, operand, foperand, sheet) {
    }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["ATAN2"] = [SocialCalc.Formula.Math2Functions, 2];
-SocialCalc.Formula.FunctionList["MOD"] = [SocialCalc.Formula.Math2Functions, 2];
-SocialCalc.Formula.FunctionList["POWER"] = [SocialCalc.Formula.Math2Functions, 2];
-SocialCalc.Formula.FunctionList["TRUNC"] = [SocialCalc.Formula.Math2Functions, 2];
+SocialCalc.Formula.FunctionList["ATAN2"] = [SocialCalc.Formula.Math2Functions, 2, "xy", "", "math"];
+SocialCalc.Formula.FunctionList["MOD"] = [SocialCalc.Formula.Math2Functions, 2, "", "", "math"];
+SocialCalc.Formula.FunctionList["POWER"] = [SocialCalc.Formula.Math2Functions, 2, "", "", "math"];
+SocialCalc.Formula.FunctionList["TRUNC"] = [SocialCalc.Formula.Math2Functions, 2, "valpre", "", "math"];
 
 /*
 #
@@ -3497,7 +3614,7 @@ SocialCalc.Formula.LogFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["LOG"] = [SocialCalc.Formula.LogFunction, -1];
+SocialCalc.Formula.FunctionList["LOG"] = [SocialCalc.Formula.LogFunction, -1, "log", "", "math"];
 
 
 /*
@@ -3563,7 +3680,7 @@ SocialCalc.Formula.RoundFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["ROUND"] = [SocialCalc.Formula.RoundFunction, -1];
+SocialCalc.Formula.FunctionList["ROUND"] = [SocialCalc.Formula.RoundFunction, -1, "vp", "", "math"];
 
 /*
 #
@@ -3613,8 +3730,8 @@ SocialCalc.Formula.AndOrFunctions = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["AND"] = [SocialCalc.Formula.AndOrFunctions, -1];
-SocialCalc.Formula.FunctionList["OR"] = [SocialCalc.Formula.AndOrFunctions, -1];
+SocialCalc.Formula.FunctionList["AND"] = [SocialCalc.Formula.AndOrFunctions, -1, "vn", "", "test"];
+SocialCalc.Formula.FunctionList["OR"] = [SocialCalc.Formula.AndOrFunctions, -1, "vn", "", "test"];
 
 /*
 #
@@ -3643,7 +3760,7 @@ SocialCalc.Formula.NotFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["NOT"] = [SocialCalc.Formula.NotFunction, 1];
+SocialCalc.Formula.FunctionList["NOT"] = [SocialCalc.Formula.NotFunction, 1, "v", "", "test"];
 
 /*
 #
@@ -3685,7 +3802,7 @@ SocialCalc.Formula.ChooseFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["CHOOSE"] = [SocialCalc.Formula.ChooseFunction, -2];
+SocialCalc.Formula.FunctionList["CHOOSE"] = [SocialCalc.Formula.ChooseFunction, -2, "choose", "", "lookup"];
 
 /*
 #
@@ -3728,8 +3845,8 @@ SocialCalc.Formula.ColumnsRowsFunctions = function(fname, operand, foperand, she
 
    }
 
-SocialCalc.Formula.FunctionList["COLUMNS"] = [SocialCalc.Formula.ColumnsRowsFunctions, 1];
-SocialCalc.Formula.FunctionList["ROWS"] = [SocialCalc.Formula.ColumnsRowsFunctions, 1];
+SocialCalc.Formula.FunctionList["COLUMNS"] = [SocialCalc.Formula.ColumnsRowsFunctions, 1, "range", "", "lookup"];
+SocialCalc.Formula.FunctionList["ROWS"] = [SocialCalc.Formula.ColumnsRowsFunctions, 1, "range", "", "lookup"];
 
 
 /*
@@ -3799,12 +3916,12 @@ SocialCalc.Formula.ZeroArgFunctions = function(fname, operand, foperand, sheet) 
 }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["FALSE"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
-SocialCalc.Formula.FunctionList["NA"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
-SocialCalc.Formula.FunctionList["NOW"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
-SocialCalc.Formula.FunctionList["PI"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
-SocialCalc.Formula.FunctionList["TODAY"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
-SocialCalc.Formula.FunctionList["TRUE"] = [SocialCalc.Formula.ZeroArgFunctions, 0];
+SocialCalc.Formula.FunctionList["FALSE"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "test"];
+SocialCalc.Formula.FunctionList["NA"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "test"];
+SocialCalc.Formula.FunctionList["NOW"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "datetime"];
+SocialCalc.Formula.FunctionList["PI"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "math"];
+SocialCalc.Formula.FunctionList["TODAY"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "datetime"];
+SocialCalc.Formula.FunctionList["TRUE"] = [SocialCalc.Formula.ZeroArgFunctions, 0, "", "", "test"];
 
 //
 // * * * * * FINANCIAL FUNCTIONS * * * * *
@@ -3866,7 +3983,7 @@ SocialCalc.Formula.DDBFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["DDB"] = [SocialCalc.Formula.DDBFunction, -4];
+SocialCalc.Formula.FunctionList["DDB"] = [SocialCalc.Formula.DDBFunction, -4, "ddb", "", "financial"];
 
 /*
 #
@@ -3903,7 +4020,7 @@ SocialCalc.Formula.SLNFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["SLN"] = [SocialCalc.Formula.SLNFunction, 3];
+SocialCalc.Formula.FunctionList["SLN"] = [SocialCalc.Formula.SLNFunction, 3, "csl", "", "financial"];
 
 /*
 #
@@ -3942,7 +4059,7 @@ SocialCalc.Formula.SYDFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["SYD"] = [SocialCalc.Formula.SYDFunction, 4];
+SocialCalc.Formula.FunctionList["SYD"] = [SocialCalc.Formula.SYDFunction, 4, "cslp", "", "financial"];
 
 /*
 #
@@ -4131,11 +4248,11 @@ SocialCalc.Formula.InterestFunctions = function(fname, operand, foperand, sheet)
 
    }
 
-SocialCalc.Formula.FunctionList["FV"] = [SocialCalc.Formula.InterestFunctions, -3];
-SocialCalc.Formula.FunctionList["NPER"] = [SocialCalc.Formula.InterestFunctions, -3];
-SocialCalc.Formula.FunctionList["PMT"] = [SocialCalc.Formula.InterestFunctions, -3];
-SocialCalc.Formula.FunctionList["PV"] = [SocialCalc.Formula.InterestFunctions, -3];
-SocialCalc.Formula.FunctionList["RATE"] = [SocialCalc.Formula.InterestFunctions, -3];
+SocialCalc.Formula.FunctionList["FV"] = [SocialCalc.Formula.InterestFunctions, -3, "fv", "", "financial"];
+SocialCalc.Formula.FunctionList["NPER"] = [SocialCalc.Formula.InterestFunctions, -3, "nper", "", "financial"];
+SocialCalc.Formula.FunctionList["PMT"] = [SocialCalc.Formula.InterestFunctions, -3, "pmt", "", "financial"];
+SocialCalc.Formula.FunctionList["PV"] = [SocialCalc.Formula.InterestFunctions, -3, "pv", "", "financial"];
+SocialCalc.Formula.FunctionList["RATE"] = [SocialCalc.Formula.InterestFunctions, -3, "rate", "", "financial"];
 
 /*
 #
@@ -4183,7 +4300,7 @@ SocialCalc.Formula.NPVFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["NPV"] = [SocialCalc.Formula.NPVFunction, -2];
+SocialCalc.Formula.FunctionList["NPV"] = [SocialCalc.Formula.NPVFunction, -2, "npv", "", "financial"];
 
 /*
 #
@@ -4278,7 +4395,7 @@ SocialCalc.Formula.IRRFunction = function(fname, operand, foperand, sheet) {
 
    }
 
-SocialCalc.Formula.FunctionList["IRR"] = [SocialCalc.Formula.IRRFunction, -1];
+SocialCalc.Formula.FunctionList["IRR"] = [SocialCalc.Formula.IRRFunction, -1, "irr", "", "financial"];
 
 //
 // SHEET CACHE

@@ -455,6 +455,14 @@ Moved spreadsheetcontrol button and tab styles to SocialCalc.Constants to make s
 Made socialcalc2demo10.
 Made socialcalcserver.pl use all filenames and have settings file.
 
+2009-03-19:
+Added function arg_def, func_def, and func_class to formula1.js and socialcalcconstants.js.
+Added definitions to all functions.
+Added function information routines FillFunctionInfo and FunctionArgString.
+Added prompt to InputEcho to show function argument prompts.
+Added function list dialog to ssctrltest1.html.
+Added SocialCalc.EditorAddToInput for pasting function starts, etc.
+
 
 TO DO:
 
