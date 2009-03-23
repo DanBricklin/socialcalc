@@ -223,6 +223,15 @@ SocialCalc.SpreadsheetControl = function() {
          }
       };
 
+   // formula bar buttons
+
+   this.formulabuttons = {
+      formulafunctions: {image: "sc-formuladialog.gif", tooltip: "Functions",
+                         command: SocialCalc.SpreadsheetControl.DoFunctionList},
+      multilineinput: {image: "sc-multilinedialog.gif", tooltip: "Multi-line Input Box",
+                         command: SocialCalc.SpreadsheetControl.DoMultiline}
+      }
+
    // Default tabs:
 
    // Edit
@@ -997,9 +1006,25 @@ spreadsheet.Buttons = {
 
    spreadsheet.formulabarDiv = document.createElement("div");
    spreadsheet.formulabarDiv.style.height = spreadsheet.formulabarheight + "px";
-   spreadsheet.formulabarDiv.innerHTML = '<input type="text" size="60" value="">';// '<textarea rows="1" cols="60"></textarea>';
+   spreadsheet.formulabarDiv.innerHTML = '<input type="text" size="60" value="">&nbsp;'; //'<textarea rows="4" cols="60" style="z-index:5;background-color:white;position:relative;"></textarea>&nbsp;';
    spreadsheet.spreadsheetDiv.appendChild(spreadsheet.formulabarDiv);
    var inputbox = new SocialCalc.InputBox(spreadsheet.formulabarDiv.firstChild, spreadsheet.editor);
+
+   for (button in spreadsheet.formulabuttons) {
+      bele = document.createElement("img");
+      bele.id = spreadsheet.idPrefix+button;
+      bele.src = spreadsheet.imagePrefix+spreadsheet.formulabuttons[button].image;
+      bele.style.verticalAlign = "middle";
+      bele.style.border = "1px solid #FFF";
+      bele.style.marginLeft = "4px";
+      SocialCalc.TooltipRegister(bele, spreadsheet.formulabuttons[button].tooltip, {});
+      SocialCalc.ButtonRegister(bele,
+         {normalstyle: "border:1px solid #FFF;backgroundColor:#FFF;",
+          hoverstyle: "border:1px solid #CCC;backgroundColor:#FFF;",
+          downstyle: "border:1px solid #000;backgroundColor:#FFF;"}, 
+         {MouseDown: spreadsheet.formulabuttons[button].command});
+      spreadsheet.formulabarDiv.appendChild(bele);
+      }
 
    // initialize tabs that need it
 
@@ -1910,6 +1935,304 @@ SocialCalc.SpreadsheetControlCreateCellHTMLSave = function(spreadsheet, range) {
    result.push(""); // one extra to get extra \n
    return result.join("\n");
    }
+
+//
+// Formula Bar Button Routines
+//
+
+SocialCalc.SpreadsheetControl.DoFunctionList = function() {
+
+   var i, cname, str, f, ele;
+
+   var scf = SocialCalc.Formula;
+   var scc = SocialCalc.Constants;
+   var fcl = scc.function_classlist;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+
+   ele = document.getElementById(idp+"dialog");
+   if (ele) return; // already have one
+
+   scf.FillFunctionInfo();
+
+   str = '<table><tr><td><span style="font-size:x-small;font-weight:bold">Category</span><br>'+
+      '<select id="'+idp+'class" size="'+fcl.length+'" style="width:120px;" onchange="SocialCalc.SpreadsheetControl.FunctionClassChosen(this.options[this.selectedIndex].value);">';
+   for (i=0; i<fcl.length; i++) {
+      str += '<option value="'+fcl[i]+'"'+(i==0?' selected>':'>')+SocialCalc.special_chars(scf.FunctionClasses[fcl[i]].name)+'</option>';
+      }
+   str += '</select></td><td>&nbsp;&nbsp;</td><td id="'+idp+'list"><span style="font-size:x-small;font-weight:bold">Functions</span><br>'+
+      '<select id="'+idp+'name" size="'+fcl.length+'" style="width:240px;" '+
+      'onchange="SocialCalc.SpreadsheetControl.FunctionChosen(this.options[this.selectedIndex].value);" ondblclick="SocialCalc.SpreadsheetControl.DoFunctionPaste();">';
+   str += SocialCalc.SpreadsheetControl.GetFunctionNamesStr("all");
+   str += '</td></tr><tr><td colspan="3">'+
+          '<div id="'+idp+'desc" style="width:380px;height:80px;overflow:auto;font-size:x-small;">'+SocialCalc.SpreadsheetControl.GetFunctionInfoStr(scf.FunctionClasses[fcl[0]].items[0])+'</div>'+
+          '<div style="width:380px;text-align:right;padding-top:6px;font-size:small;">'+
+          '<input type="button" value="Paste" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoFunctionPaste();">&nbsp;'+
+          '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideFunctions();"></div>'+
+          '</td></tr></table>';
+
+   var main = document.createElement("div");
+   main.id = idp+"dialog";
+
+   main.style.position = "absolute";
+
+   var vp = SocialCalc.GetViewportInfo();
+
+   main.style.top = (vp.height/3)+"px";
+   main.style.left = (vp.width/3)+"px";
+   main.style.zIndex = 100;
+   main.style.backgroundColor = "#FFF";
+   main.style.border = "1px solid black";
+
+   main.style.width = "400px";
+
+   main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Function List"+'</td>'+
+      '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideFunctions();">&nbsp;X&nbsp;</td></tr></table>'+
+      '<div style="background-color:#DDD;">'+str+'</div>';
+
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+                  MouseUp: SocialCalc.DragFunctionPosition,
+                  Disabled: null, positionobj: main});
+
+   spreadsheet.spreadsheetDiv.appendChild(main);
+
+   ele = document.getElementById(idp+"name");
+   ele.focus();
+   SocialCalc.CmdGotFocus(ele);
+//!!! need to do keyboard handling: if esc, hide; if All, letter scrolls to there
+
+   }
+
+SocialCalc.SpreadsheetControl.GetFunctionNamesStr = function(cname) {
+
+   var i, f;
+   var scf = SocialCalc.Formula;
+   var str = "";
+
+   f = scf.FunctionClasses[cname];
+   for (i=0; i<f.items.length; i++) {
+      str += '<option value="'+f.items[i]+'"'+(i==0?' selected>':'>')+f.items[i]+'</option>';
+      }
+
+   return str;
+
+   }
+
+SocialCalc.SpreadsheetControl.FillFunctionNames = function(cname, ele) {
+
+   var i, f;
+   var scf = SocialCalc.Formula;
+
+   ele.length = 0;
+   f = scf.FunctionClasses[cname];
+   for (i=0; i<f.items.length; i++) {
+      ele.options[i] = new Option(f.items[i], f.items[i]);
+      if (i==0) {
+         ele.options[i].selected = true;
+         }
+      }
+   }
+
+SocialCalc.SpreadsheetControl.GetFunctionInfoStr = function(fname) {
+   
+   var scf = SocialCalc.Formula;
+   var f = scf.FunctionList[fname];
+   var scsc = SocialCalc.special_chars;
+
+   var str = "<b>"+fname+"("+scsc(scf.FunctionArgString(fname))+")</b><br>";
+   str += scsc(f[3]);
+
+   return str;
+
+   }
+
+SocialCalc.SpreadsheetControl.FunctionClassChosen = function(cname) {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+   var scf = SocialCalc.Formula;
+
+   SocialCalc.SpreadsheetControl.FillFunctionNames(cname, document.getElementById(idp+"name"));
+
+   SocialCalc.SpreadsheetControl.FunctionChosen(scf.FunctionClasses[cname].items[0]);
+
+   }
+
+SocialCalc.SpreadsheetControl.FunctionChosen = function(fname) {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"function";
+
+   document.getElementById(idp+"desc").innerHTML = SocialCalc.SpreadsheetControl.GetFunctionInfoStr(fname);
+
+   }
+
+SocialCalc.SpreadsheetControl.HideFunctions = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"functiondialog");
+   ele.innerHTML = "";
+
+   SocialCalc.DragUnregister(ele);
+
+   SocialCalc.KeyboardFocus();
+
+   if (ele.parentNode) {
+      ele.parentNode.removeChild(ele);
+      }
+
+   }
+
+SocialCalc.SpreadsheetControl.DoFunctionPaste = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var ele = document.getElementById(spreadsheet.idPrefix+"functionname");
+
+   var text = ele.value+"(";
+
+   SocialCalc.SpreadsheetControl.HideFunctions();
+   editor.EditorAddToInput(text, "=");
+
+   }
+
+
+SocialCalc.SpreadsheetControl.DoMultiline = function() {
+
+   var str, ele, text;
+
+   var scc = SocialCalc.Constants;
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var wval = editor.workingvalues;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"multiline";
+
+   ele = document.getElementById(idp+"dialog");
+   if (ele) return; // already have one
+
+   switch (editor.state) {
+      case "start":
+         wval.ecoord = editor.ecell.coord;
+         wval.erow = editor.ecell.row;
+         wval.ecol = editor.ecell.col;
+         editor.RangeRemove();
+         text = SocialCalc.GetCellContents(editor.context.sheetobj, wval.ecoord);
+         break;
+
+      case "input":
+      case "inputboxdirect":
+         text = editor.inputBox.GetText();
+         break;
+      }
+
+   text = SocialCalc.special_chars(text);
+
+   str = '<textarea id="'+idp+'textarea" style="width:380px;height:120px;margin:10px 0px 0px 6px;">'+text+'</textarea>'+
+         '<div style="width:380px;text-align:right;padding:6px 0px 4px 6px;font-size:small;">'+
+         '<input type="button" value="Paste" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilinePaste();">&nbsp;'+
+         '<input type="button" value="Clear" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilineClear();">&nbsp;'+
+         '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();"></div>'+
+         '</div>';
+
+   var main = document.createElement("div");
+   main.id = idp+"dialog";
+
+   main.style.position = "absolute";
+
+   var vp = SocialCalc.GetViewportInfo();
+
+   main.style.top = (vp.height/3)+"px";
+   main.style.left = (vp.width/3)+"px";
+   main.style.zIndex = 100;
+   main.style.backgroundColor = "#FFF";
+   main.style.border = "1px solid black";
+
+   main.style.width = "400px";
+
+   main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Multi-line Input Box"+'</td>'+
+      '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();">&nbsp;X&nbsp;</td></tr></table>'+
+      '<div style="background-color:#DDD;">'+str+'</div>';
+
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+                  MouseUp: SocialCalc.DragFunctionPosition,
+                  Disabled: null, positionobj: main});
+
+   spreadsheet.spreadsheetDiv.appendChild(main);
+
+   ele = document.getElementById(idp+"textarea");
+   ele.focus();
+   SocialCalc.CmdGotFocus(ele);
+//!!! need to do keyboard handling: if esc, hide?
+
+   }
+
+
+SocialCalc.SpreadsheetControl.HideMultiline = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"multilinedialog");
+   ele.innerHTML = "";
+
+   SocialCalc.DragUnregister(ele);
+
+   SocialCalc.KeyboardFocus();
+
+   if (ele.parentNode) {
+      ele.parentNode.removeChild(ele);
+      }
+
+   }
+
+SocialCalc.SpreadsheetControl.DoMultilineClear = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"multilinetextarea");
+
+   ele.value = "";
+   ele.focus();
+
+   }
+
+
+SocialCalc.SpreadsheetControl.DoMultilinePaste = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var wval = editor.workingvalues;
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"multilinetextarea");
+
+   var text = ele.value;
+
+   SocialCalc.SpreadsheetControl.HideMultiline();
+
+   switch (editor.state) {
+      case "start":
+         wval.partialexpr = "";
+         wval.ecoord = editor.ecell.coord;
+         wval.erow = editor.ecell.row;
+         wval.ecol = editor.ecell.col;
+         break;
+      case "input":
+      case "inputboxdirect":
+         editor.inputBox.Blur();
+         editor.inputBox.ShowInputBox(false);
+         editor.state = "start";
+         break;
+      }
+
+   editor.EditorSaveEdit(text);
+
+   }
+
 
 //
 // TAB Routines

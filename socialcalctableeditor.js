@@ -297,7 +297,7 @@ SocialCalc.TableEditor.prototype.EditorMouseRange = function(coord) {return Soci
 SocialCalc.TableEditor.prototype.EditorProcessKey = function(ch, e) {return SocialCalc.EditorProcessKey(this, ch, e);};
 SocialCalc.TableEditor.prototype.EditorAddToInput = function(str, prefix) {return SocialCalc.EditorAddToInput(this, str, prefix);};
 SocialCalc.TableEditor.prototype.DisplayCellContents = function() {return SocialCalc.EditorDisplayCellContents(this);};
-SocialCalc.TableEditor.prototype.EditorSaveEdit = function() {return SocialCalc.EditorSaveEdit(this);};
+SocialCalc.TableEditor.prototype.EditorSaveEdit = function(text) {return SocialCalc.EditorSaveEdit(this, text);};
 SocialCalc.TableEditor.prototype.EditorApplySetCommandsToRange = function(cmdline, type) {return SocialCalc.EditorApplySetCommandsToRange(this, cmdline, type);};
 
 SocialCalc.TableEditor.prototype.MoveECellWithKey = function(ch) {return SocialCalc.MoveECellWithKey(this, ch);};
@@ -1632,7 +1632,7 @@ SocialCalc.EditorDisplayCellContents = function(editor) {
 
    }
 
-SocialCalc.EditorSaveEdit = function(editor) {
+SocialCalc.EditorSaveEdit = function(editor, text) {
 
    var result, cell, valueinfo, fch, type, value, oldvalue, cmdline;
 
@@ -1640,7 +1640,7 @@ SocialCalc.EditorSaveEdit = function(editor) {
    var wval = editor.workingvalues;
 
    type = "text t";
-   value = editor.inputBox.GetText(); // should not get here if no inputBox
+   value = text || editor.inputBox.GetText(); // either explicit or from input box
    oldvalue = SocialCalc.GetCellContents(sheetobj, wval.ecoord)+"";
    if (value == oldvalue) { // no change
       return;
@@ -2928,8 +2928,14 @@ SocialCalc.InputBox.prototype.Select = function(t) {
 
 SocialCalc.InputBoxDisplayCellContents = function(inputbox, coord) {
 
+   var scc = SocialCalc.Constants;
+
    if (!coord) coord = inputbox.editor.ecell.coord;
-   inputbox.SetText(SocialCalc.GetCellContents(inputbox.editor.context.sheetobj, coord));
+   var text = SocialCalc.GetCellContents(inputbox.editor.context.sheetobj, coord);
+   if (text.indexOf("\n")!=-1) {
+      text = scc.s_inputboxdisplaymultilinetext;
+      }
+   inputbox.SetText(text);
 
    }
 
@@ -3000,7 +3006,7 @@ SocialCalc.InputBoxOnMouseDown = function(e) {
 
 SocialCalc.InputEcho = function(editor) {
 
-   scc = SocialCalc.Constants;
+   var scc = SocialCalc.Constants;
 
    this.editor = editor; // the TableEditor this belongs to
    this.text = ""; // current value of what is displayed
@@ -3071,9 +3077,10 @@ SocialCalc.ShowInputEcho = function(inputecho, show) {
 
 SocialCalc.SetInputEchoText = function(inputecho, str) {
 
-   scc = SocialCalc.Constants;
+   var scc = SocialCalc.Constants;
    var fname, fstr;
    var newstr = SocialCalc.special_chars(str);
+   newstr = newstr.replace(/\n/g,"<br>");
 
    if (inputecho.text != newstr) {
       inputecho.main.innerHTML = newstr;
@@ -4303,6 +4310,8 @@ SocialCalc.ButtonMouseOver = function(event) {
 
    SocialCalc.setStyles(bobj.element, bobj.hoverstyle); // set style (if provided)
 
+   if (bobj && bobj.functionobj && bobj.functionobj.MouseOver) bobj.functionobj.MouseOver(e, buttoninfo, bobj);
+
    return;
 
    }
@@ -4330,6 +4339,8 @@ SocialCalc.ButtonMouseOut = function(event) {
       buttoninfo.buttonElement = null;
       buttoninfo.doingHover = false;
       }
+
+   if (bobj && bobj.functionobj && bobj.functionobj.MouseOut) bobj.functionobj.MouseOut(e, buttoninfo, bobj);
 
    return;
 
@@ -4433,6 +4444,8 @@ SocialCalc.ButtonMouseUp = function(event) {
       }
 
    buttoninfo.buttonDown = false;
+
+   if (bobj && bobj.functionobj && bobj.functionobj.MouseUp) bobj.functionobj.MouseUp(e, buttoninfo, bobj);
 
    }
 

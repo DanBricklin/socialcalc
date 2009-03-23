@@ -171,6 +171,10 @@ SocialCalc.Constants = {
    defaultTableControlThickness: 20, // the short size for the scrollbars, etc. (numeric in pixels)
    cteGriddivClass: "", // if present, the class for the TableEditor griddiv element
 
+   //** SocialCalc.InputBoxDisplayCellContents
+
+   s_inputboxdisplaymultilinetext: "[Multi-line text: Click icon on right to edit]",
+
    //** SocialCalc.InputEcho
 
    defaultInputEchoClass: "", // if present, the class of the popup inputEcho div

@@ -463,6 +463,11 @@ Added prompt to InputEcho to show function argument prompts.
 Added function list dialog to ssctrltest1.html.
 Added SocialCalc.EditorAddToInput for pasting function starts, etc.
 
+2009-03-23:
+Added formula bar buttons to socialcalcspreadsheetcontrol.js.
+Moved function list as a formula bar button in socialcalcspreadsheetcontrol.js.
+Added Multi-line input box dialog and support.
+
 
 TO DO:
 

@@ -23,7 +23,8 @@
 
    my $settingsfile = "socialcalcserversettings.txt"; # file with values for the following
    my $datadir = "se2-data/"; # The subdirectory of where the code is that holds the socialcalc data files
-   my $versionstr = "0.2";
+   my $versionstr = "0.2.1";
+   my $titlestr = "SocialCalc Server $versionstr";
    my $jsdir = "/sgi/scjs/"; # The subdirectory of the server home page (when run thru CGI)
                                  # where the .js files are, and ./images/ subdirectory.
 
@@ -162,7 +163,7 @@ EOF
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>SocialCalc Server $versionstr</title>
+<title>$titlestr</title>
 <style>
 body, td, input, texarea
  {font-family:verdana,helvetica,sans-serif;font-size:small;}
@@ -249,7 +250,7 @@ sub do_displaypage {
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>SocialCalc Server $versionstr</title>
+<title>$titlestr</title>
 <style>
 body, td, input, texarea
  {font-family:verdana,helvetica,sans-serif;font-size:small;}
@@ -275,13 +276,13 @@ function doview(p) {
 <div style="color:#FDD;font-weight:bold;">$statusmessage &nbsp;</div>
 <div style="padding:6px;background-color:#80A9F3;">
 <div style="font-weight:bold;font-size:smaller;">Pages:</div>
-<div style="font-size:smaller;">
+<div>
 EOF
 
    my @pagefiles = glob("$datadir*"); # Get list of all pages
    for (my $pnum=0; $pnum <= $#pagefiles; $pnum++) {
       $pagefiles[$pnum] =~ m/^(?:.*\/){0,1}(.*)$/;
-      $response .= qq!$1 <input class="smaller" type="submit" value="Edit" onclick="doedit('$1');"> !;
+      $response .= qq!<span style="font-size:smaller;">$1</span> <input class="smaller" type="submit" value="Edit" onclick="doedit('$1');"> !;
       $response .= qq! <input class="smaller" type="submit" value="View" onclick="doview('$1');"><br>!;
       }
 
@@ -331,7 +332,7 @@ sub start_editsheet {
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>SIMPLE SYSTEM FOR EDITING SOCIALCALC FILES $versionstr</title>
+<title>$titlestr - $pagename</title>
 <script type="text/javascript" src="${jsdir}socialcalcconstants.js"></script>
 <script type="text/javascript" src="${jsdir}socialcalc-3.js"></script>
 <script type="text/javascript" src="${jsdir}socialcalctableeditor.js"></script>
@@ -426,7 +427,7 @@ sub start_viewsheet {
 <html>
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>SIMPLE SYSTEM FOR EDITING SOCIALCALC FILES $versionstr</title>
+<title>$titlestr - $pagename</title>
 <script type="text/javascript" src="${jsdir}socialcalcconstants.js"></script>
 <script type="text/javascript" src="${jsdir}socialcalc-3.js"></script>
 <script type="text/javascript" src="${jsdir}socialcalctableeditor.js"></script>
