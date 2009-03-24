@@ -1412,6 +1412,7 @@ SocialCalc.ProcessEditorDblClick = function(e) {
       case "start":
          if (!editor.ecell) return true; // no ecell
          if (!editor.inputBox) return true; // no input box, so no editing
+         if (editor.inputBox.element.disabled) return true; // multi-line: ignore
          editor.inputBox.ShowInputBox(true);
          editor.inputBox.Focus();
          editor.state = "inputboxdirect";
@@ -1488,6 +1489,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             }
          if (!editor.ecell) return true; // no ecell
          if (!editor.inputBox) return true; // no inputBox so no editing
+         editor.inputBox.element.disabled = false; // make sure editable
          editor.state = "input";
          editor.inputBox.ShowInputBox(true);
          editor.inputBox.Focus();
@@ -1640,7 +1642,7 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
    var wval = editor.workingvalues;
 
    type = "text t";
-   value = text || editor.inputBox.GetText(); // either explicit or from input box
+   value = typeof text == "string" ? text : editor.inputBox.GetText(); // either explicit or from input box
    oldvalue = SocialCalc.GetCellContents(sheetobj, wval.ecoord)+"";
    if (value == oldvalue) { // no change
       return;
@@ -2934,6 +2936,10 @@ SocialCalc.InputBoxDisplayCellContents = function(inputbox, coord) {
    var text = SocialCalc.GetCellContents(inputbox.editor.context.sheetobj, coord);
    if (text.indexOf("\n")!=-1) {
       text = scc.s_inputboxdisplaymultilinetext;
+      inputbox.element.disabled = true;
+      }
+   else {
+      inputbox.element.disabled = false;
       }
    inputbox.SetText(text);
 

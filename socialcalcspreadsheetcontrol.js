@@ -2130,11 +2130,13 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
          break;
       }
 
+   editor.inputBox.element.disabled = true;
+
    text = SocialCalc.special_chars(text);
 
    str = '<textarea id="'+idp+'textarea" style="width:380px;height:120px;margin:10px 0px 0px 6px;">'+text+'</textarea>'+
          '<div style="width:380px;text-align:right;padding:6px 0px 4px 6px;font-size:small;">'+
-         '<input type="button" value="Paste" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilinePaste();">&nbsp;'+
+         '<input type="button" value="Set Cell Contents" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilinePaste();">&nbsp;'+
          '<input type="button" value="Clear" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilineClear();">&nbsp;'+
          '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();"></div>'+
          '</div>';
@@ -2175,7 +2177,9 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
 
 SocialCalc.SpreadsheetControl.HideMultiline = function() {
 
+   var scc = SocialCalc.Constants;
    var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
 
    var ele = document.getElementById(spreadsheet.idPrefix+"multilinedialog");
    ele.innerHTML = "";
@@ -2186,6 +2190,18 @@ SocialCalc.SpreadsheetControl.HideMultiline = function() {
 
    if (ele.parentNode) {
       ele.parentNode.removeChild(ele);
+      }
+
+   switch (editor.state) {
+      case "start":
+         editor.inputBox.DisplayCellContents(null);
+         break;
+
+      case "input":
+      case "inputboxdirect":
+         editor.inputBox.element.disabled = false;
+         editor.inputBox.Focus();
+         break;
       }
 
    }

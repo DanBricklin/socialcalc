@@ -468,6 +468,9 @@ Added formula bar buttons to socialcalcspreadsheetcontrol.js.
 Moved function list as a formula bar button in socialcalcspreadsheetcontrol.js.
 Added Multi-line input box dialog and support.
 
+2009-03-24:
+Tuned multi-line input to handle disabling inputbox when editing and when multi-line cell content.
+
 
 TO DO:
 
