@@ -3884,6 +3884,7 @@ SocialCalc.Formula.ZeroArgFunctions = function(fname, operand, foperand, sheet) 
          nowdays = start_1_1_1970 + startval / seconds_in_a_day - tzoffset/(24*60);
          result.value = nowdays;
          result.type = "ndt";
+         SocialCalc.Formula.FreshnessInfo.volatile.NOW = true; // remember
          break;
 
       case "PI":
@@ -3900,6 +3901,7 @@ SocialCalc.Formula.ZeroArgFunctions = function(fname, operand, foperand, sheet) 
          nowdays = start_1_1_1970 + startval / seconds_in_a_day - tzoffset/(24*60);
          result.value = Math.floor(nowdays);
          result.type = "nd";
+         SocialCalc.Formula.FreshnessInfo.volatile.TODAY = true; // remember
          break;
 
       case "TRUE":
@@ -4481,6 +4483,8 @@ SocialCalc.Formula.AddSheetToCache = function(sheetname, str) {
 
    sfsc.sheets[sheetname] = {sheet: newsheet, recalcstate: sfscc.asloaded};
 
+   SocialCalc.Formula.FreshnessInfo.sheets[sheetname] = true;
+
    return newsheet;
 
    }
@@ -4499,6 +4503,41 @@ SocialCalc.Formula.RemoteFunctionInfo = {
    waitingForServer: null
 
    };
+
+//
+// FRESHNESS INFO
+//
+// This information is generated during recalc.
+// It may be used to help determine when the recalc data in a spreadsheet
+// may be out of date.
+// For example, it may be used to display a message like:
+// "Dependent on sheet 'FOO' which was updated more recently than this printout"
+
+SocialCalc.Formula.FreshnessInfo = {
+
+   // For each external sheet referenced successfully an attribute of that name with value true.
+
+   sheets: {},
+
+   // For each volatile function that is called an attribute of that name with value true.
+
+   volatile: {},
+
+   // Set to false when started and true when recalc completes
+
+   recalc_completed: false
+
+   };
+
+SocialCalc.Formula.FreshnessInfoReset = function() {
+
+   var scffi = SocialCalc.Formula.FreshnessInfo;
+
+   scffi.sheets = {};
+   scffi.volatile = {};
+   scffi.recalc_completed = false;
+
+   }
 
 //
 // MISC ROUTINES

@@ -2985,7 +2985,8 @@ SocialCalc.RecalcSheet = function(sheet) {
    var coord, err, recalcdata;
    var scri = SocialCalc.RecalcInfo;
 
-   delete sheet.attribs.circularreferencecell;
+   delete sheet.attribs.circularreferencecell; // reset recalc-wide things
+   SocialCalc.Formula.FreshnessInfoReset();
 
    SocialCalc.RecalcClearTimeout();
 
@@ -3198,6 +3199,8 @@ SocialCalc.RecalcTimerRoutine = function() {
       SocialCalc.RecalcSetTimeout();
       return;
       }
+
+   scf.FreshnessInfo.recalc_completed = true; // say freshness info is complete
 
    do_statuscallback("calcfinished", (new Date()) - scri.starttime);
 
