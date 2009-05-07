@@ -229,7 +229,9 @@ SocialCalc.SpreadsheetControl = function() {
       formulafunctions: {image: "sc-formuladialog.gif", tooltip: "Functions",
                          command: SocialCalc.SpreadsheetControl.DoFunctionList},
       multilineinput: {image: "sc-multilinedialog.gif", tooltip: "Multi-line Input Box",
-                         command: SocialCalc.SpreadsheetControl.DoMultiline}
+                         command: SocialCalc.SpreadsheetControl.DoMultiline},
+      link: {image: "sc-linkdialog.gif", tooltip: "Link Input Box",
+                         command: SocialCalc.SpreadsheetControl.DoLink}
       }
 
    // Default tabs:
@@ -340,7 +342,7 @@ SocialCalc.SpreadsheetControl = function() {
             "[break]:|1\\c23:h:mm|1\\c23 PM:h:mm AM/PM|1\\c23\\c45:h:mm:ss|01\\c23\\c45:hh:mm:ss|26\\c23 (h\\cm):[hh]:mm|69\\c45 (m\\cs):[mm]:ss|69 (s):[ss]|"+
             "[newcol]:|2006-01-04 01\\c23\\c45:yyyy-mm-dd hh:mm:ss|January 4, 2006:mmmm d, yyyy hh:mm:ss|Wed:ddd|Wednesday:dddd|";
          var textformats = "[cancel]:|[break]:|Default:|Custom:|Automatic:general|Plain Text:text-plain|"+
-            "HTML:text-html|Formula:formula|Hidden:hidden|";
+            "HTML:text-html|Link:text-link|Formula:formula|Hidden:hidden|";
          var padsizes = "[cancel]:|[break]:|Default:|Custom:|No padding:0px|"+
                   "[newcol]:|1 pixel:1px|2 pixels:2px|3 pixels:3px|4 pixels:4px|5 pixels:5px|"+
                   "6 pixels:6px|7 pixels:7px|8 pixels:8px|[newcol]:|9 pixels:9px|10 pixels:10px|11 pixels:11px|"+
@@ -1849,7 +1851,7 @@ SocialCalc.SpreadsheetControlCreateSheetHTML = function(spreadsheet) {
 
    context = new SocialCalc.RenderContext(spreadsheet.sheet);
    div = document.createElement("div");
-   ele = context.RenderSheet(null, "html");
+   ele = context.RenderSheet(null, {type: "html"});
    div.appendChild(ele);
    delete context;
    result = div.innerHTML;
@@ -1860,12 +1862,12 @@ SocialCalc.SpreadsheetControlCreateSheetHTML = function(spreadsheet) {
    }
 
 //
-// result = SocialCalc.SpreadsheetControlCreateCellHTML(spreadsheet, coord)
+// result = SocialCalc.SpreadsheetControlCreateCellHTML(spreadsheet, coord, linkstyle)
 //
 // Returns the HTML representation of a cell. Blank is "", not "&nbsp;".
 //
 
-SocialCalc.SpreadsheetControlCreateCellHTML = function(spreadsheet, coord) {
+SocialCalc.SpreadsheetControlCreateCellHTML = function(spreadsheet, coord, linkstyle) {
 
    var result = "";
    var cell = spreadsheet.sheet.cells[coord];
@@ -1873,7 +1875,7 @@ SocialCalc.SpreadsheetControlCreateCellHTML = function(spreadsheet, coord) {
    if (!cell) return "";
 
    if (cell.displaystring == undefined) {
-      result = SocialCalc.FormatValueForDisplay(spreadsheet.sheet, cell.datavalue, coord, "html");
+      result = SocialCalc.FormatValueForDisplay(spreadsheet.sheet, cell.datavalue, coord, (linkstyle || spreadsheet.context.defaultHTMLlinkstyle));
       }
    else {
       result = cell.displaystring;
@@ -1886,7 +1888,7 @@ SocialCalc.SpreadsheetControlCreateCellHTML = function(spreadsheet, coord) {
    }
 
 //
-// result = SocialCalc.SpreadsheetControlCreateCellHTMLSave(spreadsheet, range)
+// result = SocialCalc.SpreadsheetControlCreateCellHTMLSave(spreadsheet, range, linkstyle)
 //
 // Returns the HTML representation of a range of cells, or the whole sheet if range is null.
 // The form is:
@@ -1898,7 +1900,7 @@ SocialCalc.SpreadsheetControlCreateCellHTML = function(spreadsheet, coord) {
 // Empty cells are skipped. The cell-HTML is encoded with ":"=>"\c", newline=>"\n", and "\"=>"\b".
 //
 
-SocialCalc.SpreadsheetControlCreateCellHTMLSave = function(spreadsheet, range) {
+SocialCalc.SpreadsheetControlCreateCellHTMLSave = function(spreadsheet, range, linkstyle) {
 
    var cr1, cr2, row, col, coord, cell, cellHTML;
    var result = [];
@@ -1922,7 +1924,7 @@ SocialCalc.SpreadsheetControlCreateCellHTMLSave = function(spreadsheet, range) {
          cell=spreadsheet.sheet.cells[coord];
          if (!cell) continue;
          if (cell.displaystring == undefined) {
-            cellHTML = SocialCalc.FormatValueForDisplay(spreadsheet.sheet, cell.datavalue, coord, "html");
+            cellHTML = SocialCalc.FormatValueForDisplay(spreadsheet.sheet, cell.datavalue, coord, (linkstyle || spreadsheet.context.defaultHTMLlinkstyle));
             }
          else {
             cellHTML = cell.displaystring;
@@ -2091,11 +2093,20 @@ SocialCalc.SpreadsheetControl.DoFunctionPaste = function() {
    var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
    var editor = spreadsheet.editor;
    var ele = document.getElementById(spreadsheet.idPrefix+"functionname");
+   var mele = document.getElementById(spreadsheet.idPrefix+"multilinetextarea");
 
    var text = ele.value+"(";
 
    SocialCalc.SpreadsheetControl.HideFunctions();
-   editor.EditorAddToInput(text, "=");
+
+   if (mele) { // multi-line editing is in progress
+      mele.value += text;
+      mele.focus();
+      SocialCalc.CmdGotFocus(mele);
+      }
+   else {
+      editor.EditorAddToInput(text, "=");
+      }
 
    }
 
@@ -2249,6 +2260,219 @@ SocialCalc.SpreadsheetControl.DoMultilinePaste = function() {
 
    }
 
+
+SocialCalc.SpreadsheetControl.DoLink = function() {
+
+   var str, ele, text, cell, setformat, popup;
+
+   var scc = SocialCalc.Constants;
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var wval = editor.workingvalues;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var idp = spreadsheet.idPrefix+"link";
+
+   ele = document.getElementById(idp+"dialog");
+   if (ele) return; // already have one
+
+   switch (editor.state) {
+      case "start":
+         wval.ecoord = editor.ecell.coord;
+         wval.erow = editor.ecell.row;
+         wval.ecol = editor.ecell.col;
+         editor.RangeRemove();
+         text = SocialCalc.GetCellContents(editor.context.sheetobj, wval.ecoord);
+         break;
+
+      case "input":
+      case "inputboxdirect":
+         text = editor.inputBox.GetText();
+         break;
+      }
+
+   editor.inputBox.element.disabled = true;
+
+   if (text.charAt(0)=="'") {
+      text = text.slice(1);
+      }
+
+   var parts = SocialCalc.ParseCellLinkText(text);
+
+   text = SocialCalc.special_chars(text);
+
+   cell = spreadsheet.sheet.cells[editor.ecell.coord];
+   if (!cell || !cell.textvalueformat) { // set to link format, but don't override
+      setformat = " checked";
+      }
+   else {
+      setformat = "";
+      }
+
+   popup = parts.newwin ? " checked" : "";
+
+   str = '<div style="padding:6px 0px 4px 6px;">'+
+         '<span style="font-size:smaller;">Description</span><br>'+
+         '<input type="text" id="'+idp+'desc" style="width:380px;" value="'+SocialCalc.special_chars(parts.desc)+'"><br>'+
+         '<span style="font-size:smaller;">URL</span><br>'+
+         '<input type="text" id="'+idp+'url" style="width:380px;" value="'+SocialCalc.special_chars(parts.url)+'"><br>';
+   if (SocialCalc.Callbacks.MakePageLink) { // only show if handling pagenames here
+      str += '<span style="font-size:smaller;">Page Name</span><br>'+
+             '<input type="text" id="'+idp+'pagename" style="width:380px;" value="'+SocialCalc.special_chars(parts.pagename)+'"><br>'+
+             '<span style="font-size:smaller;">Workspace</span><br>'+
+             '<input type="text" id="'+idp+'workspace" style="width:380px;" value="'+SocialCalc.special_chars(parts.workspace)+'"><br>';
+      }
+   str +='<input type="checkbox" id="'+idp+'format"'+setformat+'>&nbsp;'+
+         '<span style="font-size:smaller;">Set to Link format</span><br>'+
+         '<input type="checkbox" id="'+idp+'popup"'+popup+'>&nbsp;'+
+         '<span style="font-size:smaller;">Show in new browser window</span>'+
+         '</div>'+
+         '<div style="width:380px;text-align:right;padding:6px 0px 4px 6px;font-size:small;">'+
+         '<input type="button" value="Set Cell Contents" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkPaste();">&nbsp;'+
+         '<input type="button" value="Clear" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkClear();">&nbsp;'+
+         '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideLink();"></div>'+
+         '</div>';
+
+   var main = document.createElement("div");
+   main.id = idp+"dialog";
+
+   main.style.position = "absolute";
+
+   var vp = SocialCalc.GetViewportInfo();
+
+   main.style.top = (vp.height/3)+"px";
+   main.style.left = (vp.width/3)+"px";
+   main.style.zIndex = 100;
+   main.style.backgroundColor = "#FFF";
+   main.style.border = "1px solid black";
+
+   main.style.width = "400px";
+
+   main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Link Input Box"+'</td>'+
+      '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideLink();">&nbsp;X&nbsp;</td></tr></table>'+
+      '<div style="background-color:#DDD;">'+str+'</div>';
+
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+                  MouseUp: SocialCalc.DragFunctionPosition,
+                  Disabled: null, positionobj: main});
+
+   spreadsheet.spreadsheetDiv.appendChild(main);
+
+   ele = document.getElementById(idp+"url");
+   ele.focus();
+   SocialCalc.CmdGotFocus(ele);
+//!!! need to do keyboard handling: if esc, hide?
+
+   }
+
+
+SocialCalc.SpreadsheetControl.HideLink = function() {
+
+   var scc = SocialCalc.Constants;
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"linkdialog");
+   ele.innerHTML = "";
+
+   SocialCalc.DragUnregister(ele);
+
+   SocialCalc.KeyboardFocus();
+
+   if (ele.parentNode) {
+      ele.parentNode.removeChild(ele);
+      }
+
+   switch (editor.state) {
+      case "start":
+         editor.inputBox.DisplayCellContents(null);
+         break;
+
+      case "input":
+      case "inputboxdirect":
+         editor.inputBox.element.disabled = false;
+         editor.inputBox.Focus();
+         break;
+      }
+
+   }
+
+SocialCalc.SpreadsheetControl.DoLinkClear = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+
+   document.getElementById(spreadsheet.idPrefix+"linkdesc").value = "";
+   document.getElementById(spreadsheet.idPrefix+"linkpagename").value = "";
+   document.getElementById(spreadsheet.idPrefix+"linkworkspace").value = "";
+
+   var ele = document.getElementById(spreadsheet.idPrefix+"linkurl");
+   ele.value = "";
+   ele.focus();
+
+   }
+
+
+SocialCalc.SpreadsheetControl.DoLinkPaste = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var wval = editor.workingvalues;
+
+   var descele = document.getElementById(spreadsheet.idPrefix+"linkdesc");
+   var urlele = document.getElementById(spreadsheet.idPrefix+"linkurl");
+   var pagenameele = document.getElementById(spreadsheet.idPrefix+"linkpagename");
+   var workspaceele = document.getElementById(spreadsheet.idPrefix+"linkworkspace");
+   var formatele = document.getElementById(spreadsheet.idPrefix+"linkformat");
+   var popupele = document.getElementById(spreadsheet.idPrefix+"linkpopup");
+
+   var text = "";
+
+   var ltsym, gtsym, obsym, cbsym;
+
+   if (popupele.checked) {
+      ltsym = "<<"; gtsym = ">>"; obsym = "[["; cbsym = "]]";
+      }
+   else {
+      ltsym = "<"; gtsym = ">"; obsym = "["; cbsym = "]";
+      }
+
+   if (pagenameele && pagenameele.value) {
+      if (workspaceele.value) {
+         text = descele.value+"{"+workspaceele.value+obsym+pagenameele.value+cbsym+"]}";
+         }
+      else {
+         text = descele.value+obsym+pagenameele.value+cbsym;
+         }
+      }
+   else {
+      text = descele.value+ltsym+urlele.value+gtsym;
+      }
+
+   SocialCalc.SpreadsheetControl.HideLink();
+
+   switch (editor.state) {
+      case "start":
+         wval.partialexpr = "";
+         wval.ecoord = editor.ecell.coord;
+         wval.erow = editor.ecell.row;
+         wval.ecol = editor.ecell.col;
+         break;
+      case "input":
+      case "inputboxdirect":
+         editor.inputBox.Blur();
+         editor.inputBox.ShowInputBox(false);
+         editor.state = "start";
+         break;
+      }
+
+   if (formatele.checked) {
+      SocialCalc.SpreadsheetControlExecuteCommand(null, "set %C textvalueformat text-link", "");
+      }
+
+   editor.EditorSaveEdit(text);
+
+   }
 
 //
 // TAB Routines

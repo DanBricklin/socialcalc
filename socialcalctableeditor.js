@@ -1605,6 +1605,7 @@ SocialCalc.EditorAddToInput = function(editor, str, prefix) {
       case "start":
          editor.state = "input";
          editor.inputBox.ShowInputBox(true);
+         editor.inputBox.element.disabled = false; // make sure editable and overwrite old
          editor.inputBox.Focus();
          editor.inputBox.SetText((prefix||"")+str);
          editor.inputBox.Select("end");
@@ -1664,8 +1665,8 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
       if (valueinfo.type=="n" && value==(valueinfo.value+"")) { // see if don't need "constant"
          type = "value n";
          }
-      else if (valueinfo.type=="t") {
-         type = "text t";
+      else if (valueinfo.type.charAt(0)=="t") {
+         type = "text "+valueinfo.type;
          }
       else if (valueinfo.type=="") {
          type = "text t";

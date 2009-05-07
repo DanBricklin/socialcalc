@@ -307,7 +307,7 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
    var main = document.createElement("div");
    main.style.position = "absolute";
 
-   pos = SocialCalc.GetElementPosition(spcdata.mainele);
+   pos = SocialCalc.GetElementPositionWithScroll(spcdata.mainele);
 
    main.style.top = (pos.top+spcdata.mainele.offsetHeight)+"px";
    main.style.left = (pos.left)+"px";

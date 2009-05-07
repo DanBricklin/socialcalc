@@ -472,6 +472,33 @@ Added Multi-line input box dialog and support.
 Tuned multi-line input to handle disabling inputbox when editing and when multi-line cell content.
 Added SocialCalc.Formula.FreshnessInfo to help determine if calculations are out of date.
 
+2009-04-01:
+Fixed bug with maxUndo that messed up audit. Now have maxRedo, too.
+
+2009-04-15:
+Added value type "tl" -- text link
+Upgraded text-link format handing, and added SocialCalc.ParseCellLinkText and .expand_text_link.
+Made better handling of linktype (socialcalcspreadsheetcontrol.js) and $options (SocialCalcServersideUtilities.pm)
+
+2009-04-16:
+More work on text-link and added to SocialCalcServersideUtilities.pm.
+
+2009-04-29:
+Made linkstyle an object, added context.defaultlinkstyle and context.defaultHTMLlinkstyle.
+HTML rendering stuff like SpreadsheetControlCreateCellHTML take optional linkstyle or use defaultHTMLlinkstyle.
+Linking now has [pagename] and {worksheet [pagename]}/
+Added SocialCalc.Callback.MakePageLink.
+
+2009-04-30:
+Added Link dialog.
+
+2009-05-01:
+Added set format and popup options to Link dialog.
+Upgraded SocialCalcServersideUtilities.pm to handle pagenames and workspaces.
+
+2009-05-07:
+Added SocialCalc.GetElementPositionWithScroll to socialcalc-3.js to fix Popup bug when settings pane scrolled.
+
 
 TO DO:
 

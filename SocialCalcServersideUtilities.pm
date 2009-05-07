@@ -627,8 +627,10 @@ sub CreateRenderContext {
 # $outstr = RenderSheet($context, $options)
 #
 # Returns HTML for table rendering the sheet in that context.
-# The options are:
-#    xxx => yyyy
+#
+# The options (passed to cell rendering code) are:
+#
+#    newwinlinks => t/f (default is true) - whether text-link has target="_blank" by default or not
 #
 
 sub RenderSheet {
@@ -1037,7 +1039,7 @@ sub RenderCell {
 #!! put comment text in title tag...?
       }
 
-   $displayvalue = FormatValueForDisplay($sheet, $cell->{datavalue}, $coord, "");
+   $displayvalue = FormatValueForDisplay($sheet, $cell->{datavalue}, $coord, $options);
 
    # Assemble output
 
@@ -1461,6 +1463,7 @@ sub ExpandMarkup {
 
    }
 
+
 # # # # # # # # # #
 # estring = ExpandWikitext($estring, $sheet, $options, $valueformat)
 #
@@ -1612,7 +1615,7 @@ sub ExpandWikitext {
 "monthnames" => "January February March April May June July August September October November December",
 "sheetdefaultlayoutstyle" => "padding:2px 2px 1px 2px;vertical-align:top;",
 "sheetdefaultfontfamily" => "Verdana,Arial,Helvetica,sans-serif",
-"linkformatstring" => "Link", # you could make this an img tag if desired:
+"linkformatstring" => '<span style="font-size:smaller;text-decoration:none !important;background-color:#66B;color:#FFF;">Link</span>', # you could make this an img tag if desired:
 #"linkformatstring" => '<img border="0" src="http://www.domain.com/link.gif">',
 "defaultformatdt" => 'd-mmm-yyyy h:mm:ss',
 "defaultformatd" => 'd-mmm-yyyy',
@@ -1730,6 +1733,7 @@ sub format_text_for_display {
    if (!$valueformat || $valueformat eq "General") { # determine format from type
       $valueformat = "text-html" if ($valuesubtype eq "h");
       $valueformat = "text-wiki" if ($valuesubtype eq "w");
+      $valueformat = "text-link" if ($valuesubtype eq "l");
       $valueformat = "text-plain" unless $valuesubtype;
       }
    if ($valueformat eq "text-html") { # HTML - output as it as is
@@ -1738,17 +1742,14 @@ sub format_text_for_display {
    elsif ($valueformat =~ m/^text-wiki/) { # wiki text
       $displayvalue = ExpandWikitext($displayvalue, $sheet, $options, $valueformat); # do wiki markup
       }
-   elsif ($valueformat eq "text-url") { # text is a URL for a link
+   elsif ($valueformat eq "text-url") { # text is a URL for a link with optional description
       my $dvsc = SpecialChars($displayvalue);
       my $dvue = URLEncode($displayvalue);
       $dvue =~ s/\Q{{amp}}/%26/g;
       $displayvalue = qq!<a href="$dvue">$dvsc</a>!;
       }
-   elsif ($valueformat eq "text-link") { # text is a URL for a link shown as Link
-      my $dvsc = SpecialChars($displayvalue);
-      my $dvue = URLEncode($displayvalue);
-      $dvue =~ s/\Q{{amp}}/%26/g;
-      $displayvalue = qq!<a href="$dvue">$WKCStrings{linkformatstring}</a>!;
+   elsif ($valueformat eq "text-link") { #  more extensive link capabilities for regular web links
+      $displayvalue = ExpandTextLink($displayvalue, $sheet, $options, $valueformat);
       }
    elsif ($valueformat eq "text-image") { # text is a URL for an image
       my $dvue = URLEncode($displayvalue);
@@ -1785,6 +1786,164 @@ sub format_text_for_display {
       }
 
    return $displayvalue;
+
+   }
+
+
+# # # # # # # # #
+#
+# $displayvalue = ExpandTextLink($displayvalue, $sheet, $options, $valueformat)
+#
+# Given: url = http://www.someurl.com/more, desc = Some descriptive text
+#
+# Takes the following:
+#
+#    url => "url" as a link to url or other html (depending on SocialCalc.Constants)
+#    <url> => "Link" or image as link (depending on SocialCalc.Constants)
+#    desc<url> => "desc" as a link to url
+#    "desc"<url> => "desc" as a link to url
+#    <<>> instead of <> => target="_blank" (new window) even when not editing
+#
+# # # # # # # # #
+
+
+sub ExpandTextLink {
+
+   my ($displayvalue, $sheet, $options, $valueformat) = @_;
+
+   my ($desc, $url);
+
+   my $parts = ParseCellLinkText($displayvalue);
+
+   if ($parts->{desc}) {
+      $desc = SpecialChars($parts->{desc});
+      }
+   else {
+      $desc = $WKCStrings{linkformatstring};
+      }
+
+   if (length($displayvalue) > 7 && lc(substr($displayvalue,0,7)) eq "http://" 
+      && substr($displayvalue,-1,1) ne ">") {
+      $desc = substr($desc,7); # remove http:// unless explicit
+      }
+
+   my $tb = ($parts->{newwin} || $options->{newwinlinks}) ? ' target="_blank"' : "";
+
+   if ($parts->{pagename}) {
+      $url = MakePageLink($parts->{pagename}, $parts->{workspace}, $options, $valueformat);
+      }
+   else {
+      $url = URLEncode($parts->{url});
+      }
+
+   my $str = qq!<a href="$url"$tb>$desc</a>!;
+
+   return $str;
+
+   }
+
+
+# # # # # # # # #
+#
+# $result = ParseCellLinkText($str)
+#
+# Given: url = http://www.someurl.com/more, desc = Some descriptive text
+#
+# Takes the following:
+#
+#    url
+#    <url>
+#    desc<url>
+#    "desc"<url>
+#    <<>> instead of <> => target="_blank" (new window)
+#
+#    [page name]
+#    "desc"[page name]
+#    desc[page name]
+#    {workspace name [page name]}
+#    "desc"{workspace name [page name]}
+#    [[]] instead of [] => target="_blank" (new window)
+#
+# Returns: {url => url, desc => desc, newwin => t/f, pagename => pagename, workspace => workspace}
+#
+# # # # # # # # #
+
+sub ParseCellLinkText {
+
+   my ($str) = @_;
+
+   my $result = {url => "", desc => "", newwin => 0, pagename => "", workspace => ""};
+
+   if ($str !~ /<.*>$/ && $str !~ /\[.*\]$/ && $str !~ /\{.*\[.*\]\}$/) { # plain url
+      $result->{url} = $str;
+      $result->{desc} = $str;
+      return $result;
+      }
+
+   my $desc;
+
+   if ($str =~ /^(.*)\[\[(.*?)\]\]$/) {
+      $desc = $1;
+      $result->{pagename} = $2;
+      $result->{newwin} = 1;
+      }
+   elsif ($str =~ /^(.*)\[(.*?)\]$/) {
+      $desc = $1;
+      $result->{pagename} = $2;
+      }
+   elsif ($str =~ /^(.*)\{(.*?)(\s{0,1})\[\[(.*?)\]\]\}$/) {
+      $desc = $1;
+      $result->{workspace} = $2;
+      $result->{pagename} = $4;
+      $result->{newwin} = 1;
+      }
+   elsif ($str =~ /^(.*)\{(.*?)(\s{0,1})\[(.*?)\]\}$/) {
+      $desc = $1;
+      $result->{workspace} = $2;
+      $result->{pagename} = $4;
+      }
+   elsif ($str =~ /^(.*)<<(.*?)>>$/) {
+      $desc = $1;
+      $result->{url} = $2;
+      $result->{newwin} = 1;
+      }
+   else {
+      $str =~ /^(.*)<(.*?)>$/;
+      $desc = $1;
+      $result->{url} = $2;
+      }
+
+   if ($desc =~ /^"(.*)"$/) {
+      $desc = $1;
+      }
+
+   $result->{desc} = $desc;
+
+   return $result;
+
+   }
+
+
+# # # # # # # # # #
+# $estring = MakePageLink($pagename, $workspacename, $options, $valueformat);
+#
+# Returns $estring with expanded link to page in workspace
+# 
+
+sub MakePageLink {
+
+   my ($pagename, $workspacename, $options, $valueformat) = @_;
+
+   my $url = "";
+
+   if ($workspacename) {
+      $url = "?&workspace=" . URLEncode($workspacename) . "&pagename=" . URLEncode($pagename);
+      }
+   else {
+      $url = "?&pagename=" . URLEncode($pagename);
+      }
+
+   return $url;
 
    }
 

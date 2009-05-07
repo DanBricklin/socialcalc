@@ -336,7 +336,7 @@ sub do_displaypage {
             my $parts = DecodeSpreadsheetSave($sheetstr);
             ParseSheetSave($sheet, $parts->{sheet});
             my $context = CreateRenderContext($sheet);
-            $localhtml = RenderSheet($context);
+            $localhtml = RenderSheet($context, {newwinlinks => 0});
             }
          else {
             $html = "Sheet goes here";
@@ -674,6 +674,23 @@ SocialCalc.Callbacks.expand_wiki = function(displayvalue, sheetobj, linkstyle, v
       }
 
    return '<img src="'+spreadsheet.imagePrefix+'sc-wikiflag.gif" alt="Wikitext" title="Wikitext">' + result;
+
+   }
+
+// Page link code
+
+SocialCalc.Callbacks.MakePageLink = function(pagename, workspace, linktyle, valueformat) {
+
+   var result = "";
+
+   if (workspace) {
+      result = "?&workspace=" + encodeURI(workspace) + "&pagename=" + encodeURI(pagename);
+      }
+   else {
+      result = "?&pagename=" + encodeURI(pagename);
+      }
+
+   return result;
 
    }
 

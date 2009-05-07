@@ -146,7 +146,9 @@ SocialCalc.Constants = {
 
    //*** SocialCalc.format_text_for_display
 
-   defaultLinkFormatString: "Link", // used for format "text-link"; you could make this an img tag if desired
+   defaultLinkFormatString: '<span style="font-size:smaller;text-decoration:none !important;background-color:#66B;color:#FFF;">Link</span>', // used for format "text-link"; you could make this an img tag if desired
+//   defaultLinkFormatString: '<img src="images/sc-linkout.gif" border="0" alt="Link out" title="Link out">',
+   defaultPageLinkFormatString: '<span style="font-size:smaller;text-decoration:none !important;background-color:#66B;color:#FFF;">Page</span>', // used for format "text-link"; you could make this an img tag if desired
 
    //*** SocialCalc.format_number_for_display
 

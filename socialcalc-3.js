@@ -113,7 +113,12 @@ SocialCalc.Callbacks = {
    expand_wiki: null,
 
    expand_markup: function(displayvalue, sheetobj, linkstyle) // the old function to expand wiki text - may be replaced
-                   {return SocialCalc.default_expand_markup(displayvalue, sheetobj, linkstyle);}
+                   {return SocialCalc.default_expand_markup(displayvalue, sheetobj, linkstyle);},
+
+   // MakePageLink is used to create the href for a link to another "page"
+   // The form is: MakePageLink(pagename, workspacename, linktyle, valueformat), returns string
+
+   MakePageLink: null
 
    };
 
@@ -3511,7 +3516,8 @@ SocialCalc.UndoStack = function() {
 
    this.stack = []; // {command: [], type: type, undo: []} -- multiple dos and undos allowed
    this.tos = -1; // top of stack position, used for undo/redo
-   this.maxUndo = 100; // Maximum size of undo stack
+   this.maxUndo = 0; // Maximum size of undo stack (and audit trail) or zero if no limit
+   this.maxRedo = 4; // Maximum number of steps kept for redo (the memory intensive part) or zero if no limit
 
    }
 
@@ -3522,6 +3528,9 @@ SocialCalc.UndoStack.prototype.PushChange = function(type) {
    this.stack.push({command: [], type: type, undo: []});
    if (this.maxUndo && this.stack.length > this.maxUndo) { // limit number
       this.stack.shift(); // remove the extra one
+      }
+   if (this.maxRedo && this.stack.length > this.maxRedo) { // need to trim excess redo info
+      this.stack[this.stack.length - this.maxRedo - 1].undo = null; // only need to remove one
       }
    this.tos = this.stack.length - 1;
    }
@@ -3550,7 +3559,7 @@ SocialCalc.UndoStack.prototype.TOS = function() {
    }
 
 SocialCalc.UndoStack.prototype.Undo = function() {
-   if (this.tos >= 0) {
+   if (this.tos >= 0 && (!this.maxRedo || this.tos > this.stack.length - this.maxRedo - 1)) {
       this.tos -= 1;
       return true;
       }
@@ -3633,6 +3642,9 @@ SocialCalc.RenderContext = function(sheetobj) {
       }
 
    this.cellIDprefix = scc.defaultCellIDPrefix; // if non-null, each cell will render with an ID
+
+   this.defaultlinkstyle = null; // default linkstyle object (allows you to pass values to link renderer)
+   this.defaultHTMLlinkstyle = {type: "html"}; // default linkstyle for standalone HTML
 
    // constants:
 
@@ -3869,6 +3881,16 @@ code does this (e.g., use table-layout:fixed).
    tableobj.style.width=context.totalwidth+"px";
 
    }
+
+//
+// tableobj = SocialCalc.RenderSheet(context, oldtable, linkstyle)
+//
+// Renders a render context returning a DOM table object.
+// If there is an oldtable object, it replaces it in the parent node.
+// If oldtable is null, it just returns the new one.
+// The linkstyle is "" or null for editing rendering
+// and optionally an object passed on to formatting code.
+//
 
 SocialCalc.RenderSheet = function(context, oldtable, linkstyle) {
 
@@ -4163,7 +4185,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    if (cell.displaystring==undefined) { // cache the display value
-      cell.displaystring = SocialCalc.FormatValueForDisplay(sheetobj, cell.datavalue, coord, linkstyle);
+      cell.displaystring = SocialCalc.FormatValueForDisplay(sheetobj, cell.datavalue, coord, (linkstyle || context.defaultlinkstyle));
       }
    result.innerHTML = cell.displaystring;
 
@@ -4516,6 +4538,36 @@ SocialCalc.GetElementPosition = function (element) {
    }
 
 //
+// GetElementPositionWithScroll(element) - returns object with left and top position of the element in the document
+//
+// Takes into account scroll offsets by going through entire tree
+//
+
+SocialCalc.GetElementPositionWithScroll = function (element) {
+
+   var offsetLeft = 0;
+   var offsetTop = 0;
+   var offsetElement = element;
+   while (element) {
+      if (element.tagName=="HTML") break;
+      if (element == offsetElement) {
+         offsetLeft+=element.offsetLeft;
+         offsetTop+=element.offsetTop;
+         offsetElement = element.offsetParent;
+         }
+      if (element.scrollLeft) {
+         offsetLeft-=element.scrollLeft;
+         }
+      if (element.scrollTop) {
+         offsetTop-=element.scrollTop;
+         }
+      element=element.parentNode;
+      }
+   return {left:offsetLeft, top:offsetTop};
+
+   }
+
+//
 // LookupElement(element, array) - returns array element which is an object with "element" of element
 //
 
@@ -4699,6 +4751,7 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
    if (valueformat=="" || valueformat=="General") { // determine format from type
       if (valuesubtype=="h") valueformat="text-html";
       if (valuesubtype=="w") valueformat="text-wiki";
+      if (valuesubtype=="l") valueformat="text-link";
       if (!valuesubtype) valueformat="text-plain";
       }
    if (valueformat=="text-html") { // HTML - output as it as is
@@ -4717,10 +4770,8 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
       dvue = encodeURI(displayvalue);
       displayvalue = '<a href="'+dvue+'">'+dvsc+'</a>';
       }
-   else if (valueformat=="text-link") { // text is a URL for a link shown as Link
-      dvsc = SocialCalc.special_chars(displayvalue);
-      dvue = encodeURI(displayvalue);
-      displayvalue = '<a href="'+dvue+'">'+SocialCalc.Constants.defaultLinkFormatString+'</a>';
+   else if (valueformat=="text-link") { // more extensive link capabilities for regular web links
+      displayvalue = SocialCalc.expand_text_link(displayvalue, sheetobj, linkstyle, valueformat);
       }
    else if (valueformat=="text-image") { // text is a URL for an image
       dvue = encodeURI(displayvalue);
@@ -4900,6 +4951,11 @@ SocialCalc.DetermineValueType = function(rawvalue) {
       type = constr.substring(num+1);
       }
 
+   else if (tvalue.length > 7 && tvalue.substring(0,7).toLowerCase()=="http://") { // URL
+      value = tvalue;
+      type = "tl";
+      }
+
    return {value: value, type: type};
 
    }
@@ -4931,6 +4987,162 @@ SocialCalc.default_expand_markup = function(displayvalue, sheetobj, linkstyle) {
    return result;
 
    }
+
+
+//
+// result = SocialCalc.expand_text_link(displayvalue, sheetobj, linkstyle, valueformat)
+//
+// Parses link text (URL, descriptions, pagenames, workspace names) and returns HTML
+//
+
+SocialCalc.expand_text_link = function(displayvalue, sheetobj, linkstyle, valueformat) {
+
+   var desc, tb, str;
+
+   var scc = SocialCalc.Constants;
+
+   var url = "";
+   var parts = SocialCalc.ParseCellLinkText(displayvalue+"");
+
+   if (parts.desc) {
+      desc = SocialCalc.special_chars(parts.desc);
+      }
+   else {
+      desc = parts.pagename ? scc.defaultPageLinkFormatString : scc.defaultLinkFormatString;
+      }
+
+   if (displayvalue.length > 7 && displayvalue.substring(0,7).toLowerCase()=="http://" 
+      && displayvalue.charAt(displayvalue.length-1)!=">") {
+      desc = desc.substring(7); // remove http:// unless explicit
+      }
+
+   tb = (parts.newwin || !linkstyle) ? ' target="_blank"' : "";
+
+   if (parts.pagename) {
+      if (SocialCalc.Callbacks.MakePageLink) {
+         url = SocialCalc.Callbacks.MakePageLink(parts.pagename, parts.workspacename, linkstyle, valueformat);
+         }
+//      else if (parts.workspace) {
+//         url = "/" + encodeURI(parts.workspace) + "/" + encodeURI(parts.pagename);
+//         }
+//      else {
+//         url = parts.pagename;
+//         }
+      }
+   else {
+      url = encodeURI(parts.url);
+      }
+   str = '<a href="' + url + '"' + tb + '>' + desc + '</a>';
+
+   return str;
+
+   }
+
+
+//
+// result = SocialCalc.ParseCellLinkText(str)
+//
+// Given: url = http://www.someurl.com/more, desc = Some descriptive text
+//
+// Takes the following:
+//
+//    url
+//    <url>
+//    desc<url>
+//    "desc"<url>
+//    <<>> instead of <> => target="_blank" (new window)
+//
+//    [page name]
+//    "desc"[page name]
+//    desc[page name]
+//    {workspace name [page name]}
+//    "desc"{workspace name [page name]}
+//    [[]] instead of [] => target="_blank" (new window)
+//
+//
+// Returns: {url: url, desc: desc, newwin: t/f, pagename: pagename, workspace: workspace}
+//
+
+SocialCalc.ParseCellLinkText = function(str) {
+
+   var result = {url: "", desc: "", newwin: false, pagename: "", workspace: ""};
+
+   var pageform = false;
+   var urlend = str.length - 1;
+   var descstart = 0;
+   var lastlt = str.lastIndexOf("<");
+   var lastbrkt = str.lastIndexOf("[");
+   var lastbrace = str.lastIndexOf("{");
+   var descend = -1;
+
+   if ((str.charAt(urlend) != ">" || lastlt == -1)
+         && (str.charAt(urlend) != "]" || lastbrkt == -1)
+         && (str.charAt(urlend) != "}" || str.charAt(urlend-1) != "]" || 
+             lastbrace == -1 || lastbrkt == -1 || lastbrkt < lastbrace)) { // plain url
+      urlend++;
+      descend = urlend;
+      }
+   else { // some markup
+      if (str.charAt(urlend)==">") { // url form
+         descend = lastlt - 1;
+         if (lastlt > 0 && str.charAt(descend) == "<" && str.charAt(urlend-1) == ">") {
+            descend--;
+            urlend--;
+            result.newwin = true;
+            }
+         }
+
+      else if (str.charAt(urlend)=="]") { // plain page form
+         descend = lastbrkt - 1;
+         pageform = true;
+         if (lastbrkt > 0 && str.charAt(descend) == "[" && str.charAt(urlend-1) == "]") {
+            descend--;
+            urlend--;
+            result.newwin = true;
+            }
+         }
+
+      else if (str.charAt(urlend)=="}") { // page and workspace form
+         descend = lastbrace - 1;
+         pageform = true;
+         wsend = lastbrkt;
+         urlend--;
+         if (lastbrkt > 0 && str.charAt(lastbrkt-1) == "[" && str.charAt(urlend-1) == "]") {
+            wsend = lastbrkt-1;
+            urlend--;
+            result.newwin = true;
+            }
+         if (str.charAt(wsend-1)==" ") { // trim trailing space in workspace name
+            wsend--;
+            }
+         result.workspace = str.substring(lastbrace+1, wsend) || "";
+         }
+
+      if (str.charAt(descend)==" ") { // trim trailing space on desc
+         descend--;
+         }
+
+      if (str.charAt(descstart) == '"' && str.charAt(descend) == '"') {
+         descstart++;
+         descend--;
+         }
+      }
+
+   if (pageform) {
+      result.pagename = str.substring(lastbrkt+1, urlend) || "";
+      }
+   else {
+      result.url = str.substring(lastlt+1, urlend) || "";
+      }
+
+   if (descend >= descstart) {
+      result.desc = str.substring(descstart, descend+1);
+      }
+
+   return result;
+
+   }
+
 
 //
 // result = SocialCalc.ConvertSaveToOtherFormat(savestr, outputformat, dorecalc)
@@ -4976,7 +5188,7 @@ SocialCalc.ConvertSaveToOtherFormat = function(savestr, outputformat, dorecalc) 
          context.colpanes[0] = {first: clipextents.cr1.col, last: clipextents.cr2.col};
          }
       div = document.createElement("div");
-      ele = context.RenderSheet(null);
+      ele = context.RenderSheet(null, context.defaultHTMLlinkstyle);
       div.appendChild(ele);
       delete context;
       delete sheet;
@@ -5196,9 +5408,9 @@ SocialCalc.SetConvertedCell = function(sheet, cr, rawvalue) {
       cell.valuetype = "n";
       cell.datavalue = value.value;
       }
-   else if (value.type == 't') { // normal text
+   else if (value.type.charAt(0) == 't') { // text of some sort but left unchanged
       cell.datatype = "t";
-      cell.valuetype = "t";
+      cell.valuetype = value.type;
       cell.datavalue = value.value;
       }
    else { // special number types

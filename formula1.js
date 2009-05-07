@@ -113,9 +113,10 @@ SocialCalc.Formula = {};
                 'e*': '|e*:1|n*:1|t*:1|b:1|'
                },
        concat: {
-                't': '|t:t|th:th|tw:tw|t*:2|e*:2|',
-                'th': '|t:th|th:th|tw:t|t*:t|e*:2|',
-                'tw': '|t:tw|th:t|tw:tw|t*:t|e*:2|',
+                't': '|t:t|th:th|tw:tw|tl:t|t*:2|e*:2|',
+                'th': '|t:th|th:th|tw:t|tl:th|t*:t|e*:2|',
+                'tw': '|t:tw|th:t|tw:tw|tl:tw|t*:t|e*:2|',
+                'tl': '|t:tl|th:th|tw:tw|tl:tl|t*:t|e*:2|',
                 'e*': '|e*:1|n*:1|t*:1|'
                },
        oneargnumeric: { 'n*': '|n*:n|', 'e*': '|e*:1|', 't*': '|t*:e#VALUE!|', 'b': '|b:n|'},
