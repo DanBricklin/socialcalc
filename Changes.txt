@@ -498,6 +498,7 @@ Upgraded SocialCalcServersideUtilities.pm to handle pagenames and workspaces.
 
 2009-05-07:
 Added SocialCalc.GetElementPositionWithScroll to socialcalc-3.js to fix Popup bug when settings pane scrolled.
+Added sheet.recalcchangedavalue so you can tell if a recalc changed anything.
 
 
 TO DO:

@@ -292,6 +292,8 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.changedrendervalues = true; // if true, spans and/or fonts have changed (set by ExecuteSheetCommand & GetStyle)
 
+   sheet.recalcchangedavalue = false; // true if a recalc resulted in a change to a cell's calculated value
+
    }
 
 // Methods:
@@ -3176,6 +3178,7 @@ SocialCalc.RecalcTimerRoutine = function() {
          cell.datavalue = eresult.value;
          cell.valuetype = eresult.type;
          delete cell.displaystring;
+         sheet.recalcchangedavalue = true; // remember something changed in case other code wants to know
          }
       if (eresult.error) {
          cell.errors = eresult.error;
