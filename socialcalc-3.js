@@ -1,6 +1,7 @@
 //
 // The main SocialCalc code module of the SocialCalc package
 //
+/*
 // (c) Copyright 2008 Socialtext, Inc.
 // All Rights Reserved.
 //
@@ -25,6 +26,7 @@
 // Unless otherwise specified, referring to "SocialCalc" in comments refers to this
 // JavaScript version of the code, not the SocialCalc Perl code.
 //
+*/
 
 /*
 
@@ -3511,6 +3513,10 @@ SocialCalc.Parse.prototype.EOF = function() {
 // so you can undo and redo. Doing a new PushChange removes all undone items
 // after TOS.
 //
+// You can push more things than you can undo if you want.
+// There is a maximum to remember as the "did" stack for an audit trail (and as redo). This may be unlimited.
+// There is a separate maximum to remember that can be undone. This may be smaller than maxRedo.
+//
 // *************************************
 
 SocialCalc.UndoStack = function() {
@@ -3519,21 +3525,21 @@ SocialCalc.UndoStack = function() {
 
    this.stack = []; // {command: [], type: type, undo: []} -- multiple dos and undos allowed
    this.tos = -1; // top of stack position, used for undo/redo
-   this.maxUndo = 0; // Maximum size of undo stack (and audit trail) or zero if no limit
-   this.maxRedo = 4; // Maximum number of steps kept for redo (the memory intensive part) or zero if no limit
+   this.maxRedo = 0; // Maximum size of redo stack (and audit trail which is this.stack[n].command) or zero if no limit
+   this.maxUndo = 50; // Maximum number of steps kept for undo (usually the memory intensive part) or zero if no limit
 
    }
 
-SocialCalc.UndoStack.prototype.PushChange = function(type) {
-   while (this.stack.length > 0 && this.stack.length-1 > this.tos) {
+SocialCalc.UndoStack.prototype.PushChange = function(type) { // adding a new thing to the stack
+   while (this.stack.length > 0 && this.stack.length-1 > this.tos) { // pop off things not redone
       this.stack.pop();
       }
    this.stack.push({command: [], type: type, undo: []});
-   if (this.maxUndo && this.stack.length > this.maxUndo) { // limit number
+   if (this.maxRedo && this.stack.length > this.maxRedo) { // limit number kept as audit trail
       this.stack.shift(); // remove the extra one
       }
-   if (this.maxRedo && this.stack.length > this.maxRedo) { // need to trim excess redo info
-      this.stack[this.stack.length - this.maxRedo - 1].undo = null; // only need to remove one
+   if (this.maxUndo && this.stack.length > this.maxUndo) { // need to trim excess undo info
+      this.stack[this.stack.length - this.maxUndo - 1].undo = []; // only need to remove one
       }
    this.tos = this.stack.length - 1;
    }
@@ -3562,7 +3568,7 @@ SocialCalc.UndoStack.prototype.TOS = function() {
    }
 
 SocialCalc.UndoStack.prototype.Undo = function() {
-   if (this.tos >= 0 && (!this.maxRedo || this.tos > this.stack.length - this.maxRedo - 1)) {
+   if (this.tos >= 0 && (!this.maxUndo || this.tos > this.stack.length - this.maxUndo - 1)) {
       this.tos -= 1;
       return true;
       }
@@ -3639,9 +3645,9 @@ SocialCalc.RenderContext = function(sheetobj) {
       {
          cursor: {style: scc.defaultHighlightTypeCursorStyle, className: scc.defaultHighlightTypeCursorClass},
          range: {style: scc.defaultHighlightTypeRangeStyle, className: scc.defaultHighlightTypeRangeClass},
-         cursorinsertup: {style: "color:#FFF;backgroundColor:#A6A6A6;backgroundRepeat:repeat-x;backgroundPosition:top left;backgroundImage:url(images/sc-cursorinsertup.gif);", className: scc.defaultHighlightTypeCursorClass},
-         cursorinsertleft: {style: "color:#FFF;backgroundColor:#A6A6A6;backgroundRepeat:repeat-y;backgroundPosition:top left;backgroundImage:url(images/sc-cursorinsertleft.gif);", className: scc.defaultHighlightTypeCursorClass},
-         range2: {style: "color:#000;backgroundColor:#FFF;backgroundImage:url(images/sc-range2.gif);", className: ""}
+         cursorinsertup: {style: "color:#FFF;backgroundColor:#A6A6A6;backgroundRepeat:repeat-x;backgroundPosition:top left;backgroundImage:url("+scc.defaultImagePrefix+"cursorinsertup.gif);", className: scc.defaultHighlightTypeCursorClass},
+         cursorinsertleft: {style: "color:#FFF;backgroundColor:#A6A6A6;backgroundRepeat:repeat-y;backgroundPosition:top left;backgroundImage:url("+scc.defaultImagePrefix+"cursorinsertleft.gif);", className: scc.defaultHighlightTypeCursorClass},
+         range2: {style: "color:#000;backgroundColor:#FFF;backgroundImage:url("+scc.defaultImagePrefix+"range2.gif);", className: ""}
       }
 
    this.cellIDprefix = scc.defaultCellIDPrefix; // if non-null, each cell will render with an ID

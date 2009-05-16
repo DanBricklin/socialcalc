@@ -500,6 +500,23 @@ Upgraded SocialCalcServersideUtilities.pm to handle pagenames and workspaces.
 Added SocialCalc.GetElementPositionWithScroll to socialcalc-3.js to fix Popup bug when settings pane scrolled.
 Added sheet.recalcchangedavalue so you can tell if a recalc changed anything.
 
+2009-05-11:
+Changed tableeditor, socialcalc-3.js, and spreadsheetcontrol to use SocialCalc.Constants.defaultImagePrefix for images. It should have the "sc-" in it.
+SocialCalc.Popup.imagePrefix needs its own version of the same thing.
+
+2009-05-15:
+Split SocialCalcServersideUtilities.pm into 2 parts, adding SocialCalcServersideNumberFormatting.pm.
+Upgraded socialcalcserver.pl to handle new image prefixes.
+Added /* */ to SocialCalc js files so the minimizer won't strip out the licensing notices.
+
+2009-05-16:
+Added ctrl-c handling, and got ctrl-c/ctrl-v working on FF 2/3/mac, Safari/Chrome, IE 6/7, Opera.
+Added ctrl-z to do undo.
+Fixed maxUndo/maxRedo to have maxRedo be the max size of stack and maxUndo is max undoable, and various undo bugs.
+Fixed bugs with queuing up commands.
+Set default maxUndo to 50.
+Fixed bug that made some typeahead be lost.
+
 
 TO DO:
 

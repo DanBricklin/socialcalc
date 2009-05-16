@@ -23,7 +23,7 @@
 
    my $settingsfile = "socialcalcserversettings.txt"; # file with values for the following
    my $datadir = "se2-data/"; # The subdirectory of where the code is that holds the socialcalc data files
-   my $versionstr = "0.2.1";
+   my $versionstr = "0.2.2";
    my $titlestr = "SocialCalc Server $versionstr";
    my $jsdir = "/sgi/scjs/"; # The subdirectory of the server home page (when run thru CGI)
                                  # where the .js files are, and ./images/ subdirectory.
@@ -369,10 +369,10 @@ function dosave() {
 
 // start everything
 
+   SocialCalc.Constants.defaultImagePrefix = "$jsdir/images/sc-";
+   SocialCalc.Popup.imagePrefix = "$jsdir/images/sc-";
+
    var spreadsheet = new SocialCalc.SpreadsheetControl();
-   spreadsheet.imagePrefix="/sgi/scjstest/images/";
-   spreadsheet.editor.imageprefix="/sgi/scjstest/images/sc";
-   SocialCalc.Popup.imagePrefix = "/sgi/scjstest/images/sc";
    spreadsheet.InitializeSpreadsheetControl("tableeditor", 0, 0, 0);
 
    var savestr = document.getElementById("sheetdata").value;

@@ -1,4 +1,5 @@
 //
+/*
 // The module of the SocialCalc package for the optional popup menus in socialcalcspreadsheetcontrol.js
 //
 // (c) Copyright 2009 Socialtext, Inc.
@@ -15,6 +16,7 @@
 //
 // Initially coded by Dan Bricklin of Software Garden, Inc., for Socialtext, Inc.
 //
+*/
 
    var SocialCalc; // All values are stored in the master SocialCalc object
    if (!SocialCalc) {
@@ -63,7 +65,7 @@
    // Other values used by the Popup system
    //
 
-   SocialCalc.Popup.imagePrefix = "images/sc"; // image prefix
+   SocialCalc.Popup.imagePrefix = "images/sc-"; // image prefix
 
 // * * * * * * * * * * * * * * * *
 //
@@ -883,7 +885,7 @@ SocialCalc.Popup.Types.ColorChooser.SetValue = function(type, id, value) {
          }
       else {
          spcdata.mainele.firstChild.style.backgroundColor = "#FFF";
-         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"-defaultcolor.gif)";
+         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"defaultcolor.gif)";
          }
       }
 
@@ -904,7 +906,7 @@ SocialCalc.Popup.Types.ColorChooser.SetDisabled = function(type, id, disabled) {
    if (spcdata.mainele && spcdata.mainele.firstChild) {
       if (disabled) {
          spcdata.mainele.firstChild.style.backgroundColor = "#DDD";
-         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"-defaultcolor.gif)";
+         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"defaultcolor.gif)";
          }
       else {
          sp.SetValue(id, spcdata.value);
@@ -1143,7 +1145,7 @@ SocialCalc.Popup.Types.ColorChooser.CreateGrid = function (type, id) {
    ele = document.createElement("div");
    ele.style.marginTop = "3px";
    ele.innerHTML = '<table cellspacing="0" cellpadding="0"><tr>'+
-      '<td style="width:17px;background-color:#FFF;background-image:url('+sp.imagePrefix+'-defaultcolor.gif);height:16px;font-size:10px;cursor:pointer;" title="Default">&nbsp;</td>'+
+      '<td style="width:17px;background-color:#FFF;background-image:url('+sp.imagePrefix+'defaultcolor.gif);height:16px;font-size:10px;cursor:pointer;" title="Default">&nbsp;</td>'+
       '<td style="width:23px;height:16px;font-size:10px;text-align:center;cursor:pointer;" title="Custom">#</td>'+
       '<td style="width:60px;height:16px;font-size:10px;text-align:center;cursor:pointer;">OK</td>'+
       '</tr></table>';
@@ -1237,7 +1239,7 @@ SocialCalc.Popup.Types.ColorChooser.SetColors = function(id) {
          g.ele.style.backgroundColor = g.rgb;
          g.ele.title = sp.RGBToHex(g.rgb);
          if (grid["selectedrow"+col]==row) {
-            g.ele.style.backgroundImage = "url("+sp.imagePrefix+"-chooserarrow.gif)";
+            g.ele.style.backgroundImage = "url("+sp.imagePrefix+"chooserarrow.gif)";
             }
          else {
             g.ele.style.backgroundImage = "";
@@ -1257,7 +1259,7 @@ SocialCalc.Popup.Types.ColorChooser.SetColors = function(id) {
       }
    if (!spcdata.value) { // default
       grid.msg.style.backgroundColor = "#FFF";
-      grid.msg.style.backgroundImage = "url("+sp.imagePrefix+"-defaultcolor.gif)";
+      grid.msg.style.backgroundImage = "url("+sp.imagePrefix+"defaultcolor.gif)";
       grid.msg.title = "Default";
       }
    else {

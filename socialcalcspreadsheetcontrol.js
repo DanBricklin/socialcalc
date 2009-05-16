@@ -1,12 +1,14 @@
 //
 // SocialCalcSpreadsheetControl
 //
+/*
 // The code module of the SocialCalc package that lets you embed a spreadsheet
 // control with toolbar, etc., into a web page.
 //
 // (c) Copyright 2008 Socialtext, Inc.
 // All Rights Reserved.
 //
+*/
 
 /*
 
@@ -177,7 +179,7 @@ SocialCalc.SpreadsheetControl = function() {
 
    this.idPrefix = "SocialCalc-"; // prefix added to element ids used here, should end in "-"
    this.multipartBoundary = "SocialCalcSpreadsheetControlSave"; // boundary used by SpreadsheetControlCreateSpreadsheetSave
-   this.imagePrefix = "images/"; // prefix added to img src
+   this.imagePrefix = scc.defaultImagePrefix; // prefix added to img src
 
    this.toolbarbackground = scc.SCToolbarbackground;
    this.tabbackground = scc.SCTabbackground;"background-color:#CCC;";
@@ -226,11 +228,11 @@ SocialCalc.SpreadsheetControl = function() {
    // formula bar buttons
 
    this.formulabuttons = {
-      formulafunctions: {image: "sc-formuladialog.gif", tooltip: "Functions",
+      formulafunctions: {image: "formuladialog.gif", tooltip: "Functions",
                          command: SocialCalc.SpreadsheetControl.DoFunctionList},
-      multilineinput: {image: "sc-multilinedialog.gif", tooltip: "Multi-line Input Box",
+      multilineinput: {image: "multilinedialog.gif", tooltip: "Multi-line Input Box",
                          command: SocialCalc.SpreadsheetControl.DoMultiline},
-      link: {image: "sc-linkdialog.gif", tooltip: "Link Input Box",
+      link: {image: "linkdialog.gif", tooltip: "Link Input Box",
                          command: SocialCalc.SpreadsheetControl.DoLink}
       }
 
@@ -241,40 +243,40 @@ SocialCalc.SpreadsheetControl = function() {
    this.tabnums.edit = this.tabs.length;
    this.tabs.push({name: "edit", text: "Edit", html:
       ' <div id="%id.edittools" style="padding:10px 0px 0px 0px;">'+
-'&nbsp;<img id="%id.button_undo" src="%img.sc-undo.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_redo" src="%img.sc-redo.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_copy" src="%img.sc-copy.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_cut" src="%img.sc-cut.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_paste" src="%img.sc-paste.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_delete" src="%img.sc-delete.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_pasteformats" src="%img.sc-pasteformats.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_filldown" src="%img.sc-filldown.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_fillright" src="%img.sc-fillright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_movefrom" src="%img.sc-movefromoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_movepaste" src="%img.sc-movepasteoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_moveinsert" src="%img.sc-moveinsertoff.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_alignleft" src="%img.sc-alignleft.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_aligncenter" src="%img.sc-aligncenter.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_alignright" src="%img.sc-alignright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_borderon" src="%img.sc-borderson.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_borderoff" src="%img.sc-bordersoff.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_swapcolors" src="%img.sc-swapcolors.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_merge" src="%img.sc-merge.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_unmerge" src="%img.sc-unmerge.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_insertrow" src="%img.sc-insertrow.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_insertcol" src="%img.sc-insertcol.gif" style="vertical-align:bottom;"> '+
-'&nbsp; <img id="%id.button_deleterow" src="%img.sc-deleterow.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_deletecol" src="%img.sc-deletecol.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img id="%id.divider_recalc" src="%img.sc-divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_recalc" src="%img.sc-recalc.gif" style="vertical-align:bottom;"> '+
+'&nbsp;<img id="%id.button_undo" src="%img.undo.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_redo" src="%img.redo.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_copy" src="%img.copy.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_cut" src="%img.cut.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_paste" src="%img.paste.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_delete" src="%img.delete.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_pasteformats" src="%img.pasteformats.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_filldown" src="%img.filldown.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_fillright" src="%img.fillright.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_movefrom" src="%img.movefromoff.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_movepaste" src="%img.movepasteoff.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_moveinsert" src="%img.moveinsertoff.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_alignleft" src="%img.alignleft.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_aligncenter" src="%img.aligncenter.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_alignright" src="%img.alignright.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_borderon" src="%img.borderson.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_borderoff" src="%img.bordersoff.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_swapcolors" src="%img.swapcolors.gif" style="vertical-align:bottom;"> '+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_merge" src="%img.merge.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_unmerge" src="%img.unmerge.gif" style="vertical-align:bottom;"> '+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_insertrow" src="%img.insertrow.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_insertcol" src="%img.insertcol.gif" style="vertical-align:bottom;"> '+
+'&nbsp; <img id="%id.button_deleterow" src="%img.deleterow.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_deletecol" src="%img.deletecol.gif" style="vertical-align:bottom;"> '+
+' &nbsp;<img id="%id.divider_recalc" src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+'<img id="%id.button_recalc" src="%img.recalc.gif" style="vertical-align:bottom;"> '+
       ' </div>',
       oncreate: null, //function(spreadsheet, viewobject) {SocialCalc.DoCmd(null, "fill-rowcolstuff");},
       onclick: null});
@@ -1552,11 +1554,11 @@ SocialCalc.DoCmd = function(obj, which) {
             }
          str = editor.range2.hasrange ? "" : "off";
          ele = document.getElementById(spreadsheet.idPrefix+"button_movefrom");
-         ele.src=spreadsheet.imagePrefix+"sc-movefrom"+str+".gif";
+         ele.src=spreadsheet.imagePrefix+"movefrom"+str+".gif";
          ele = document.getElementById(spreadsheet.idPrefix+"button_movepaste");
-         ele.src=spreadsheet.imagePrefix+"sc-movepaste"+str+".gif";
+         ele.src=spreadsheet.imagePrefix+"movepaste"+str+".gif";
          ele = document.getElementById(spreadsheet.idPrefix+"button_moveinsert");
-         ele.src=spreadsheet.imagePrefix+"sc-moveinsert"+str+".gif";
+         ele.src=spreadsheet.imagePrefix+"moveinsert"+str+".gif";
          if (editor.range2.hasrange) editor.RangeRemove();
          break;
 
@@ -1571,11 +1573,11 @@ SocialCalc.DoCmd = function(obj, which) {
             spreadsheet.ExecuteCommand(combostr, "");
             editor.Range2Remove();
             ele = document.getElementById(spreadsheet.idPrefix+"button_movefrom");
-            ele.src=spreadsheet.imagePrefix+"sc-movefromoff.gif";
+            ele.src=spreadsheet.imagePrefix+"movefromoff.gif";
             ele = document.getElementById(spreadsheet.idPrefix+"button_movepaste");
-            ele.src=spreadsheet.imagePrefix+"sc-movepasteoff.gif";
+            ele.src=spreadsheet.imagePrefix+"movepasteoff.gif";
             ele = document.getElementById(spreadsheet.idPrefix+"button_moveinsert");
-            ele.src=spreadsheet.imagePrefix+"sc-moveinsertoff.gif";
+            ele.src=spreadsheet.imagePrefix+"moveinsertoff.gif";
             }
          break;
 
@@ -1833,7 +1835,7 @@ SocialCalc.SpreadsheetControlExecuteCommand = function(obj, combostr, sstr) {
    combostr = combostr.replace(/%W/g, str.W);
    combostr = combostr.replace(/%P/g, str.P);
 
-   eobj.EditorScheduleSheetCommands(combostr, true);
+   eobj.EditorScheduleSheetCommands(combostr);
 
    }
 
@@ -2749,14 +2751,14 @@ SocialCalc.SpreadsheetControlClipboardLoad = function() {
       }
    s.editor.EditorScheduleSheetCommands("loadclipboard "+
       SocialCalc.encodeForSave(
-         SocialCalc.ConvertOtherFormatToSave(document.getElementById(s.idPrefix+"clipboardtext").value, savetype)), true);
+         SocialCalc.ConvertOtherFormatToSave(document.getElementById(s.idPrefix+"clipboardtext").value, savetype)));
    }
 
 SocialCalc.SpreadsheetControlClipboardClear = function() {
    var s = SocialCalc.GetSpreadsheetControlObject();
    var clipele = document.getElementById(s.idPrefix+"clipboardtext");
    clipele.value = "";
-   s.editor.EditorScheduleSheetCommands("clearclipboard", true);
+   s.editor.EditorScheduleSheetCommands("clearclipboard");
    clipele.focus();
    }
 

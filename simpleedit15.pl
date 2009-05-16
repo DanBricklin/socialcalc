@@ -881,10 +881,10 @@ function alertContents2() {
 
 // start everything
 
+   SocialCalc.Constants.defaultImagePrefix = "/sgi/scjstest/images/sc-";
+   SocialCalc.Popup.imagePrefix = SocialCalc.Constants.defaultImagePrefix;
+
    var spreadsheet = new SocialCalc.SpreadsheetControl();
-   spreadsheet.imagePrefix="/sgi/scjstest/images/";
-   spreadsheet.editor.imageprefix="/sgi/scjstest/images/sc";
-   SocialCalc.Popup.imagePrefix = "/sgi/scjstest/images/sc";
    spreadsheet.InitializeSpreadsheetControl("tableeditor", 0, 0, 0);
 
    var savestr = document.getElementById("sheetdata").value;

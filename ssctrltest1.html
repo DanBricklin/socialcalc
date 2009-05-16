@@ -34,7 +34,7 @@ body
 <input type="button" value="SheetHTML" onclick="alert(spreadsheet.CreateSheetHTML());" class="smaller">
 <input type="button" value="SheetSave" onclick="alert(spreadsheet.CreateSheetSave());" class="smaller">
 <input type="button" value="Attribs" onclick="doattribs();" class="smaller">
-<input type="button" value="Changed?" onclick="alert(spreadsheet.sheet.recalcchangedavalue);" class="smaller">
+<input type="button" value="Copy" onclick="newcopy();" class="smaller">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">
@@ -43,7 +43,7 @@ body
 </form>
 <div id="msg" style="position:absolute;right:15px;">
 <input type="button" style="font-size:x-small;" value="Clear" onclick="addmsg('',true);"><br>
-<textarea id="msgtext" style="margin-top:10px;width:110px;height:200px;"></textarea>
+<textarea id="msgtext" style="margin-top:10px;width:110px;height:200px;"></textarea><br>
 </div>
 <div id="tableeditor" style="margin:8px 140px 10px 0px;">editor goes here</div>
 <script>
@@ -177,6 +177,49 @@ function doattribs() {
 
 var fromrange = "A1:A1";
 
+function newcopy() {
+
+   var ta, cell, position, sel, parseobj;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+
+   ta = editor.pasteTextarea;
+   ta.value = "";
+
+   cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
+   if (cell) {
+      position = SocialCalc.GetElementPosition(cell.element);
+      ta.style.left = (position.left-1)+"px";
+      ta.style.top = (position.top-1)+"px";
+      }
+   if (editor.range.hasrange) {
+      sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+         ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+      }
+   else {
+      sel = editor.ecell.coord;
+      }
+
+   parseobj = new SocialCalc.Parse("copy "+sel+" all");
+   SocialCalc.ExecuteSheetCommand(editor.context.sheetobj, parseobj, true); // note: not queued!!!??!!
+   SocialCalc.Clipboard.clipboard.loadedByCtrlC = true; // remember this clipboard data was from ctrl-c
+   ta.value = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "tab");
+   ta.style.display = "block";
+   ta.focus();
+   ta.select();
+//   var range = document.selection.createRange();
+var range = window.getSelection().getRangeAt(0);
+
+   range.execCommand("copy");
+   window.setTimeout(function() {
+      var s = SocialCalc.GetSpreadsheetControlObject();
+      var editor = s.editor;
+      var ta = editor.pasteTextarea;
+      ta.style.display = "none";
+      }, 200);
+   return;
+  }
 
 </script>
 </body>

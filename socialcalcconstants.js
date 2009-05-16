@@ -1,4 +1,5 @@
 //
+/*
 // The module of the SocialCalc package with customizable constants, strings, etc.
 // This is where most of the common localizations are done.
 //
@@ -26,6 +27,7 @@
 // Unless otherwise specified, referring to "SocialCalc" in comments refers to this
 // JavaScript version of the code, not the SocialCalc Perl code.
 //
+*/
 
 var SocialCalc;
 if (!SocialCalc) SocialCalc = {};
@@ -164,7 +166,7 @@ SocialCalc.Constants = {
 
    //*** SocialCalc.TableEditor
 
-   defaultImagePrefix: "images/sc", // URL prefix for images (e.g., "/images/sc")
+   defaultImagePrefix: "images/sc-", // URL prefix for images (e.g., "/images/sc")
    defaultTableEditorIDPrefix: "te_", // if present, many TableEditor elements are assigned IDs with this prefix
    defaultPageUpDnAmount: 15, // number of rows to move cursor on PgUp/PgDn keys (numeric)
 

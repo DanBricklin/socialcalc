@@ -1,12 +1,14 @@
 //
 // SocialCalcTableEditor
 //
+/*
 // The code module of the SocialCalc package that displays a scrolling grid with panes
 // and handles keyboard and mouse I/O.
 //
 // (c) Copyright 2008 Socialtext, Inc.
 // All Rights Reserved.
 //
+*/
 
 /*
 
@@ -178,9 +180,42 @@ SocialCalc.TableEditor = function(context) {
 
    this.ctrlkeyFunction = function(editor, charname) {
 
-      var ta, cell, position;
+      var ta, cell, position, parseobj, sel;
 
       switch (charname) {
+         case "[ctrl-c]":
+            ta = editor.pasteTextarea;
+            ta.value = "";
+            cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
+            if (cell) {
+               position = SocialCalc.GetElementPosition(cell.element);
+               ta.style.left = (position.left-1)+"px";
+               ta.style.top = (position.top-1)+"px";
+               }
+            if (editor.range.hasrange) {
+               sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+                  ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+               }
+            else {
+               sel = editor.ecell.coord;
+               }
+
+            parseobj = new SocialCalc.Parse("copy "+sel+" all");
+            SocialCalc.ExecuteSheetCommand(editor.context.sheetobj, parseobj, true); // note: not queued!!!??!!
+            ta.style.display = "block";
+            ta.value = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "tab"); // must follow "block" setting for Webkit
+            ta.focus();
+            ta.select();
+            window.setTimeout(function() {
+               var s = SocialCalc.GetSpreadsheetControlObject();
+               var editor = s.editor;
+               var ta = editor.pasteTextarea;
+               ta.blur();
+               ta.style.display = "none";
+               SocialCalc.KeyboardFocus();
+               }, 200);
+            return true;
+
          case "[ctrl-v]":
             ta = editor.pasteTextarea;
             ta.value = "";
@@ -191,19 +226,33 @@ SocialCalc.TableEditor = function(context) {
                ta.style.top = (position.top-1)+"px";
                }
             ta.style.display = "block";
+            ta.value = "";  // must follow "block" setting for Webkit
             ta.focus();
             window.setTimeout(function() {
                var s = SocialCalc.GetSpreadsheetControlObject();
                var editor = s.editor;
                var ta = editor.pasteTextarea;
                var value = ta.value;
+               ta.blur();
                ta.style.display = "none";
-               var cmd = "loadclipboard "+
-                  SocialCalc.encodeForSave(SocialCalc.ConvertOtherFormatToSave(value, "tab"))+"\npaste "+
-                     editor.ecell.coord+" all";
-               editor.EditorScheduleSheetCommands(cmd, true);
+               var cmd = "";
+               var clipstr = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "tab");
+               value = value.replace(/\r\n/g, "\n");
+               // pastes SocialCalc clipboard if did a Ctrl-C and contents still the same
+               // Webkit adds an extra blank line, so need to allow for that
+               if (value != clipstr && (value.length-clipstr.length!=1 || value.substring(0,value.length-1)!=clipstr)) {
+                  cmd = "loadclipboard "+
+                  SocialCalc.encodeForSave(SocialCalc.ConvertOtherFormatToSave(value, "tab")) + "\n";
+                  }
+               cmd += "paste "+editor.ecell.coord+" all";
+               editor.EditorScheduleSheetCommands(cmd);
+               SocialCalc.KeyboardFocus();
                }, 200);
             return true;
+
+         case "[ctrl-z]":
+            editor.EditorScheduleSheetCommands("undo");
+            return false;
 
          default:
             break;
@@ -277,7 +326,7 @@ SocialCalc.TableEditor.prototype.SaveEditorSettings = function() {return SocialC
 SocialCalc.TableEditor.prototype.LoadEditorSettings = function(str, flags) {return SocialCalc.LoadEditorSettings(this, str, flags);};
 
 SocialCalc.TableEditor.prototype.EditorRenderSheet = function() {SocialCalc.EditorRenderSheet(this);};
-SocialCalc.TableEditor.prototype.EditorScheduleSheetCommands = function(cmdstr) {SocialCalc.EditorScheduleSheetCommands(this, cmdstr);};
+SocialCalc.TableEditor.prototype.EditorScheduleSheetCommands = function(cmdstr, ignoreundo) {SocialCalc.EditorScheduleSheetCommands(this, cmdstr, ignoreundo);};
 SocialCalc.TableEditor.prototype.ScheduleSheetCommands = function(cmdstr, saveundo) {
    this.context.sheetobj.ScheduleSheetCommands(cmdstr, saveundo);
    };
@@ -392,8 +441,8 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
    tr.appendChild(td);
 
    td = document.createElement("td"); // logo display: Required by CPAL License for this code!
-   td.style.background="url("+editor.imageprefix+"-logo.gif) no-repeat center center";
-   td.innerHTML = "<div style='cursor:pointer;font-size:1px;'><img src='"+editor.imageprefix+"-1x1.gif' border='0' width='18' height='18'></div>";
+   td.style.background="url("+editor.imageprefix+"logo.gif) no-repeat center center";
+   td.innerHTML = "<div style='cursor:pointer;font-size:1px;'><img src='"+editor.imageprefix+"1x1.gif' border='0' width='18' height='18'></div>";
    tr.appendChild(td);
    editor.logo = td;
    AssignID(editor, editor.logo, "logo");
@@ -404,7 +453,7 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
    editor.inputEcho = new SocialCalc.InputEcho(editor);
    AssignID(editor, editor.inputEcho.main, "inputecho");
 
-   ta = document.createElement("textarea");
+   ta = document.createElement("textarea"); // used for ctrl-c/ctrl-v where an invisible text area is needed
    SocialCalc.setStyles(ta, "display:none;position:absolute;height:1px;width:1px;opacity:0;filter:alpha(opacity=0);");
    ta.value = "";
    editor.pasteTextarea = ta;
@@ -618,16 +667,16 @@ SocialCalc.EditorRenderSheet = function(editor) {
    }
 
 //
-// EditorScheduleSheetCommands(cmdstr)
+// EditorScheduleSheetCommands(editor, cmdstr, ignorebusy)
 //
 
-SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr) {
+SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr, ignorebusy) {
 
-   if (editor.state!="start") { // ignore commands if editing a cell
+   if (editor.state!="start" && !ignorebusy) { // ignore commands if editing a cell
       return;
       }
 
-   if (editor.busy) { // hold off on commands if doing one
+   if (editor.busy && !ignorebusy) { // hold off on commands if doing one
       editor.deferredCommands.push(cmdstr);
       return;
       }
@@ -697,11 +746,8 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
             editor.ReplaceCell(cell, cr.row, cr.col);
             }
 
-         editor.DisplayCellContents(); // make sure up to date
-
          if (editor.deferredCommands.length) {
-            editor.busy = false;
-            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift());
+            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift(), true);
             return;
             }
 
@@ -757,12 +803,12 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
       case "doneposcalc":
          if (editor.deferredCommands.length) {
             signalstatus(status);
-            editor.busy = false;
-            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift());
+            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift(), true);
             }
          else {
             editor.busy = false;
             signalstatus(status);
+            if (editor.state=="start") editor.DisplayCellContents(); // make sure up to date
             }
          return;
 
@@ -1343,7 +1389,7 @@ SocialCalc.ProcessEditorColsizeMouseUp = function(e) {
    var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
    if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
 
-   editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize, true);
+   editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize);
 
    if (editor.timeout) window.clearTimeout(editor.timeout);
    editor.timeout = window.setTimeout(SocialCalc.FinishColsize, 1); // wait - Firefox 2 has a bug otherwise with next mousedown
@@ -1644,6 +1690,7 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
 
    type = "text t";
    value = typeof text == "string" ? text : editor.inputBox.GetText(); // either explicit or from input box
+
    oldvalue = SocialCalc.GetCellContents(sheetobj, wval.ecoord)+"";
    if (value == oldvalue) { // no change
       return;
@@ -1704,11 +1751,11 @@ SocialCalc.EditorApplySetCommandsToRange = function(editor, cmd) {
    if (range.hasrange) {
       coord = SocialCalc.crToCoord(range.left, range.top)+":"+SocialCalc.crToCoord(range.right, range.bottom);
       line = "set "+coord+" "+cmd;
-      errortext = editor.EditorScheduleSheetCommands(line, true);
+      errortext = editor.EditorScheduleSheetCommands(line);
       }
    else {
       line = "set "+ecell.coord+" "+cmd;
-      errortext = editor.EditorScheduleSheetCommands(line, true);
+      errortext = editor.EditorScheduleSheetCommands(line);
       }
 
    editor.DisplayCellContents();
@@ -2485,7 +2532,7 @@ SocialCalc.DoPositionCalculations = function() {
 
    SocialCalc.EditorSheetStatusCallback(null, "doneposcalc", null, editor);
 
-   if (editor.ensureecell && editor.ecell && !editor.busy) { // could be busy if deferred cmd to execute
+   if (editor.ensureecell && editor.ecell && !editor.deferredCommands.length) { // don't do if deferred cmd to execute
       editor.ensureecell = false;
       editor.EnsureECellVisible(); // this could cause another redisplay
       }
@@ -3242,7 +3289,7 @@ SocialCalc.CreateTableControl = function(control) {
    s.width = (control.vertical ? control.controlthickness : control.size)+"px";
    s.zIndex = 0;
    setStyles(control.main, scc.TCmainStyle);
-   s.backgroundImage="url("+imageprefix+"-main-"+vh+".gif)";
+   s.backgroundImage="url("+imageprefix+"main-"+vh+".gif)";
    if (scc.TCmainClass) control.main.className = scc.TCmainClass;
 
    control.main.style.display="none"; // wait for layout
@@ -3255,7 +3302,7 @@ SocialCalc.CreateTableControl = function(control) {
    s.overflow = "hidden"; // IE will make the DIV at least font-size height...so use this
    s.position = "absolute";
    setStyles(control.endcap, scc.TCendcapStyle);
-   s.backgroundImage="url("+imageprefix+"-endcap-"+vh+".gif)";
+   s.backgroundImage="url("+imageprefix+"endcap-"+vh+".gif)";
    if (scc.TCendcapClass) control.endcap.className = scc.TCendcapClass;
    AssignID(control.editor, control.endcap, "endcap"+vh);
 
@@ -3270,7 +3317,7 @@ SocialCalc.CreateTableControl = function(control) {
    s[control.vertical?"top":"left"] = "4px";
    s.zIndex = 3;
    setStyles(control.paneslider, scc.TCpanesliderStyle);
-   s.backgroundImage="url("+imageprefix+"-paneslider-"+vh+".gif)";
+   s.backgroundImage="url("+imageprefix+"paneslider-"+vh+".gif)";
    if (scc.TCpanesliderClass) control.paneslider.className = scc.TCpanesliderClass;
    AssignID(control.editor, control.paneslider, "paneslider"+vh);
    TooltipRegister(control.paneslider, "paneslider", vh);
@@ -3294,14 +3341,14 @@ SocialCalc.CreateTableControl = function(control) {
    s.overflow = "hidden"; // IE will make the DIV at least font-size height...so use this
    s.position = "absolute";
    setStyles(control.lessbutton, scc.TClessbuttonStyle);
-   s.backgroundImage="url("+imageprefix+"-less-"+vh+"n.gif)"
+   s.backgroundImage="url("+imageprefix+"less-"+vh+"n.gif)"
    if (scc.TClessbuttonClass) control.lessbutton.className = scc.TClessbuttonClass;
    AssignID(control.editor, control.lessbutton, "lessbutton"+vh);
 
    params = {repeatwait:scc.TClessbuttonRepeatWait, repeatinterval:scc.TClessbuttonRepeatInterval,
-             normalstyle: "backgroundImage:url("+imageprefix+"-less-"+vh+"n.gif);",
-             downstyle: "backgroundImage:url("+imageprefix+"-less-"+vh+"d.gif);",
-             hoverstyle: "backgroundImage:url("+imageprefix+"-less-"+vh+"h.gif);"};
+             normalstyle: "backgroundImage:url("+imageprefix+"less-"+vh+"n.gif);",
+             downstyle: "backgroundImage:url("+imageprefix+"less-"+vh+"d.gif);",
+             hoverstyle: "backgroundImage:url("+imageprefix+"less-"+vh+"h.gif);"};
    functions = {MouseDown:function(){if(!control.editor.busy) control.editor.ScrollRelative(control.vertical, -1);},
                 Repeat:function(){if(!control.editor.busy) control.editor.ScrollRelative(control.vertical, -1);},
                 Disabled: function() {return control.editor.busy;}};
@@ -3318,14 +3365,14 @@ SocialCalc.CreateTableControl = function(control) {
    s.overflow = "hidden"; // IE will make the DIV at least font-size height...so use this
    s.position = "absolute";
    setStyles(control.morebutton, scc.TCmorebuttonStyle);
-   s.backgroundImage="url("+imageprefix+"-more-"+vh+"n.gif)"
+   s.backgroundImage="url("+imageprefix+"more-"+vh+"n.gif)"
    if (scc.TCmorebuttonClass) control.morebutton.className = scc.TCmorebuttonClass;
    AssignID(control.editor, control.morebutton, "morebutton"+vh);
 
    params = {repeatwait:scc.TCmorebuttonRepeatWait, repeatinterval:scc.TCmorebuttonRepeatInterval,
-             normalstyle: "backgroundImage:url("+imageprefix+"-more-"+vh+"n.gif);",
-             downstyle: "backgroundImage:url("+imageprefix+"-more-"+vh+"d.gif);",
-             hoverstyle: "backgroundImage:url("+imageprefix+"-more-"+vh+"h.gif);"};
+             normalstyle: "backgroundImage:url("+imageprefix+"more-"+vh+"n.gif);",
+             downstyle: "backgroundImage:url("+imageprefix+"more-"+vh+"d.gif);",
+             hoverstyle: "backgroundImage:url("+imageprefix+"more-"+vh+"h.gif);"};
    functions = {MouseDown:function(){if(!control.editor.busy) control.editor.ScrollRelative(control.vertical, +1);},
                 Repeat:function(){if(!control.editor.busy) control.editor.ScrollRelative(control.vertical, +1);},
                 Disabled: function() {return control.editor.busy;}};
@@ -3342,7 +3389,7 @@ SocialCalc.CreateTableControl = function(control) {
    s.overflow = "hidden"; // IE will make the DIV at least font-size height...so use this
    s.position = "absolute";
    setStyles(control.scrollarea, scc.TCscrollareaStyle);
-   s.backgroundImage="url("+imageprefix+"-scrollarea-"+vh+".gif)";
+   s.backgroundImage="url("+imageprefix+"scrollarea-"+vh+".gif)";
    if (scc.TCscrollareaClass) control.scrollarea.className = scc.TCscrollareaClass;
    AssignID(control.editor, control.scrollarea, "scrollarea"+vh);
 
@@ -3363,7 +3410,7 @@ SocialCalc.CreateTableControl = function(control) {
    s.overflow = "hidden"; // IE will make the DIV at least font-size height...so use this
    s.position = "absolute";
    setStyles(control.thumb, scc.TCthumbStyle);
-   control.thumb.style.backgroundImage="url("+imageprefix+"-thumb-"+vh+"n.gif)";
+   control.thumb.style.backgroundImage="url("+imageprefix+"thumb-"+vh+"n.gif)";
    if (scc.TCthumbClass) control.thumb.className = scc.TCthumbClass;
    AssignID(control.editor, control.thumb, "thumb"+vh);
 
@@ -3374,9 +3421,9 @@ SocialCalc.CreateTableControl = function(control) {
    functions.control = control; // make sure this is there
    SocialCalc.DragRegister(control.thumb, control.vertical, !control.vertical, functions);
 
-   params = {normalstyle: "backgroundImage:url("+imageprefix+"-thumb-"+vh+"n.gif)", name:"Thumb",
-             downstyle:  "backgroundImage:url("+imageprefix+"-thumb-"+vh+"d.gif)",
-             hoverstyle:  "backgroundImage:url("+imageprefix+"-thumb-"+vh+"h.gif)"};
+   params = {normalstyle: "backgroundImage:url("+imageprefix+"thumb-"+vh+"n.gif)", name:"Thumb",
+             downstyle:  "backgroundImage:url("+imageprefix+"thumb-"+vh+"d.gif)",
+             hoverstyle:  "backgroundImage:url("+imageprefix+"thumb-"+vh+"h.gif)"};
    SocialCalc.ButtonRegister(control.thumb, params, null); // give it button-like visual behavior
 
    control.main.appendChild(control.thumb);
@@ -3513,7 +3560,7 @@ SocialCalc.TCPSDragFunctionStart = function(event, draginfo, dobj) {
       (editor.tableheight-(editor.headposition.top-editor.gridposition.top))+"px";
    draginfo.trackingline.style.width = dobj.vertical ? 
       (editor.tablewidth-(editor.headposition.left-editor.gridposition.left))+"px" : scc.TCPStrackinglineThickness;
-   draginfo.trackingline.style.backgroundImage="url("+editor.imageprefix+"-trackingline-"+(dobj.vertical?"v":"h")+".gif)";;
+   draginfo.trackingline.style.backgroundImage="url("+editor.imageprefix+"trackingline-"+(dobj.vertical?"v":"h")+".gif)";;
    if (scc.TCPStrackinglineClass) draginfo.trackingline.className = scc.TCPStrackinglineClass;
    SocialCalc.setStyles(draginfo.trackingline, scc.TCPStrackinglineStyle);
 
@@ -4571,7 +4618,9 @@ SocialCalc.keyboardTables = {
       },
 
    controlKeysIE: {
-      86: "[ctrl-v]"
+      67: "[ctrl-c]",
+      86: "[ctrl-v]",
+      90: "[ctrl-z]"
       },
 
    specialKeysOpera: {
@@ -4582,7 +4631,9 @@ SocialCalc.keyboardTables = {
       },
 
    controlKeysOpera: {
-      86: "[ctrl-v]"
+      67: "[ctrl-c]",
+      86: "[ctrl-v]",
+      90: "[ctrl-z]"
       },
 
    specialKeysSafari: {
@@ -4592,7 +4643,9 @@ SocialCalc.keyboardTables = {
       },
 
    controlKeysSafari: {
-      118: "[ctrl-v]"
+      99: "[ctrl-c]",
+      118: "[ctrl-v]",
+      122: "[ctrl-z]"
       },
 
    ignoreKeysSafari: {
@@ -4607,7 +4660,9 @@ SocialCalc.keyboardTables = {
       },
 
    controlKeysFirefox: {
-      118: "[ctrl-v]"
+      99: "[ctrl-c]",
+      118: "[ctrl-v]",
+      122: "[ctrl-z]"
       },
 
    ignoreKeysFirefox: {

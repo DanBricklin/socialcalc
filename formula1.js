@@ -1,4 +1,5 @@
 //
+/*
 // SocialCalc Spreadsheet Formula Library
 //
 // Part of the SocialCalc package
@@ -27,6 +28,7 @@
 // Unless otherwise specified, referring to "SocialCalc" in comments refers to this
 // JavaScript version of the code, not the SocialCalc Perl code.
 //
+*/
 
    var SocialCalc;
    if (!SocialCalc) SocialCalc = {}; // May be used with other SocialCalc libraries or standalone
