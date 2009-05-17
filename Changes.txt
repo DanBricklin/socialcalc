@@ -516,6 +516,10 @@ Fixed maxUndo/maxRedo to have maxRedo be the max size of stack and maxUndo is ma
 Fixed bugs with queuing up commands.
 Set default maxUndo to 50.
 Fixed bug that made some typeahead be lost.
+Changed statusline total to use formatNumberWithFormat with [,]General format to clean up rounding, and add commas.
+
+2009-05-17:
+Changed Ctrl-V to do just a Paste Formulas, not Paste All.
 
 
 TO DO:

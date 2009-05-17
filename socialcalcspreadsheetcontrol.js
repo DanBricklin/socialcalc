@@ -1428,8 +1428,6 @@ SocialCalc.DoCmd = function(obj, which) {
    var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
    var editor = spreadsheet.editor;
 
-   which = which.substring(spreadsheet.idPrefix); // remove prefix
-
    switch (which) {
       case "undo":
          spreadsheet.ExecuteCommand("undo", "");

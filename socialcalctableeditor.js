@@ -200,7 +200,7 @@ SocialCalc.TableEditor = function(context) {
                sel = editor.ecell.coord;
                }
 
-            parseobj = new SocialCalc.Parse("copy "+sel+" all");
+            parseobj = new SocialCalc.Parse("copy "+sel+" formulas");
             SocialCalc.ExecuteSheetCommand(editor.context.sheetobj, parseobj, true); // note: not queued!!!??!!
             ta.style.display = "block";
             ta.value = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "tab"); // must follow "block" setting for Webkit
@@ -244,7 +244,7 @@ SocialCalc.TableEditor = function(context) {
                   cmd = "loadclipboard "+
                   SocialCalc.encodeForSave(SocialCalc.ConvertOtherFormatToSave(value, "tab")) + "\n";
                   }
-               cmd += "paste "+editor.ecell.coord+" all";
+               cmd += "paste "+editor.ecell.coord+" formulas";
                editor.EditorScheduleSheetCommands(cmd);
                SocialCalc.KeyboardFocus();
                }, 200);
@@ -927,7 +927,8 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
       }
 
    // if there is a range, calculate sum (not during busy times)
-   if (!params.calculating && !params.command && !progress && editor.range.hasrange && (editor.range.left!=editor.range.right || editor.range.top!=editor.range.bottom)) {
+   if (!params.calculating && !params.command && !progress && editor.range.hasrange 
+       && (editor.range.left!=editor.range.right || editor.range.top!=editor.range.bottom)) {
       sum = 0;
       for (r=editor.range.top; r <= editor.range.bottom; r++) {
          for (c=editor.range.left; c <= editor.range.right; c++) {
@@ -938,6 +939,8 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
                }
             }
          }
+
+      sum = SocialCalc.FormatNumber.formatNumberWithFormat(sum, "[,]General", "");
 
       coord = SocialCalc.crToCoord(editor.range.left, editor.range.top) + ":" +
          SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
