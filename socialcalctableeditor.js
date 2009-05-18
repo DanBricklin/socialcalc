@@ -180,10 +180,11 @@ SocialCalc.TableEditor = function(context) {
 
    this.ctrlkeyFunction = function(editor, charname) {
 
-      var ta, cell, position, parseobj, sel;
+      var ta, cell, position, cmd, sel, cliptext;
 
       switch (charname) {
          case "[ctrl-c]":
+         case "[ctrl-x]":
             ta = editor.pasteTextarea;
             ta.value = "";
             cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
@@ -200,20 +201,31 @@ SocialCalc.TableEditor = function(context) {
                sel = editor.ecell.coord;
                }
 
-            parseobj = new SocialCalc.Parse("copy "+sel+" formulas");
-            SocialCalc.ExecuteSheetCommand(editor.context.sheetobj, parseobj, true); // note: not queued!!!??!!
+            // get what to copy to clipboard
+            cliptext = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.CreateSheetSave(editor.context.sheetobj, sel), "tab");
+
+            if (charname == "[ctrl-c]") {
+               cmd = "copy "+sel+" formulas";
+               }
+            else { // [ctrl-x]
+               cmd = "cut "+sel+" formulas";
+               }
+            editor.EditorScheduleSheetCommands(cmd); // queue up command to put on SocialCalc clipboard
+
             ta.style.display = "block";
-            ta.value = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.Clipboard.clipboard, "tab"); // must follow "block" setting for Webkit
+            ta.value = cliptext; // must follow "block" setting for Webkit
             ta.focus();
             ta.select();
             window.setTimeout(function() {
                var s = SocialCalc.GetSpreadsheetControlObject();
+               if (!s) return;
                var editor = s.editor;
                var ta = editor.pasteTextarea;
                ta.blur();
                ta.style.display = "none";
                SocialCalc.KeyboardFocus();
                }, 200);
+
             return true;
 
          case "[ctrl-v]":
@@ -230,6 +242,7 @@ SocialCalc.TableEditor = function(context) {
             ta.focus();
             window.setTimeout(function() {
                var s = SocialCalc.GetSpreadsheetControlObject();
+               if (!s) return;
                var editor = s.editor;
                var ta = editor.pasteTextarea;
                var value = ta.value;
@@ -4623,6 +4636,7 @@ SocialCalc.keyboardTables = {
    controlKeysIE: {
       67: "[ctrl-c]",
       86: "[ctrl-v]",
+      88: "[ctrl-x]",
       90: "[ctrl-z]"
       },
 
@@ -4636,6 +4650,7 @@ SocialCalc.keyboardTables = {
    controlKeysOpera: {
       67: "[ctrl-c]",
       86: "[ctrl-v]",
+      88: "[ctrl-x]",
       90: "[ctrl-z]"
       },
 
@@ -4648,6 +4663,7 @@ SocialCalc.keyboardTables = {
    controlKeysSafari: {
       99: "[ctrl-c]",
       118: "[ctrl-v]",
+      120: "[ctrl-x]",
       122: "[ctrl-z]"
       },
 
@@ -4665,6 +4681,7 @@ SocialCalc.keyboardTables = {
    controlKeysFirefox: {
       99: "[ctrl-c]",
       118: "[ctrl-v]",
+      120: "[ctrl-x]",
       122: "[ctrl-z]"
       },
 

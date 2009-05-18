@@ -521,6 +521,9 @@ Changed statusline total to use formatNumberWithFormat with [,]General format to
 2009-05-17:
 Changed Ctrl-V to do just a Paste Formulas, not Paste All.
 
+2009-05-18:
+Added Ctrl-X to be like Ctrl-C with Cut formulas instead of copy, made Ctrl-C use EditorScheduleSheetCommands.
+
 
 TO DO:
 
