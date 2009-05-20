@@ -280,8 +280,7 @@ function dosum2() {
    if (editor.range.hasrange) {
       sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
          ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
-      cmd = "set "+SocialCalc.crToCoord(editor.range.right, editor.range.bottom+1)+
-         " formula sum("+sel+")";
+      cmd = "sum("+sel+")";
       }
    else {
       row = editor.ecell.row - 1;

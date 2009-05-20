@@ -1681,6 +1681,12 @@ SocialCalc.EditorAddToInput = function(editor, str, prefix) {
       case "input":
       case "inputboxdirect":
          editor.inputBox.element.focus();
+         if (wval.partialexpr) {
+            editor.inputBox.SetText(wval.partialexpr);
+            wval.partialexpr = "";
+            editor.RangeRemove();
+            editor.MoveECell(wval.ecoord);
+            }
          editor.inputBox.SetText(editor.inputBox.GetText()+str);
          break;
 

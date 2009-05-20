@@ -525,7 +525,8 @@ Changed Ctrl-V to do just a Paste Formulas, not Paste All.
 Added Ctrl-X to be like Ctrl-C with Cut formulas instead of copy, made Ctrl-C use EditorScheduleSheetCommands.
 
 2009-05-19:
-Hide ssctrl1.html extra buttons, added sample minimal Sum Button code.
+Hide ssctrl1.html extra buttons, added sample minimal Sum and Sum2 Button code.
+Updated EditorAddToInput to erase any pointing partial expressions.
 
 
 TO DO:
