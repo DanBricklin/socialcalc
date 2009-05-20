@@ -37,6 +37,7 @@ body
 <input class="hide" type="button" value="Attribs" onclick="doattribs();" class="smaller">
 <input class="hide" type="button" value="New Copy" onclick="newcopy();" class="smaller">
 <input type="button" value="Sum" onclick="dosum();" class="smaller">
+<input type="button" value="Sum2" onclick="dosum2();" class="smaller">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">
@@ -265,6 +266,51 @@ function dosum() {
       }
 
    editor.EditorScheduleSheetCommands(cmd);
+
+  }
+
+function dosum2() {
+
+   var cmd, cell, row, col, sel, cr, foundvalue;
+
+   var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
+   var editor = spreadsheet.editor;
+   var sheet = editor.context.sheetobj;
+
+   if (editor.range.hasrange) {
+      sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+         ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+      cmd = "set "+SocialCalc.crToCoord(editor.range.right, editor.range.bottom+1)+
+         " formula sum("+sel+")";
+      }
+   else {
+      row = editor.ecell.row - 1;
+      col = editor.ecell.col;
+      if (row<=1) {
+         cmd = "sum()";
+         }
+      else {
+         foundvalue = false;
+         while (row>0) {
+            cr = SocialCalc.crToCoord(col, row);
+            cell = sheet.GetAssuredCell(cr);
+            if (!cell.datatype || cell.datatype=="t") {
+               if (foundvalue) {
+                  row++;
+                  break;
+                  }
+               }
+            else {
+               foundvalue = true;
+               }
+            row--;
+            }
+         cmd = "sum("+
+            SocialCalc.crToCoord(col,row)+":"+SocialCalc.crToCoord(col, editor.ecell.row-1)+")";
+         }
+      }
+
+   editor.EditorAddToInput(cmd, "=");
 
   }
 
