@@ -528,8 +528,12 @@ Added Ctrl-X to be like Ctrl-C with Cut formulas instead of copy, made Ctrl-C us
 Hide ssctrl1.html extra buttons, added sample minimal Sum and Sum2 Button code.
 Updated EditorAddToInput to erase any pointing partial expressions.
 
+2009-05-21:
+Changed ctrl-v to paste in upper left if has range.
+
 
 TO DO:
+
 
 Handle unknown function better - should be error message but propogate OK.
 Handle bad settings

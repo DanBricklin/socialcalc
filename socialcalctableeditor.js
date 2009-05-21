@@ -257,7 +257,14 @@ SocialCalc.TableEditor = function(context) {
                   cmd = "loadclipboard "+
                   SocialCalc.encodeForSave(SocialCalc.ConvertOtherFormatToSave(value, "tab")) + "\n";
                   }
-               cmd += "paste "+editor.ecell.coord+" formulas";
+               var cr;
+               if (editor.range.hasrange) {
+                  cr = SocialCalc.crToCoord(editor.range.left, editor.range.top);
+                  }
+               else {
+                  cr = editor.ecell.coord;
+                  }
+               cmd += "paste "+cr+" formulas";
                editor.EditorScheduleSheetCommands(cmd);
                SocialCalc.KeyboardFocus();
                }, 200);
