@@ -1479,20 +1479,7 @@ SocialCalc.ProcessEditorDblClick = function(e) {
 
    switch (editor.state) {
       case "start":
-         if (!editor.ecell) return true; // no ecell
-         if (!editor.inputBox) return true; // no input box, so no editing
-         if (editor.inputBox.element.disabled) return true; // multi-line: ignore
-         editor.inputBox.ShowInputBox(true);
-         editor.inputBox.Focus();
-         editor.state = "inputboxdirect";
-         editor.inputBox.SetText("");
-         editor.inputBox.DisplayCellContents();
-         editor.inputBox.Select("end");
-         wval = editor.workingvalues;
-         wval.partialexpr = "";
-         wval.ecoord = editor.ecell.coord;
-         wval.erow = editor.ecell.row;
-         wval.ecol = editor.ecell.col;
+         SocialCalc.EditorOpenCellEdit(editor);
          break;
 
       case "input":
@@ -1506,6 +1493,30 @@ SocialCalc.ProcessEditorDblClick = function(e) {
    else event.cancelBubble = true; // IE 5+
    if (event.preventDefault) event.preventDefault(); // DOM Level 2
    else event.returnValue = false; // IE 5+
+
+   return;
+
+   }
+
+
+SocialCalc.EditorOpenCellEdit = function(editor) {
+
+   var wval;
+
+   if (!editor.ecell) return true; // no ecell
+   if (!editor.inputBox) return true; // no input box, so no editing
+   if (editor.inputBox.element.disabled) return true; // multi-line: ignore
+   editor.inputBox.ShowInputBox(true);
+   editor.inputBox.Focus();
+   editor.state = "inputboxdirect";
+   editor.inputBox.SetText("");
+   editor.inputBox.DisplayCellContents();
+   editor.inputBox.Select("end");
+   wval = editor.workingvalues;
+   wval.partialexpr = "";
+   wval.ecoord = editor.ecell.coord;
+   wval.erow = editor.ecell.row;
+   wval.ecol = editor.ecell.col;
 
    return;
 
@@ -1545,6 +1556,11 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
                   editor.StatusCallback[f].func(editor, "specialkey", ch, editor.StatusCallback[f].params);
                   }
                }
+            return false;
+            }
+
+         if (ch=="[f2]") {
+            SocialCalc.EditorOpenCellEdit(editor);
             return false;
             }
 
@@ -1623,6 +1639,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             editor.MoveECell(wval.ecoord);
             return false;
             }
+         if (ch=="[f2]") return false;
          if (range.hasrange) {
             editor.RangeRemove();
             }
@@ -1652,6 +1669,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
                }
             break;
             }
+         if (ch=="[f2]") return false;
          return true;
 
       case "skip-and-start":
@@ -3739,24 +3757,59 @@ SocialCalc.TCTDragFunctionStart = function(event, draginfo, dobj) {
    SocialCalc.DragFunctionStart(event, draginfo, dobj);
 
    draginfo.thumbstatus = document.createElement("div");
-   if (scc.TCTDFSthumbstatusClass) draginfo.thumbstatus.className = scc.TCTDFSthumbstatusClass;
-   SocialCalc.setStyles(draginfo.thumbstatus, scc.TCTDFSthumbstatusStyle);
 
    if (dobj.vertical) {
+      if (scc.TCTDFSthumbstatusvClass) draginfo.thumbstatus.className = scc.TCTDFSthumbstatusvClass;
+      SocialCalc.setStyles(draginfo.thumbstatus, scc.TCTDFSthumbstatusvStyle);
       draginfo.thumbstatus.style.top = (draginfo.clientY+scc.TCTDFStopOffsetv)+"px";
-      draginfo.thumbstatus.style.left = (control.controlborder+scc.TCTDFSleftOffsetv)+"px";
-      draginfo.thumbstatus.innerHTML = scc.s_TCTDFthumbstatusPrefixv+editor.firstscrollingrow;
+      draginfo.thumbstatus.style.left = (control.controlborder-10-(editor.tablewidth/2))+"px";
+      draginfo.thumbstatus.style.width = (editor.tablewidth/2)+"px";
+
+      draginfo.thumbcontext = new SocialCalc.RenderContext(editor.context.sheetobj);
+      draginfo.thumbcontext.showGrid = true;
+      draginfo.thumbcontext.rowpanes = [{first: 1, last: 1}];
+      var pane = editor.context.colpanes[editor.context.colpanes.length-1];
+      draginfo.thumbcontext.colpanes = [{first: pane.first, last: pane.last}];
+      draginfo.thumbstatus.innerHTML = '<table cellspacing="0" cellpadding="0"><tr><td valign="top" style="'+
+        scc.TCTDFSthumbstatusrownumStyle+'" class="'+scc.TCTDFSthumbstatusrownumClass+
+        '"><div>msg</div></td><td valign="top"><div style="overflow:hidden;">preview</div></td></tr></table>';
+      draginfo.thumbstatus.rowmsgele = draginfo.thumbstatus.firstChild.firstChild.firstChild.firstChild.firstChild;
+      draginfo.thumbstatus.rowpreviewele = draginfo.thumbstatus.firstChild.firstChild.firstChild.childNodes[1].firstChild;
+      editor.toplevel.appendChild(draginfo.thumbstatus);
+      SocialCalc.TCTDragFunctionRowSetStatus(draginfo, editor, editor.firstscrollingrow || 1);
       }
    else {
+      if (scc.TCTDFSthumbstatushClass) draginfo.thumbstatus.className = scc.TCTDFSthumbstatushClass;
+      SocialCalc.setStyles(draginfo.thumbstatus, scc.TCTDFSthumbstatushStyle);
       draginfo.thumbstatus.style.top = (control.controlborder+scc.TCTDFStopOffseth)+"px";
       draginfo.thumbstatus.style.left = (draginfo.clientX+scc.TCTDFSleftOffseth)+"px";
+      editor.toplevel.appendChild(draginfo.thumbstatus);
       draginfo.thumbstatus.innerHTML = scc.s_TCTDFthumbstatusPrefixh+SocialCalc.rcColname(editor.firstscrollingcol);
       }
 
+   }
 
-   editor.toplevel.appendChild(draginfo.thumbstatus);
+
+//
+// SocialCalc.TCTDragFunctionRowSetStatus(draginfo, editor, row)
+//
+// Render partial row
+//
+
+SocialCalc.TCTDragFunctionRowSetStatus = function(draginfo, editor, row) {
+
+   var scc = SocialCalc.Constants;
+   var msg = scc.s_TCTDFthumbstatusPrefixv+row+" ";
+
+   draginfo.thumbstatus.rowmsgele.innerHTML = msg;
+
+   draginfo.thumbcontext.rowpanes = [{first: row, last: row}];
+   draginfo.thumbrowshown = row;
+
+   var ele = draginfo.thumbcontext.RenderSheet(draginfo.thumbstatus.rowpreviewele.firstChild, {type: "html"});
 
    }
+
 
 //
 // TCTDragFunctionMove(event, draginfo, dobj)
@@ -3784,8 +3837,10 @@ SocialCalc.TCTDragFunctionMove = function(event, draginfo, dobj) {
       first = Math.floor(first);
       if (first <= editor.lastnonscrollingrow) first = editor.lastnonscrollingrow + 1;
       if (first > editor.context.sheetobj.attribs.lastrow) first = editor.context.sheetobj.attribs.lastrow;
-      msg = scc.s_TCTDFthumbstatusPrefixv+first;
-
+//      msg = scc.s_TCTDFthumbstatusPrefixv+first;
+      if (first != draginfo.thumbrowshown) {
+         SocialCalc.TCTDragFunctionRowSetStatus(draginfo, editor, first);
+         }
       }
    else {
       if (draginfo.clientX > control.scrollareaend - draginfo.offsetX - control.thumbthickness + 2)
@@ -3802,9 +3857,8 @@ SocialCalc.TCTDragFunctionMove = function(event, draginfo, dobj) {
       if (first <= editor.lastnonscrollingcol) first = editor.lastnonscrollingcol + 1;
       if (first > editor.context.sheetobj.attribs.lastcol) first = editor.context.sheetobj.attribs.lastcol;
       msg = scc.s_TCTDFthumbstatusPrefixh+SocialCalc.rcColname(first);
+      draginfo.thumbstatus.innerHTML = msg;
       }
-
-   draginfo.thumbstatus.innerHTML = msg;
 
    SocialCalc.DragFunctionPosition(event, draginfo, dobj);
 
@@ -3845,7 +3899,10 @@ SocialCalc.TCTDragFunctionStop = function(event, draginfo, dobj) {
 
    editor.FitToEditTable();
 
+   draginfo.thumbstatus.rowmsgele = null;
+   draginfo.thumbstatus.rowpreviewele = null;
    editor.toplevel.removeChild(draginfo.thumbstatus);
+   draginfo.thumbstatus = null;
 
    editor.ScheduleRender();
 
@@ -4637,13 +4694,13 @@ SocialCalc.keyboardTables = {
    specialKeysCommon: {
       8: "[backspace]", 9: "[tab]", 13: "[enter]", 25: "[tab]", 27: "[esc]", 33: "[pgup]", 34: "[pgdn]",
       35: "[end]", 36: "[home]", 37: "[aleft]", 38: "[aup]", 39: "[aright]", 40: "[adown]", 45: "[ins]",
-      46: "[del]"
+      46: "[del]", 113: "[f2]"
       },
 
    specialKeysIE: {
       8: "[backspace]", 9: "[tab]", 13: "[enter]", 25: "[tab]", 27: "[esc]", 33: "[pgup]", 34: "[pgdn]",
       35: "[end]", 36: "[home]", 37: "[aleft]", 38: "[aup]", 39: "[aright]", 40: "[adown]", 45: "[ins]",
-      46: "[del]"
+      46: "[del]", 113: "[f2]"
       },
 
    controlKeysIE: {
@@ -4657,7 +4714,8 @@ SocialCalc.keyboardTables = {
       8: "[backspace]", 9: "[tab]", 13: "[enter]", 25: "[tab]", 27: "[esc]", 33: "[pgup]", 34: "[pgdn]",
       35: "[end]", 36: "[home]", 37: "[aleft]", 38: "[aup]", 39: "[aright]", 40: "[adown]",
       45: "[ins]", // issues with releases before 9.5 - same as "-" ("-" changed in 9.5)
-      46: "[del]" // issues with releases before 9.5 - same as "." ("." changed in 9.5)
+      46: "[del]", // issues with releases before 9.5 - same as "." ("." changed in 9.5)
+      113: "[f2]"
       },
 
    controlKeysOpera: {
@@ -4670,7 +4728,7 @@ SocialCalc.keyboardTables = {
    specialKeysSafari: {
       8: "[backspace]", 9: "[tab]", 13: "[enter]", 25: "[tab]", 27: "[esc]", 63232: "[aup]", 63233: "[adown]",
       63234: "[aleft]", 63235: "[aright]", 63272: "[del]", 63273: "[home]", 63275: "[end]", 63276: "[pgup]",
-      63277: "[pgdn]"
+      63277: "[pgdn]", 63237: "[f2]"
       },
 
    controlKeysSafari: {
@@ -4681,14 +4739,14 @@ SocialCalc.keyboardTables = {
       },
 
    ignoreKeysSafari: {
-      63236: "[f1]", 63237: "[f2]", 63238: "[f3]", 63239: "[f4]", 63240: "[f5]", 63241: "[f6]", 63242: "[f7]",
+      63236: "[f1]", 63238: "[f3]", 63239: "[f4]", 63240: "[f5]", 63241: "[f6]", 63242: "[f7]",
       63243: "[f8]", 63244: "[f9]", 63245: "[f10]", 63246: "[f11]", 63247: "[f12]", 63289: "[numlock]"
       },
 
    specialKeysFirefox: {
       8: "[backspace]", 9: "[tab]", 13: "[enter]", 25: "[tab]", 27: "[esc]", 33: "[pgup]", 34: "[pgdn]",
       35: "[end]", 36: "[home]", 37: "[aleft]", 38: "[aup]", 39: "[aright]", 40: "[adown]", 45: "[ins]",
-      46: "[del]"
+      46: "[del]", 113: "[f2]"
       },
 
    controlKeysFirefox: {
@@ -4700,7 +4758,7 @@ SocialCalc.keyboardTables = {
 
    ignoreKeysFirefox: {
       16: "[shift]", 17: "[ctrl]", 18: "[alt]", 20: "[capslock]", 19: "[pause]", 44: "[printscreen]",
-      91: "[windows]", 92: "[windows]", 112: "[f1]", 113: "[f2]", 114: "[f3]", 115: "[f4]", 116: "[f5]",
+      91: "[windows]", 92: "[windows]", 112: "[f1]", 114: "[f3]", 115: "[f4]", 116: "[f5]",
       117: "[f6]", 118: "[f7]", 119: "[f8]", 120: "[f9]", 121: "[f10]", 122: "[f11]", 123: "[f12]",
       144: "[numlock]", 145: "[scrolllock]", 224: "[cmd]"
       }

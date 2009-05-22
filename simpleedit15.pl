@@ -816,7 +816,8 @@ addmsg("received:"+http_request.responseText.length+" chars");
 
 function dosave() {
    var sheetstr = spreadsheet.CreateSpreadsheetSave();
-   var htmlstr = spreadsheet.CreateSheetHTML();
+//   var htmlstr = spreadsheet.CreateSheetHTML();
+   var htmlstr = "<div>No HTML Data</div>";
    document.getElementById("newdata").value = sheetstr + "\\nHTML:\\n" + htmlstr;
    }
 

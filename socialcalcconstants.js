@@ -234,10 +234,16 @@ SocialCalc.Constants = {
 
    //*** SocialCalc.TCTDragFunctionStart
 
-   TCTDFSthumbstatusClass: "", // at least one of class/style for thumb dragging status display in table control
-   TCTDFSthumbstatusStyle: "height:20px;width:auto;border:1px solid black;padding:2px;"+
+   TCTDFSthumbstatusvClass: "", // at least one of class/style for vertical thumb dragging status display in table control
+   TCTDFSthumbstatusvStyle: "height:20px;width:auto;border:3px solid #808080;overflow:hidden;"+
                            "backgroundColor:#FFF;fontSize:small;position:absolute;zIndex:100;",
                            // if present, pseudo style (text-align is textAlign)
+   TCTDFSthumbstatushClass: "", // at least one of class/style for horizontal thumb dragging status display in table control
+   TCTDFSthumbstatushStyle: "height:20px;width:auto;border:1px solid black;padding:2px;"+
+                           "backgroundColor:#FFF;fontSize:small;position:absolute;zIndex:100;",
+                           // if present, pseudo style (text-align is textAlign)
+   TCTDFSthumbstatusrownumClass: "", // at least one of class/style for thumb dragging status display in table control
+   TCTDFSthumbstatusrownumStyle: "color:#FFF;background-color:#808080;font-size:small;white-space:nowrap;padding:3px;", // if present, real style
    TCTDFStopOffsetv: 0, // offsets for thumbstatus display while dragging
    TCTDFSleftOffsetv: -80,
    s_TCTDFthumbstatusPrefixv: "Row ", // Text Control Drag Function text before row number

@@ -531,6 +531,9 @@ Updated EditorAddToInput to erase any pointing partial expressions.
 2009-05-21:
 Changed ctrl-v to paste in upper left if has range.
 
+2009-05-22:
+Changed dragging vertical thumb to display part of each proposed new top row. New constants, etc.
+
 
 TO DO:
 
