@@ -4448,8 +4448,10 @@ SocialCalc.Formula.FindInSheetCache = function(sheetname) {
    var str;
    var sfsc = SocialCalc.Formula.SheetCache;
 
-   if (sfsc.sheets[sheetname]) { // a sheet by that name is in the cache already
-      return sfsc.sheets[sheetname].sheet; // return it
+   var nsheetname = SocialCalc.Formula.NormalizeSheetName(sheetname); // normalize different versions
+
+   if (sfsc.sheets[nsheetname]) { // a sheet by that name is in the cache already
+      return sfsc.sheets[nsheetname].sheet; // return it
       }
 
    if (sfsc.waitingForLoading) { // waiting already - only queue up one
@@ -4457,10 +4459,11 @@ SocialCalc.Formula.FindInSheetCache = function(sheetname) {
       }
 
    if (sfsc.loadsheet) { // Deprecated old format synchronous callback
-      return SocialCalc.Formula.AddSheetToCache(sheetname, sfsc.loadsheet(sheetname));
+alert("Using SocialCalc.Formula.SheetCache.loadsheet - deprecated");
+      return SocialCalc.Formula.AddSheetToCache(nsheetname, sfsc.loadsheet(nsheetname));
       }
 
-   sfsc.waitingForLoading = sheetname; // let recalc loop know that we have a sheet to load
+   sfsc.waitingForLoading = nsheetname; // let recalc loop know that we have a sheet to load
 
    return null; // return not found
 
@@ -4490,6 +4493,20 @@ SocialCalc.Formula.AddSheetToCache = function(sheetname, str) {
 
    return newsheet;
 
+   }
+
+//
+// nsheet = SocialCalc.Formula.NormalizeSheetName(sheetname)
+//
+
+SocialCalc.Formula.NormalizeSheetName = function(sheetname) {
+
+   if (SocialCalc.Callbacks.NormalizeSheetName) {
+      return SocialCalc.Callbacks.NormalizeSheetName(sheetname);
+      }
+   else {
+      return sheetname.toLowerCase();
+      }
    }
 
 //

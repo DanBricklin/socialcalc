@@ -120,7 +120,11 @@ SocialCalc.Callbacks = {
    // MakePageLink is used to create the href for a link to another "page"
    // The form is: MakePageLink(pagename, workspacename, linktyle, valueformat), returns string
 
-   MakePageLink: null
+   MakePageLink: null,
+
+   // NormalizeSheetName is used to make different variations of sheetnames use the same cache slot
+
+   NormalizeSheetName: null // use default - lowercase
 
    };
 
