@@ -1215,6 +1215,60 @@ sub CreateCellHTMLSave {
    }
 
 
+#
+# $result = CreateCSV($sheet, $range, $options)
+#
+# Returns the CSV representation of a range of cells, or of the whole sheet if range is null.
+# It returns the raw values, not formatted as dates, etc.
+#
+
+sub CreateCSV {
+
+   my ($sheet, $range, $options) = @_;
+
+   my ($prange, $str);
+
+   if ($range) {
+      $prange = ParseRange($range);
+      }
+   else {
+      $prange = {cr1 => {row => 1, col => 1},
+                cr2 => {row => $sheet->{attribs}{lastrow}, col => $sheet->{attribs}{lastcol}}};
+      }
+   my $cr1 = $prange->{cr1};
+   my $cr2 = $prange->{cr2};
+
+   my $result = "";
+
+   for (my $row=$cr1->{row}; $row <= $cr2->{row}; $row++) {
+      for (my $col=$cr1->{col}; $col <= $cr2->{col}; $col++) {
+         my $coord = CRToCoord($col, $row);
+         my $cell = $sheet->{cells}{$coord};
+
+         if ($cell->{errors}) {
+            $str = $cell->{errors};
+            }
+         else {
+            $str = $cell->{datavalue} || "";
+            }
+
+         $str =~ s/"/""/g; # double quotes
+         if ($str =~ m/[, \n"]/) {
+            $str = qq!"$str"!; # add quotes
+            }
+         if ($col > $cr1->{col}) {
+            $str = ",$str"; # add commas
+            }
+         $result .= $str;
+         }
+      $result .= "\n";
+      }
+
+   return $result;
+
+   }
+
+
 # * * * * * * * * * * * * * * * * * * * *
 #
 # Common helping routines

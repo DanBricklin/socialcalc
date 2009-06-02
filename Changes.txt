@@ -535,7 +535,7 @@ Changed ctrl-v to paste in upper left if has range.
 Changed dragging vertical thumb to display part of each proposed new top row. New constants, etc.
 
 2009-05-28:
-Wrote ConvertCSV routine in Perl in socialcalcserverX.pl.
+Wrote CreateCSV routine in Perl in socialcalcserverX.pl.
 
 2009-05-31:
 Moved sum button into socialcalcspreadsheetcontrol.js as additional formula bar button.
@@ -544,6 +544,7 @@ Moved sum button into socialcalcspreadsheetcontrol.js as additional formula bar 
 Made OLPC version's graphing more modular, and save.
 Fixed bug in sort settings save.
 Added SocialCalc.Callbacks.NormalizeSheetName to socialcalc-3.js and formula1.js.
+Moved CreateCSV into SocialCalcServersideUtilities.pm.
 
 
 TO DO:
