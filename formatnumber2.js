@@ -84,7 +84,7 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
    var hrs, mins, secs, ehrs, emins, esecs, ampmstr, ymd;
    var minOK, mpos;
    var result="";
-   var this_format;
+   var thisformat;
    var section, gotcomparison, compop, compval, cpos, oppos;
    var sectioninfo;
    var i, decimalscale, scaledvalue, strvalue, strparts, integervalue, fractionvalue;
@@ -111,9 +111,9 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
    if (thisformat.hascomparison) { // has comparisons - determine which section
       section = 0; // set to which section we will use
       gotcomparison = 0; // this section has no comparison
-      for (cpos; ;cpos++) { // scan for comparisons
+      for (cpos=0; ;cpos++) { // scan for comparisons
          op = thisformat.operators[cpos];
-         operandstr = thisformatoperands[cpos]; // get next operator and operand
+         operandstr = thisformat.operands[cpos]; // get next operator and operand
          if (!op) { // at end with no match
             if (gotcomparison) { // if comparison but no match
                format_string = "General"; // use default of General
@@ -121,7 +121,7 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
                thisformat = scfn.format_definitions[format_string];
                section = 0;
                }
-            break; // if no comparision, matchines on this section
+            break; // if no comparision, matches on this section
             }
          if (op == scfn.commands.section) { // end of section
             if (!gotcomparison) { // no comparison, so it's a match
@@ -133,10 +133,11 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
             }
          if (op == scfn.commands.comparison) { // found a comparison - do we meet it?
             i=operandstr.indexOf(":");
-            compop=operandstr.substring(0,i-1);
+            compop=operandstr.substring(0,i);
             compval=operandstr.substring(i+1)-0;
             if ((compop == "<" && rawvalue < compval) ||
                 (compop == "<=" && rawvalue <= compval) ||
+                (compop == "=" && rawvalue == compval) ||
                 (compop == "<>" && rawvalue != compval) ||
                 (compop == ">=" && rawvalue >= compval) ||
                 (compop == ">" && rawvalue > compval)) { // a match

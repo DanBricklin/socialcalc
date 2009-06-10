@@ -274,6 +274,30 @@ SocialCalc.TableEditor = function(context) {
             editor.EditorScheduleSheetCommands("undo");
             return false;
 
+         case "[ctrl-s]": // !!!! temporary hack
+            window.setTimeout(
+               function() {
+                  var s = SocialCalc.GetSpreadsheetControlObject();
+                  if (!s) return;
+                  var editor = s.editor;
+                  var sheet = editor.context.sheetobj;
+                  var cell = sheet.GetAssuredCell(editor.ecell.coord);
+                  var ntvf = cell.nontextvalueformat ? sheet.valueformats[cell.nontextvalueformat-0] || "" : "";
+                  var newntvf = window.prompt("Custom Numeric Format", ntvf);
+                  if (newntvf != null) { // not cancelled
+                     if (editor.range.hasrange) {
+                        sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+                           ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+                        }
+                    else {
+                       sel = editor.ecell.coord;
+                        }
+                     editor.EditorScheduleSheetCommands("set "+sel+" nontextvalueformat "+newntvf);
+                     }
+                  },
+               200);
+            return false;
+
          default:
             break;
             }
@@ -3188,7 +3212,7 @@ SocialCalc.SetInputEchoText = function(inputecho, str) {
       inputecho.text = newstr;
       }
 
-   var parts = str.match(/.*[\+\-\*\/\&\^\<\>\=\,\(]([A-Za-z][A-ZA-z]\w*?)\([^\)]*?$/);
+   var parts = str.match(/.*[\+\-\*\/\&\^\<\>\=\,\(]([A-Za-z][A-ZA-z]\w*?)\([^\)]*$/);
    if (str.charAt(0)=="=" && parts) {
       fname = parts[1].toUpperCase();
       if (SocialCalc.Formula.FunctionList[fname]) {
@@ -4705,6 +4729,7 @@ SocialCalc.keyboardTables = {
 
    controlKeysIE: {
       67: "[ctrl-c]",
+      83: "[ctrl-s]",
       86: "[ctrl-v]",
       88: "[ctrl-x]",
       90: "[ctrl-z]"
@@ -4720,6 +4745,7 @@ SocialCalc.keyboardTables = {
 
    controlKeysOpera: {
       67: "[ctrl-c]",
+      83: "[ctrl-s]",
       86: "[ctrl-v]",
       88: "[ctrl-x]",
       90: "[ctrl-z]"
@@ -4733,6 +4759,7 @@ SocialCalc.keyboardTables = {
 
    controlKeysSafari: {
       99: "[ctrl-c]",
+      115: "[ctrl-s]",
       118: "[ctrl-v]",
       120: "[ctrl-x]",
       122: "[ctrl-z]"
@@ -4751,6 +4778,7 @@ SocialCalc.keyboardTables = {
 
    controlKeysFirefox: {
       99: "[ctrl-c]",
+      115: "[ctrl-s]",
       118: "[ctrl-v]",
       120: "[ctrl-x]",
       122: "[ctrl-z]"

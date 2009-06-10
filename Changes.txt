@@ -546,6 +546,12 @@ Fixed bug in sort settings save.
 Added SocialCalc.Callbacks.NormalizeSheetName to socialcalc-3.js and formula1.js.
 Moved CreateCSV into SocialCalcServersideUtilities.pm.
 
+2009-06-09:
+Fixed Safari bug with detecting partial formulas for prompt.
+Fixed bugs with conditionals in formats. Issues converting from Perl...
+Merged SocialCalcServersideFormatting.pm back into ServersideUtilities.pm.
+Fixed bug in js and Perl with missing "=" comparison in conditional custom formats.
+
 
 TO DO:
 
