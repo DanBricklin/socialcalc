@@ -551,6 +551,7 @@ Fixed Safari bug with detecting partial formulas for prompt.
 Fixed bugs with conditionals in formats. Issues converting from Perl...
 Merged SocialCalcServersideFormatting.pm back into ServersideUtilities.pm.
 Fixed bug in js and Perl with missing "=" comparison in conditional custom formats.
+Added temporary Ctrl-S for setting custom numeric formats.
 
 
 TO DO:
