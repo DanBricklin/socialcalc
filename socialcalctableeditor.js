@@ -275,6 +275,7 @@ SocialCalc.TableEditor = function(context) {
             return false;
 
          case "[ctrl-s]": // !!!! temporary hack
+            if (!SocialCalc.Constants.AllowCtrlS) break;
             window.setTimeout(
                function() {
                   var s = SocialCalc.GetSpreadsheetControlObject();

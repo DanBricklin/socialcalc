@@ -170,6 +170,8 @@ SocialCalc.Constants = {
    defaultTableEditorIDPrefix: "te_", // if present, many TableEditor elements are assigned IDs with this prefix
    defaultPageUpDnAmount: 15, // number of rows to move cursor on PgUp/PgDn keys (numeric)
 
+   AllowCtrlS: true, // turns on Ctrl-S trapdoor for setting custom numeric formats and commands if true
+
    //*** SocialCalc.CreateTableEditor
 
    defaultTableControlThickness: 20, // the short size for the scrollbars, etc. (numeric in pixels)

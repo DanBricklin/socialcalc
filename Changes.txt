@@ -555,6 +555,7 @@ Added temporary Ctrl-S for setting custom numeric formats.
 
 2009-06-11:
 Added "cmd:" prefix option to Ctrl-S for manually issuing commands.
+Fixed bug in VLOOKUP argument prompt.
 
 
 TO DO:
