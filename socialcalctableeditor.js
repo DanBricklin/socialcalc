@@ -283,16 +283,22 @@ SocialCalc.TableEditor = function(context) {
                   var sheet = editor.context.sheetobj;
                   var cell = sheet.GetAssuredCell(editor.ecell.coord);
                   var ntvf = cell.nontextvalueformat ? sheet.valueformats[cell.nontextvalueformat-0] || "" : "";
-                  var newntvf = window.prompt("Custom Numeric Format", ntvf);
+                  var newntvf = window.prompt("Advanced Feature:\n\nCustom Numeric Format or Command", ntvf);
                   if (newntvf != null) { // not cancelled
-                     if (editor.range.hasrange) {
-                        sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
-                           ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+                     if (newntvf.match(/^cmd:/)) {
+                        cmd = newntvf.substring(4); // execute as command
                         }
-                    else {
-                       sel = editor.ecell.coord;
+                     else {
+                        if (editor.range.hasrange) {
+                           sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+                              ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
+                           }
+                        else {
+                          sel = editor.ecell.coord;
+                           }
+                        cmd = "set "+sel+" nontextvalueformat "+newntvf;
                         }
-                     editor.EditorScheduleSheetCommands("set "+sel+" nontextvalueformat "+newntvf);
+                     editor.EditorScheduleSheetCommands(cmd);
                      }
                   },
                200);

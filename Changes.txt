@@ -553,6 +553,9 @@ Merged SocialCalcServersideFormatting.pm back into ServersideUtilities.pm.
 Fixed bug in js and Perl with missing "=" comparison in conditional custom formats.
 Added temporary Ctrl-S for setting custom numeric formats.
 
+2009-06-11:
+Added "cmd:" prefix option to Ctrl-S for manually issuing commands.
+
 
 TO DO:
 
