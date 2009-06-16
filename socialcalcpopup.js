@@ -689,8 +689,11 @@ SocialCalc.Popup.Types.List.MakeCustom = function(type, id) {
 
    var str = "";
 
+   var val = spcdata.value;
+   val = SocialCalc.special_chars(val);
+
    str = '<div style="white-space:nowrap;"><br>'+
-         '<input id="customvalue" value="'+spcdata.value+'"><br><br>'+
+         '<input id="customvalue" value="'+val+'"><br><br>'+
          '<input '+style+' type="button" value="OK" onclick="SocialCalc.Popup.Types.List.CustomOK(\''+id+'\');return false;">'+
          '<input '+style+' type="button" value="List" onclick="SocialCalc.Popup.Types.List.CustomToList(\''+id+'\');">'+
          '<input '+style+' type="button" value="Cancel" onclick="SocialCalc.Popup.Close();">'+

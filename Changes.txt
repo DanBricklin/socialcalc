@@ -557,9 +557,18 @@ Added temporary Ctrl-S for setting custom numeric formats.
 Added "cmd:" prefix option to Ctrl-S for manually issuing commands.
 Fixed bug in VLOOKUP argument prompt.
 
+2009-06-14:
+Fixed bug with SocialCalc.Formula.OperandAsSheetName not working with absolute references.
+Fixed bug with Popup custom not escaping current value.
+
+2009-06-16:
+Fixed bug in SocialCalc.RecalcCheckCell where sheetref wasn't reset if range item ended in sheetref.
+
 
 TO DO:
 
+Audit tab doesn't escape <>, etc.
+Make defaultCommentStyle work with defaultImagePrefix.
 
 Handle unknown function better - should be error message but propogate OK.
 Handle bad settings

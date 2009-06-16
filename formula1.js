@@ -1297,7 +1297,7 @@ SocialCalc.Formula.OperandAsSheetName = function(sheet, operand) {
       result.type = nvalue.type;
       }
    if (result.type == "coord") { // value is a coord reference, follow it to find sheet name
-      cell = sheet.cells[result.value];
+      cell = sheet.cells[SocialCalc.Formula.PlainCoord(result.value)];
       if (cell) {
          result.value = cell.datavalue;
          result.type = cell.valuetype;

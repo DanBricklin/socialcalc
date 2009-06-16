@@ -3400,6 +3400,8 @@ mainloop:
             }
          }
 
+      sheetref = false; // make sure off when bump back up
+
       checkinfo[coord] = true; // this one is finished
       if (!recalcdata.firstcalc) { // add to calclist
          recalcdata.firstcalc = coord;
