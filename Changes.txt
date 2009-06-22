@@ -564,10 +564,12 @@ Fixed bug with Popup custom not escaping current value.
 2009-06-16:
 Fixed bug in SocialCalc.RecalcCheckCell where sheetref wasn't reset if range item ended in sheetref.
 
+2009-06-21:
+Fixed: Audit tab doesn't escape <>, etc.
+
 
 TO DO:
 
-Audit tab doesn't escape <>, etc.
 Make defaultCommentStyle work with defaultImagePrefix.
 
 Handle unknown function better - should be error message but propogate OK.

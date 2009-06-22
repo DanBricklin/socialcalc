@@ -758,7 +758,7 @@ SocialCalc.SpreadsheetControl = function() {
             for (i=0; i<stack.length; i++) {
                if (i==tos+1) str += '<br></td></tr><tr><td style="font-size:small;background-color:#EEE;padding:6px;">UNDONE STEPS:<br>';
                for (j=0; j<stack[i].command.length; j++) {
-                  str += stack[i].command[j] + "<br>";
+                  str += SocialCalc.special_chars(stack[i].command[j]) + "<br>";
                   }
                }
             s.views.audit.element.innerHTML = str+"</td></tr></table>";
