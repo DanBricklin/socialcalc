@@ -1448,7 +1448,7 @@ SocialCalc.Formula.StepThroughRangeDown = function(operand, rangevalue) {
 # the number of the first column in the range, the number of columns,
 # and equivalent row information:
 #
-# {sheetdata: sheet, col1num: n, ncols: n, row1num: n, nrows: n}
+# {sheetdata: sheet, sheetname: name-or-"", col1num: n, ncols: n, row1num: n, nrows: n}
 #
 # If any errors, a null result is returned.
 #
@@ -1488,7 +1488,7 @@ SocialCalc.Formula.DecodeRangeParts = function(sheetdata, range) {
 
    rp = scf.OrderRangeParts(value1, value2);
 
-   return {sheetdata: coordsheetdata, col1num: rp.c1, ncols: rp.c2-rp.c1+1, row1num: rp.r1, nrows: rp.r2-rp.r1+1}
+   return {sheetdata: coordsheetdata, sheetname: sheet1, col1num: rp.c1, ncols: rp.c2-rp.c1+1, row1num: rp.r1, nrows: rp.r2-rp.r1+1}
 
    }
 
@@ -2445,7 +2445,7 @@ SocialCalc.Formula.FunctionList["VLOOKUP"] = [SocialCalc.Formula.LookupFunctions
 
 SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
 
-   var range, indexinfo, rowindex, colindex, result, resulttype;
+   var range, sheetname, indexinfo, rowindex, colindex, result, resulttype;
 
    var scf = SocialCalc.Formula;
 
@@ -2457,6 +2457,12 @@ SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
       return 0;
       }
    indexinfo = scf.DecodeRangeParts(sheet, range.value, range.type);
+   if (indexinfo.sheetname) {
+      sheetname = "!" + indexinfo.sheetname;
+      }
+   else {
+      sheetname = "";
+      }
 
    rowindex = {value:0};
    colindex = {value:0};
@@ -2494,11 +2500,11 @@ SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
    if (rowindex.value == 0) {
       if (colindex.value == 0) {
          if (indexinfo.nrows == 1 && indexinfo.ncols == 1) {
-            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num);
+            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num) + sheetname;
             resulttype = "coord";
             }
          else {
-            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num) + "|" +
+            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num) + sheetname + "|" +
                      SocialCalc.crToCoord(indexinfo.col1num+indexinfo.ncols-1, indexinfo.row1num+indexinfo.nrows-1) + 
                      "|";
             resulttype = "range";
@@ -2506,11 +2512,11 @@ SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
          }
       else {
          if (indexinfo.nrows == 1) {
-            result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num);
+            result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num) + sheetname;
             resulttype = "coord";
             }
          else {
-            result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num) + "|" +
+            result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num) + sheetname + "|" +
                      SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num+indexinfo.nrows-1) +
                      "|";
             resulttype = "range";
@@ -2520,23 +2526,21 @@ SocialCalc.Formula.IndexFunction = function(fname, operand, foperand, sheet) {
    else {
       if (colindex.value == 0) {
          if (indexinfo.ncols == 1) {
-            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num+rowindex.value-1);
+            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num+rowindex.value-1) + sheetname;
             resulttype = "coord";
             }
          else {
-            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num+rowindex.value-1) + "|" +
+            result = SocialCalc.crToCoord(indexinfo.col1num, indexinfo.row1num+rowindex.value-1) + sheetname + "|" +
                      SocialCalc.crToCoord(indexinfo.col1num+indexinfo.ncols-1, indexinfo.row1num+rowindex.value-1) +
                      "|";
             resulttype = "range";
             }
          }
       else {
-         result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num+rowindex.value-1);
+         result = SocialCalc.crToCoord(indexinfo.col1num+colindex.value-1, indexinfo.row1num+rowindex.value-1) + sheetname;
          resulttype = "coord";
          }
       }
-
-//!!!! Does not handle other sheets - drops the !
 
    PushOperand(resulttype, result);
 
@@ -4414,6 +4418,7 @@ SocialCalc.Formula.SheetCache = {
    //    recalcstate: constants.asloaded = as loaded
    //                 constants.recalcing = being recalced now
    //                 constants.recalcdone = recalc done
+   //    name: name of sheet (in case just have object and don't know name)
    //
 
    sheets: {},
@@ -4481,15 +4486,16 @@ SocialCalc.Formula.AddSheetToCache = function(sheetname, str) {
    var newsheet = null;
    var sfsc = SocialCalc.Formula.SheetCache;
    var sfscc = sfsc.constants;
+   var newsheetname = SocialCalc.Formula.NormalizeSheetName(sheetname);
 
    if (str) {
       newsheet = new SocialCalc.Sheet();
       newsheet.ParseSheetSave(str);
       }
 
-   sfsc.sheets[sheetname] = {sheet: newsheet, recalcstate: sfscc.asloaded};
+   sfsc.sheets[newsheetname] = {sheet: newsheet, recalcstate: sfscc.asloaded, name: newsheetname};
 
-   SocialCalc.Formula.FreshnessInfo.sheets[sheetname] = true;
+   SocialCalc.Formula.FreshnessInfo.sheets[newsheetname] = true;
 
    return newsheet;
 

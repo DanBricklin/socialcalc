@@ -4802,7 +4802,7 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
       textval.s = dvsc;
       textval.u = dvue;
       displayvalue = valueformat.substring(12); // remove "text-custom:"
-      displayvalue = displayvalue.replace(/@(r|s|u)/g, function(c){return textval[c];}); // replace placeholders
+      displayvalue = displayvalue.replace(/@(r|s|u)/g, function(a,c){return textval[c];}); // replace placeholders
       }
    else if (valueformat.substring(0,6)=="custom") { // custom
       displayvalue = SocialCalc.special_chars(displayvalue); // do special chars
