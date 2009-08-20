@@ -5,7 +5,7 @@
 // The code module of the SocialCalc package that lets you embed a spreadsheet
 // control with toolbar, etc., into a web page.
 //
-// (c) Copyright 2008 Socialtext, Inc.
+// (c) Copyright 2008, 2009 Socialtext, Inc.
 // All Rights Reserved.
 //
 */
@@ -144,12 +144,13 @@ SocialCalc.SpreadsheetControl = function() {
 
    // View definitions: An object where each view is an object of the form:
    //
-   //    name: "name",
+   //    name: "name", // localized when first set using SocialCalc.LocalizeString
    //    element: node-in-the-dom, // filled in when initialized
    //    replacements: {}, // see below
    //    html: "html-to-create div",
    //       replacements:
-   //         "%s.": "SocialCalc", "%id.": spreadsheet.idPrefix, "%tbt.": spreadsheet.toolbartext, $img.": spreadsheet.imagePrefix
+   //         "%s.": "SocialCalc", "%id.": spreadsheet.idPrefix, "%tbt.": spreadsheet.toolbartext, "%img.": spreadsheet.imagePrefix,
+   //         SocialCalc.LocalizeSubstring replacements ("%loc!string!" and "%ssc!constant-name!")
    //         Other replacements from viewobject.replacements:
    //            replacementname: {regex: regular-expression-to-match-with-g, replacement: string}
    //    divStyle: attributes for sheet div (SocialCalc.setStyles format)
@@ -228,7 +229,7 @@ SocialCalc.SpreadsheetControl = function() {
    // formula bar buttons
 
    this.formulabuttons = {
-      formulafunctions: {image: "formuladialog.gif", tooltip: "Functions",
+      formulafunctions: {image: "formuladialog.gif", tooltip: "Functions", // tooltips are localized when set below
                          command: SocialCalc.SpreadsheetControl.DoFunctionList},
       multilineinput: {image: "multilinedialog.gif", tooltip: "Multi-line Input Box",
                          command: SocialCalc.SpreadsheetControl.DoMultiline},
@@ -290,20 +291,20 @@ SocialCalc.SpreadsheetControl = function() {
       '<div id="%id.settingstools" style="display:none;">'+
       ' <div id="%id.sheetsettingstoolbar" style="display:none;">'+
       '  <table cellspacing="0" cellpadding="0"><tr><td>'+
-      '   <div style="%tbt.">SHEET SETTINGS:</div>'+
+      '   <div style="%tbt.">%loc!SHEET SETTINGS!:</div>'+
       '   </td></tr><tr><td>'+
-      '   <input id="%id.settings-savesheet" type="button" value="Save" onclick="SocialCalc.SettingsControlSave(\'sheet\');">'+
-      '   <input type="button" value="Cancel" onclick="SocialCalc.SettingsControlSave(\'cancel\');">'+
-      '   <input type="button" value="Show Cell Settings" onclick="SocialCalc.SpreadsheetControlSettingsSwitch(\'cell\');return false;">'+
+      '   <input id="%id.settings-savesheet" type="button" value="%loc!Save!" onclick="SocialCalc.SettingsControlSave(\'sheet\');">'+
+      '   <input type="button" value="%loc!Cancel!" onclick="SocialCalc.SettingsControlSave(\'cancel\');">'+
+      '   <input type="button" value="%loc!Show Cell Settings!" onclick="SocialCalc.SpreadsheetControlSettingsSwitch(\'cell\');return false;">'+
       '   </td></tr></table>'+
       ' </div>'+
       ' <div id="%id.cellsettingstoolbar" style="display:none;">'+
       '  <table cellspacing="0" cellpadding="0"><tr><td>'+
-      '   <div style="%tbt.">CELL SETTINGS: <span id="%id.settingsecell">&nbsp;</span></div>'+
+      '   <div style="%tbt.">%loc!CELL SETTINGS!: <span id="%id.settingsecell">&nbsp;</span></div>'+
       '   </td></tr><tr><td>'+
-      '  <input id="%id.settings-savecell" type="button" value="Save" onclick="SocialCalc.SettingsControlSave(\'cell\');">'+
-      '  <input type="button" value="Cancel" onclick="SocialCalc.SettingsControlSave(\'cancel\');">'+
-      '  <input type="button" value="Show Sheet Settings" onclick="SocialCalc.SpreadsheetControlSettingsSwitch(\'sheet\');return false;">'+
+      '  <input id="%id.settings-savecell" type="button" value="%loc!Save!" onclick="SocialCalc.SettingsControlSave(\'cell\');">'+
+      '  <input type="button" value="%loc!Cancel!" onclick="SocialCalc.SettingsControlSave(\'cancel\');">'+
+      '  <input type="button" value="%loc!Show Sheet Settings!" onclick="SocialCalc.SpreadsheetControlSettingsSwitch(\'sheet\');return false;">'+
       '  </td></tr></table>'+
       ' </div>'+
       '</div>',
@@ -328,94 +329,66 @@ SocialCalc.SpreadsheetControl = function() {
          else {
             range = s.editor.ecell.coord;
             }
-         document.getElementById(s.idPrefix+"settings-savecell").value = "Save to: "+range;
+         document.getElementById(s.idPrefix+"settings-savecell").value = SocialCalc.LocalizeString("Save to")+": "+range;
          },
       onclickFocus: true
          });
 
    this.views["settings"] = {name: "settings", values: {},
       oncreate: function(s, viewobj) {
-         var numberformats = "[cancel]:|[break]:|Default:|Custom:|Automatic:general|Auto w/ commas:[,]General|[break]:|"+
-            "00:00|000:000|0000:0000|00000:00000|[break]:|Formula:formula|Hidden:hidden|[newcol]:"+
-            "1234:0|1,234:#,##0|1,234.5:#,##0.0|1,234.56:#,##0.00|1,234.567:#,##0.000|1,234.5678:#,##0.0000|"+
-            "[break]:|1,234%:#,##0%|1,234.5%:#,##0.0%|1,234.56%:#,##0.00%|"+
-            "[newcol]:|$1,234:$#,##0|$1,234.5:$#,##0.0|$1,234.56:$#,##0.00|[break]:|"+
-            "(1,234):#,##0_);(#,##0)|(1,234.5):#,##0.0_);(#,##0.0)|(1,234.56):#,##0.00_);(#,##0.00)|[break]:|"+
-            "($1,234):#,##0_);($#,##0)|($1,234.5):$#,##0.0_);($#,##0.0)|($1,234.56):$#,##0.00_);($#,##0.00)|"+
-            "[newcol]:|1/4/06:m/d/yy|01/04/2006:mm/dd/yyyy|2006-01-04:yyyy-mm-dd|4-Jan-06:d-mmm-yy|04-Jan-2006:dd-mmm-yyyy|January 4, 2006:mmmm d, yyyy|"+
-            "[break]:|1\\c23:h:mm|1\\c23 PM:h:mm AM/PM|1\\c23\\c45:h:mm:ss|01\\c23\\c45:hh:mm:ss|26\\c23 (h\\cm):[hh]:mm|69\\c45 (m\\cs):[mm]:ss|69 (s):[ss]|"+
-            "[newcol]:|2006-01-04 01\\c23\\c45:yyyy-mm-dd hh:mm:ss|January 4, 2006:mmmm d, yyyy hh:mm:ss|Wed:ddd|Wednesday:dddd|";
-         var textformats = "[cancel]:|[break]:|Default:|Custom:|Automatic:general|Plain Text:text-plain|"+
-            "HTML:text-html|Link:text-link|Formula:formula|Hidden:hidden|";
-         var padsizes = "[cancel]:|[break]:|Default:|Custom:|No padding:0px|"+
-                  "[newcol]:|1 pixel:1px|2 pixels:2px|3 pixels:3px|4 pixels:4px|5 pixels:5px|"+
-                  "6 pixels:6px|7 pixels:7px|8 pixels:8px|[newcol]:|9 pixels:9px|10 pixels:10px|11 pixels:11px|"+
-                  "12 pixels:12px|13 pixels:13px|14 pixels:14px|16 pixels:16px|"+
-                  "18 pixels:18px|[newcol]:|20 pixels:20px|22 pixels:22px|24 pixels:24px|28 pixels:28px|36 pixels:36px|";
-         var fontsizes = "[cancel]:|[break]:|Default:|Custom:|X-Small:x-small|Small:small|Medium:medium|Large:large|X-Large:x-large|"+
-                  "[newcol]:|6pt:6pt|7pt:7pt|8pt:8pt|9pt:9pt|10pt:10pt|11pt:11pt|12pt:12pt|14pt:14pt|16pt:16pt|"+
-                  "[newcol]:|18pt:18pt|20pt:20pt|22pt:22pt|24pt:24pt|28pt:28pt|36pt:36pt|48pt:48pt|72pt:72pt|"+
-                  "[newcol]:|8 pixels:8px|9 pixels:9px|10 pixels:10px|11 pixels:11px|"+
-                  "12 pixels:12px|13 pixels:13px|14 pixels:14px|[newcol]:|16 pixels:16px|"+
-                  "18 pixels:18px|20 pixels:20px|22 pixels:22px|24 pixels:24px|28 pixels:28px|36 pixels:36px|";
-         var fontfamilies = "[cancel]:|[break]:|Default:|Custom:|Verdana:Verdana,Arial,Helvetica,sans-serif|"+
-                  "Arial:arial,helvetica,sans-serif|Courier:'Courier New',Courier,monospace|";
+         var scc = SocialCalc.Constants;
 
          viewobj.values.sheetspanel = {
 //            name: "sheet",
             colorchooser: {id: s.idPrefix+"scolorchooser"},
             formatnumber: {setting: "numberformat", type: "PopupList", id: s.idPrefix+"formatnumber",
-               initialdata: numberformats},
+               initialdata: scc.SCFormatNumberFormats},
             formattext: {setting: "textformat", type: "PopupList", id: s.idPrefix+"formattext",
-               initialdata: textformats},
+               initialdata: scc.SCFormatTextFormats},
             fontfamily: {setting: "fontfamily", type: "PopupList", id: s.idPrefix+"fontfamily",
-               initialdata: fontfamilies},
+               initialdata: scc.SCFormatFontfamilies},
             fontlook: {setting: "fontlook", type: "PopupList", id: s.idPrefix+"fontlook",
-               initialdata: "[cancel]:|[break]:|Default:|Normal:normal normal|Bold:normal bold|Italic:italic normal|"+
-                  "Bold Italic:italic bold"},
+               initialdata: scc.SCFormatFontlook},
             fontsize: {setting: "fontsize", type: "PopupList", id: s.idPrefix+"fontsize",
-               initialdata: fontsizes},
+               initialdata: scc.SCFormatFontsizes},
             textalignhoriz: {setting: "textalignhoriz", type: "PopupList", id: s.idPrefix+"textalignhoriz",
-               initialdata: "[cancel]:|[break]:|Default:|Left:left|Center:center|Right:right|"},
+               initialdata: scc.SCFormatTextAlignhoriz},
             numberalignhoriz: {setting: "numberalignhoriz", type: "PopupList", id: s.idPrefix+"numberalignhoriz",
-               initialdata: "[cancel]:|[break]:|Default:|Left:left|Center:center|Right:right|"},
+               initialdata: scc.SCFormatNumberAlignhoriz},
             alignvert: {setting: "alignvert", type: "PopupList", id: s.idPrefix+"alignvert",
-               initialdata: "[cancel]:|[break]:|Default:|Top:top|Middle:middle|Bottom:bottom|"},
+               initialdata: scc.SCFormatAlignVertical},
             textcolor: {setting: "textcolor", type: "ColorChooser", id: s.idPrefix+"textcolor"},
             bgcolor: {setting: "bgcolor", type: "ColorChooser", id: s.idPrefix+"bgcolor"},
             padtop: {setting: "padtop", type: "PopupList", id: s.idPrefix+"padtop",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             padright: {setting: "padright", type: "PopupList", id: s.idPrefix+"padright",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             padbottom: {setting: "padbottom", type: "PopupList", id: s.idPrefix+"padbottom",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             padleft: {setting: "padleft", type: "PopupList", id: s.idPrefix+"padleft",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             colwidth: {setting: "colwidth", type: "PopupList", id: s.idPrefix+"colwidth",
-               initialdata: "[cancel]:|[break]:|Default:|Custom:|[newcol]:|"+
-                  "20 pixels:20|40:40|60:60|80:80|100:100|120:120|140:140|160:160|"+
-                  "[newcol]:|180 pixels:180|200:200|220:220|240:240|260:260|280:280|300:300|"},
+               initialdata: scc.SCFormatColwidth},
             recalc: {setting: "recalc", type: "PopupList", id: s.idPrefix+"recalc",
-               initialdata: "[cancel]:|[break]:|Auto:|Manual:off|"}
+               initialdata: scc.SCFormatRecalc}
             };
          viewobj.values.cellspanel = {
             name: "cell",
             colorchooser: {id: s.idPrefix+"scolorchooser"},
             cformatnumber: {setting: "numberformat", type: "PopupList", id: s.idPrefix+"cformatnumber",
-               initialdata: numberformats},
+               initialdata: scc.SCFormatNumberFormats},
             cformattext: {setting: "textformat", type: "PopupList", id: s.idPrefix+"cformattext",
-               initialdata: textformats},
+               initialdata: scc.SCFormatTextFormats},
             cfontfamily: {setting: "fontfamily", type: "PopupList", id: s.idPrefix+"cfontfamily",
-               initialdata: fontfamilies},
+               initialdata: scc.SCFormatFontfamilies},
             cfontlook: {setting: "fontlook", type: "PopupList", id: s.idPrefix+"cfontlook",
-               initialdata: "[cancel]:|[break]:|Default:|Normal:normal normal|Bold:normal bold|Italic:italic normal|"+
-                  "Bold Italic:italic bold|"},
+               initialdata: scc.SCFormatFontlook},
             cfontsize: {setting: "fontsize", type: "PopupList", id: s.idPrefix+"cfontsize",
-               initialdata: fontsizes},
+               initialdata: scc.SCFormatFontsizes},
             calignhoriz: {setting: "alignhoriz", type: "PopupList", id: s.idPrefix+"calignhoriz",
-               initialdata: "[cancel]:|[break]:|Default:|Left:left|Center:center|Right:right|"},
+               initialdata: scc.SCFormatTextAlignhoriz},
             calignvert: {setting: "alignvert", type: "PopupList", id: s.idPrefix+"calignvert",
-               initialdata: "[cancel]:|[break]:|Default:|Top:top|Middle:middle|Bottom:bottom|"},
+               initialdata: scc.SCFormatAlignVertical},
             ctextcolor: {setting: "textcolor", type: "ColorChooser", id: s.idPrefix+"ctextcolor"},
             cbgcolor: {setting: "bgcolor", type: "ColorChooser", id: s.idPrefix+"cbgcolor"},
             cbt: {setting: "bt", type: "BorderSide", id: s.idPrefix+"cbt"},
@@ -423,15 +396,14 @@ SocialCalc.SpreadsheetControl = function() {
             cbb: {setting: "bb", type: "BorderSide", id: s.idPrefix+"cbb"},
             cbl: {setting: "bl", type: "BorderSide", id: s.idPrefix+"cbl"},
             cpadtop: {setting: "padtop", type: "PopupList", id: s.idPrefix+"cpadtop",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             cpadright: {setting: "padright", type: "PopupList", id: s.idPrefix+"cpadright",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             cpadbottom: {setting: "padbottom", type: "PopupList", id: s.idPrefix+"cpadbottom",
-               initialdata: padsizes},
+               initialdata: scc.SCFormatPadsizes},
             cpadleft: {setting: "padleft", type: "PopupList", id: s.idPrefix+"cpadleft",
-               initialdata: padsizes}
+               initialdata: scc.SCFormatPadsizes}
             };
-
 
          SocialCalc.SettingsControlInitializePanel(viewobj.values.sheetspanel);
          SocialCalc.SettingsControlInitializePanel(viewobj.values.cellspanel);
@@ -450,91 +422,91 @@ SocialCalc.SpreadsheetControl = function() {
 ' <tr><td style="vertical-align:top;">'+
 '<table id="%id.sheetsettingstable" style="display:none;" cellspacing="0" cellpadding="0">'+
 '<tr>'+
-' <td %itemtitle.><br>Default Format:</td>'+
+' <td %itemtitle.><br>%loc!Default Format!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Number</div>'+
+'     <div %parttitle.>%loc!Number!</div>'+
 '     <span id="%id.formatnumber"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Text</div>'+
+'     <div %parttitle.>%loc!Text!</div>'+
 '     <span id="%id.formattext"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Default Alignment:</td>'+
+' <td %itemtitle.><br>%loc!Default Alignment!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Text Horizontal</div>'+
+'     <div %parttitle.>%loc!Text Horizontal!</div>'+
 '     <span id="%id.textalignhoriz"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Number Horizontal</div>'+
+'     <div %parttitle.>%loc!Number Horizontal!</div>'+
 '     <span id="%id.numberalignhoriz"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Vertical</div>'+
+'     <div %parttitle.>%loc!Vertical!</div>'+
 '     <span id="%id.alignvert"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Default Font:</td>'+
+' <td %itemtitle.><br>%loc!Default Font!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Family</div>'+
+'     <div %parttitle.>%loc!Family!</div>'+
 '     <span id="%id.fontfamily"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Bold & Italics</div>'+
+'     <div %parttitle.>%loc!Bold &amp; Italics!</div>'+
 '     <span id="%id.fontlook"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Size</div>'+
+'     <div %parttitle.>%loc!Size!</div>'+
 '     <span id="%id.fontsize"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Color</div>'+
+'     <div %parttitle.>%loc!Color!</div>'+
 '     <div id="%id.textcolor"></div>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Background</div>'+
+'     <div %parttitle.>%loc!Background!</div>'+
 '     <div id="%id.bgcolor"></div>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Default Padding:</td>'+
+' <td %itemtitle.><br>%loc!Default Padding!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Top</div>'+
+'     <div %parttitle.>%loc!Top!</div>'+
 '     <span id="%id.padtop"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Right</div>'+
+'     <div %parttitle.>%loc!Right!</div>'+
 '     <span id="%id.padright"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Bottom</div>'+
+'     <div %parttitle.>%loc!Bottom!</div>'+
 '     <span id="%id.padbottom"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Left</div>'+
+'     <div %parttitle.>%loc!Left!</div>'+
 '     <span id="%id.padleft"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Default Column Width:</td>'+
+' <td %itemtitle.><br>%loc!Default Column Width!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
@@ -545,7 +517,7 @@ SocialCalc.SpreadsheetControl = function() {
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Recalculation:</td>'+
+' <td %itemtitle.><br>%loc!Recalculation!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
@@ -558,70 +530,70 @@ SocialCalc.SpreadsheetControl = function() {
 '</table>'+
 '<table id="%id.cellsettingstable" cellspacing="0" cellpadding="0">'+
 '<tr>'+
-' <td %itemtitle.><br>Format:</td>'+
+' <td %itemtitle.><br>%loc!Format!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Number</div>'+
+'     <div %parttitle.>%loc!Number!</div>'+
 '     <span id="%id.cformatnumber"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Text</div>'+
+'     <div %parttitle.>%loc!Text!</div>'+
 '     <span id="%id.cformattext"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Alignment:</td>'+
+' <td %itemtitle.><br>%loc!Alignment!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Horizontal</div>'+
+'     <div %parttitle.>%loc!Horizontal!</div>'+
 '     <span id="%id.calignhoriz"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Vertical</div>'+
+'     <div %parttitle.>%loc!Vertical!</div>'+
 '     <span id="%id.calignvert"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Font:</td>'+
+' <td %itemtitle.><br>%loc!Font!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Family</div>'+
+'     <div %parttitle.>%loc!Family!</div>'+
 '     <span id="%id.cfontfamily"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Bold & Italics</div>'+
+'     <div %parttitle.>%loc!Bold &amp; Italics!</div>'+
 '     <span id="%id.cfontlook"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Size</div>'+
+'     <div %parttitle.>%loc!Size!</div>'+
 '     <span id="%id.cfontsize"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Color</div>'+
+'     <div %parttitle.>%loc!Color!</div>'+
 '     <div id="%id.ctextcolor"></div>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Background</div>'+
+'     <div %parttitle.>%loc!Background!</div>'+
 '     <div id="%id.cbgcolor"></div>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Borders:</td>'+
+' <td %itemtitle.><br>%loc!Borders!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0">'+
-'    <tr><td %bodypart. colspan="3"><div %parttitle.>Top Border</div></td>'+
-'     <td %bodypart. colspan="3"><div %parttitle.>Right Border</div></td>'+
-'     <td %bodypart. colspan="3"><div %parttitle.>Bottom Border</div></td>'+
-'     <td %bodypart. colspan="3"><div %parttitle.>Left Border</div></td>'+
+'    <tr><td %bodypart. colspan="3"><div %parttitle.>%loc!Top Border!</div></td>'+
+'     <td %bodypart. colspan="3"><div %parttitle.>%loc!Right Border!</div></td>'+
+'     <td %bodypart. colspan="3"><div %parttitle.>%loc!Bottom Border!</div></td>'+
+'     <td %bodypart. colspan="3"><div %parttitle.>%loc!Left Border!</div></td>'+
 '    </tr><tr>'+
 '    <td %bodypart.>'+
 '     <input id="%id.cbt-onoff-bcb" onclick="SocialCalc.SettingsControlOnchangeBorder(this);" type="checkbox">'+
@@ -655,23 +627,23 @@ SocialCalc.SpreadsheetControl = function() {
 ' </td>'+
 '</tr>'+
 '<tr>'+
-' <td %itemtitle.><br>Padding:</td>'+
+' <td %itemtitle.><br>%loc!Padding!:</td>'+
 ' <td %itembody.>'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Top</div>'+
+'     <div %parttitle.>%loc!Top!</div>'+
 '     <span id="%id.cpadtop"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Right</div>'+
+'     <div %parttitle.>%loc!Right!</div>'+
 '     <span id="%id.cpadright"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Bottom</div>'+
+'     <div %parttitle.>%loc!Bottom!</div>'+
 '     <span id="%id.cpadbottom"></span>'+
 '    </td>'+
 '    <td %bodypart.>'+
-'     <div %parttitle.>Left</div>'+
+'     <div %parttitle.>%loc!Left!</div>'+
 '     <span id="%id.cpadleft"></span>'+
 '    </td>'+
 '   </tr></table>'+
@@ -681,7 +653,7 @@ SocialCalc.SpreadsheetControl = function() {
 ' </td><td style="vertical-align:top;padding:12px 0px 0px 12px;">'+
 '  <div style="width:100px;height:100px;overflow:hidden;border:1px solid black;background-color:#EEE;padding:6px;">'+
 '   <table cellspacing="0" cellpadding="0"><tr>'+
-'    <td id="sample-text" style="height:100px;width:100px;"><div>This is a<br>sample</div><div>-1234.5</div></td>'+
+'    <td id="sample-text" style="height:100px;width:100px;"><div>%loc!This is a<br>sample!</div><div>-1234.5</div></td>'+
 '   </tr></table>'+
 '  </div>'+
 ' </td></tr></table>'+
@@ -695,44 +667,44 @@ SocialCalc.SpreadsheetControl = function() {
       ' <div id="%id.sorttools" style="display:none;">'+
       '  <table cellspacing="0" cellpadding="0"><tr>'+
       '   <td style="vertical-align:top;padding-right:4px;width:160px;">'+
-      '    <div style="%tbt.">Set Cells To Sort</div>'+
+      '    <div style="%tbt.">%loc!Set Cells To Sort!</div>'+
       '    <select id="%id.sortlist" size="1" onfocus="%s.CmdGotFocus(this);"><option selected>[select range]</option></select>'+
-      '    <input type="button" value="OK" onclick="%s.DoCmd(this, \'ok-setsort\');" style="font-size:x-small;">'+
+      '    <input type="button" value="%loc!OK!" onclick="%s.DoCmd(this, \'ok-setsort\');" style="font-size:x-small;">'+
       '   </td>'+
       '   <td style="vertical-align:middle;padding-right:16px;width:100px;text-align:right;">'+
       '    <div style="%tbt.">&nbsp;</div>'+
-      '    <input type="button" id="%id.sortbutton" value="Sort Cells A1:A1" onclick="%s.DoCmd(this, \'dosort\');" style="visibility:hidden;">'+
+      '    <input type="button" id="%id.sortbutton" value="%loc!Sort Cells! A1:A1" onclick="%s.DoCmd(this, \'dosort\');" style="visibility:hidden;">'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:16px;">'+
       '    <table cellspacing="0" cellpadding="0"><tr>'+
       '     <td style="vertical-align:top;">'+
-      '      <div style="%tbt.">Major Sort</div>'+
+      '      <div style="%tbt.">%loc!Major Sort!</div>'+
       '      <select id="%id.majorsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="majorsort" id="%id.majorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">Up</span><br>'+
-      '      <input type="radio" name="majorsort" id="%id.majorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">Down</span>'+
+      '      <input type="radio" name="majorsort" id="%id.majorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
+      '      <input type="radio" name="majorsort" id="%id.majorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:16px;">'+
       '    <table cellspacing="0" cellpadding="0"><tr>'+
       '     <td style="vertical-align:top;">'+
-      '      <div style="%tbt.">Minor Sort</div>'+
+      '      <div style="%tbt.">%loc!Minor Sort!</div>'+
       '      <select id="%id.minorsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="minorsort" id="%id.minorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">Up</span><br>'+
-      '      <input type="radio" name="minorsort" id="%id.minorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">Down</span>'+
+      '      <input type="radio" name="minorsort" id="%id.minorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
+      '      <input type="radio" name="minorsort" id="%id.minorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:16px;">'+
       '    <table cellspacing="0" cellpadding="0"><tr>'+
       '     <td style="vertical-align:top;">'+
-      '      <div style="%tbt.">Last Sort</div>'+
+      '      <div style="%tbt.">%loc!Last Sort!</div>'+
       '      <select id="%id.lastsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="lastsort" id="%id.lastsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">Up</span><br>'+
-      '      <input type="radio" name="lastsort" id="%id.lastsortdown" value="down"><span style="font-size:x-small;color:#FFF;">Down</span>'+
+      '      <input type="radio" name="lastsort" id="%id.lastsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
+      '      <input type="radio" name="lastsort" id="%id.lastsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
@@ -751,12 +723,13 @@ SocialCalc.SpreadsheetControl = function() {
       view: "audit",
       onclick:
          function(s, t) {
+            var SCLoc = SocialCalc.LocalizeString;
             var i, j;
-            var str = '<table cellspacing="0" cellpadding="0" style="margin-bottom:10px;"><tr><td style="font-size:small;padding:6px;"><b>Audit Trail This Session:</b><br><br>';
+            var str = '<table cellspacing="0" cellpadding="0" style="margin-bottom:10px;"><tr><td style="font-size:small;padding:6px;"><b>'+SCLoc("Audit Trail This Session")+':</b><br><br>';
             var stack = s.sheet.changes.stack;
             var tos = s.sheet.changes.tos;
             for (i=0; i<stack.length; i++) {
-               if (i==tos+1) str += '<br></td></tr><tr><td style="font-size:small;background-color:#EEE;padding:6px;">UNDONE STEPS:<br>';
+               if (i==tos+1) str += '<br></td></tr><tr><td style="font-size:small;background-color:#EEE;padding:6px;">'+SCLoc("UNDONE STEPS")+':<br>';
                for (j=0; j<stack[i].command.length; j++) {
                   str += SocialCalc.special_chars(stack[i].command[j]) + "<br>";
                   }
@@ -780,7 +753,7 @@ SocialCalc.SpreadsheetControl = function() {
       '<table cellspacing="0" cellpadding="0"><tr><td>'+
       '<textarea id="%id.commenttext" style="font-size:small;height:32px;width:600px;overflow:auto;" onfocus="%s.CmdGotFocus(this);"></textarea>'+
       '</td><td style="vertical-align:top;">'+
-      '&nbsp;<input type="button" value="Save" onclick="%s.SpreadsheetControlCommentSet();" style="font-size:x-small;">'+
+      '&nbsp;<input type="button" value="%loc!Save!" onclick="%s.SpreadsheetControlCommentSet();" style="font-size:x-small;">'+
       '</td></tr></table>'+
       '</div>',
       view: "sheet",
@@ -795,29 +768,29 @@ SocialCalc.SpreadsheetControl = function() {
       '<div id="%id.namestools" style="display:none;">'+
       '  <table cellspacing="0" cellpadding="0"><tr>'+
       '   <td style="vertical-align:top;padding-right:24px;">'+
-      '    <div style="%tbt.">Existing Names</div>'+
+      '    <div style="%tbt.">%loc!Existing Names!</div>'+
       '    <select id="%id.nameslist" size="1" onchange="%s.SpreadsheetControlNamesChangedName();" onfocus="%s.CmdGotFocus(this);"><option selected>[New]</option></select>'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:6px;">'+
-      '    <div style="%tbt.">Name</div>'+
+      '    <div style="%tbt.">%loc!Name!</div>'+
       '    <input type="text" id="%id.namesname" style="font-size:x-small;width:75px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:6px;">'+
-      '    <div style="%tbt.">Description</div>'+
+      '    <div style="%tbt.">%loc!Description!</div>'+
       '    <input type="text" id="%id.namesdesc" style="font-size:x-small;width:150px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:6px;">'+
-      '    <div style="%tbt.">Value</div>'+
+      '    <div style="%tbt.">%loc!Value!</div>'+
       '    <input type="text" id="%id.namesvalue" width="16" style="font-size:x-small;width:100px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:12px;width:80px;">'+
-      '    <div style="%tbt.">Set Value To</div>'+
+      '   <td style="vertical-align:top;padding-right:12px;width:100px;">'+
+      '    <div style="%tbt.">%loc!Set Value To!</div>'+
       '    <input type="button" id="%id.namesrangeproposal" value="A1" onclick="%s.SpreadsheetControlNamesSetValue();" style="font-size:x-small;">'+
       '   </td>'+
       '   <td style="vertical-align:top;padding-right:6px;">'+
       '    <div style="%tbt.">&nbsp;</div>'+
-      '    <input type="button" value="Save" onclick="%s.SpreadsheetControlNamesSave();" style="font-size:x-small;">'+
-      '    <input type="button" value="Delete" onclick="%s.SpreadsheetControlNamesDelete()" style="font-size:x-small;">'+
+      '    <input type="button" value="%loc!Save!" onclick="%s.SpreadsheetControlNamesSave();" style="font-size:x-small;">'+
+      '    <input type="button" value="%loc!Delete!" onclick="%s.SpreadsheetControlNamesDelete()" style="font-size:x-small;">'+
       '   </td>'+
       '  </tr></table>'+
       '</div>',
@@ -846,13 +819,13 @@ SocialCalc.SpreadsheetControl = function() {
 
    this.views["clipboard"] = {name: "clipboard", divStyle: "overflow:auto;", html:
       ' <div style="font-size:x-small;padding:5px 0px 10px 0px;">'+
-      '  <b>Display Clipboard in:</b>'+
-      '  <input type="radio" id="%id.clipboardformat-tab" name="%id.clipboardformat" checked onclick="%s.SpreadsheetControlClipboardFormat(\'tab\');"> Tab-delimited format &nbsp;'+
-      '  <input type="radio" id="%id.clipboardformat-csv" name="%id.clipboardformat" onclick="%s.SpreadsheetControlClipboardFormat(\'csv\');"> CSV format &nbsp;'+
-      '  <input type="radio" id="%id.clipboardformat-scsave" name="%id.clipboardformat" onclick="%s.SpreadsheetControlClipboardFormat(\'scsave\');"> SocialCalc-save format'+
+      '  <b>%loc!Display Clipboard in!:</b>'+
+      '  <input type="radio" id="%id.clipboardformat-tab" name="%id.clipboardformat" checked onclick="%s.SpreadsheetControlClipboardFormat(\'tab\');"> %loc!Tab-delimited format! &nbsp;'+
+      '  <input type="radio" id="%id.clipboardformat-csv" name="%id.clipboardformat" onclick="%s.SpreadsheetControlClipboardFormat(\'csv\');"> %loc!CSV format! &nbsp;'+
+      '  <input type="radio" id="%id.clipboardformat-scsave" name="%id.clipboardformat" onclick="%s.SpreadsheetControlClipboardFormat(\'scsave\');"> %loc!SocialCalc-save format!'+
       ' </div>'+
-      ' <input type="button" value="Load SocialCalc Clipboard With This" style="font-size:x-small;" onclick="%s.SpreadsheetControlClipboardLoad();">&nbsp; '+
-      ' <input type="button" value="Clear SocialCalc Clipboard" style="font-size:x-small;" onclick="%s.SpreadsheetControlClipboardClear();">&nbsp; '+
+      ' <input type="button" value="%loc!Load SocialCalc Clipboard With This!" style="font-size:x-small;" onclick="%s.SpreadsheetControlClipboardLoad();">&nbsp; '+
+      ' <input type="button" value="%loc!Clear SocialCalc Clipboard!" style="font-size:x-small;" onclick="%s.SpreadsheetControlClipboardClear();">&nbsp; '+
       ' <br>'+
       ' <textarea id="%id.clipboardtext" style="font-size:small;height:350px;width:800px;overflow:auto;" onfocus="%s.CmdGotFocus(this);"></textarea>'
       };
@@ -906,6 +879,8 @@ SocialCalc.SpreadsheetControl.prototype.CreateSheetSave = function() {return thi
 SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, width, spacebelow) {
 
    var scc = SocialCalc.Constants;
+   var SCLoc = SocialCalc.LocalizeString;
+   var SCLocSS = SocialCalc.LocalizeSubstrings;
 
    var html, child, i, vname, v, style, button, bele;
    var tabs = spreadsheet.tabs;
@@ -948,7 +923,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
    for (i=0; i<tabs.length; i++) {
       html += '  <td id="%id.' + tabs[i].name + 'tab" style="' +
          (i==0 ? spreadsheet.tabselectedCSS : spreadsheet.tabplainCSS) +
-         '" onclick="%s.SetTab(this);">' + tabs[i].text + '</td>';
+         '" onclick="%s.SetTab(this);">' + SCLoc(tabs[i].text) + '</td>';
       }
 
    html += ' </tr></table></div></div>';
@@ -962,6 +937,9 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
    html = html.replace(/\%id\./g, spreadsheet.idPrefix);
    html = html.replace(/\%tbt\./g, spreadsheet.toolbartext);
    html = html.replace(/\%img\./g, spreadsheet.imagePrefix);
+
+   html = SCLocSS(html); // localize with %loc!string! and %scc!constant!
+
    spreadsheet.spreadsheetDiv.innerHTML = html;
 
    node.appendChild(spreadsheet.spreadsheetDiv);
@@ -1000,7 +978,7 @@ spreadsheet.Buttons = {
       bele = document.getElementById(spreadsheet.idPrefix+button);
       if (!bele) {alert("Button "+(spreadsheet.idPrefix+button)+" missing"); continue;}
       bele.style.border = "1px solid "+scc.ISCButtonBorderNormal;
-      SocialCalc.TooltipRegister(bele, spreadsheet.Buttons[button].tooltip, {});
+      SocialCalc.TooltipRegister(bele, SCLoc(spreadsheet.Buttons[button].tooltip), {});
       SocialCalc.ButtonRegister(bele,
          {normalstyle: "border:1px solid "+scc.ISCButtonBorderNormal+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
           hoverstyle: "border:1px solid "+scc.ISCButtonBorderHover+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
@@ -1023,7 +1001,7 @@ spreadsheet.Buttons = {
       bele.style.verticalAlign = "middle";
       bele.style.border = "1px solid #FFF";
       bele.style.marginLeft = "4px";
-      SocialCalc.TooltipRegister(bele, spreadsheet.formulabuttons[button].tooltip, {});
+      SocialCalc.TooltipRegister(bele, SCLoc(spreadsheet.formulabuttons[button].tooltip), {});
       SocialCalc.ButtonRegister(bele,
          {normalstyle: "border:1px solid #FFF;backgroundColor:#FFF;",
           hoverstyle: "border:1px solid #CCC;backgroundColor:#FFF;",
@@ -1065,6 +1043,8 @@ spreadsheet.Buttons = {
       v.style.width = spreadsheet.width + "px";
       v.style.height = spreadsheet.viewheight + "px";
 
+      html = SCLocSS(html); // localize with %loc!string!, etc.
+
       v.innerHTML = html;
       spreadsheet.spreadsheetDiv.appendChild(v);
       views[vname].element = v;
@@ -1086,6 +1066,64 @@ spreadsheet.Buttons = {
    // done - refresh screen needed
 
    return;
+
+   }
+
+//
+// outstr = SocialCalc.LocalizeString(str)
+//
+// SocialCalc function to make localization easier.
+// If str is "Text to localize", it returns
+// SocialCalc.Constants.s_loc_text_to_localize if
+// it exists, or else with just "Text to localize".
+// Note that spaces are replaced with "_" and other special
+// chars with "X" in the name of the constant (e.g., "A & B"
+// would look for SocialCalc.Constants.s_loc_a_X_b.
+//
+
+SocialCalc.LocalizeString = function(str) {
+   var cstr = SocialCalc.LocalizeStringList[str]; // found already this session?
+   if (!cstr) { // no - look up
+      cstr = SocialCalc.Constants["s_loc_"+str.toLowerCase().replace(/\s/g, "_").replace(/\W/g, "X")] || str;
+      SocialCalc.LocalizeStringList[str] = cstr;
+      }
+   return cstr;
+   }
+
+SocialCalc.LocalizeStringList = {}; // a list of strings to localize accumulated by the routine
+
+//
+// outstr = SocialCalc.LocalizeSubstrings(str)
+//
+// SocialCalc function to make localization easier using %loc and %scc.
+//
+// Replaces sections of str with:
+//    %loc!Text to localize!
+// with SocialCalc.Constants.s_loc_text_to_localize if
+// it exists, or else with just "Text to localize".
+// Note that spaces are replaced with "_" and other special
+// chars with "X" in the name of the constant (e.g., %loc!A & B!
+// would look for SocialCalc.Constants.s_loc_a_X_b.
+// Uses SocialCalc.LocalizeString for this.
+//
+// Replaces sections of str with:
+//    %ssc!constant-name!
+// with SocialCalc.Constants.constant-name.
+// If the constant doesn't exist, throws and alert.
+//
+
+SocialCalc.LocalizeSubstrings = function(str) {
+
+   var SCLoc = SocialCalc.LocalizeString;
+
+   return str.replace(/%(loc|ssc)!(.*?)!/g, function(a, t, c) {
+      if (t=="ssc") {
+         return SocialCalc.Constants[c] || alert("Missing constant: "+c);
+         }
+      else {
+         return SCLoc(c);
+         }
+      });
 
    }
 
@@ -1334,7 +1372,7 @@ SocialCalc.UpdateSortRangeProposal = function(editor) {
                             SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
       }
    else {
-      ele.options[0].text = "[select range]";
+      ele.options[0].text = SocialCalc.LocalizeString("[select range]");
       }
 
    }
@@ -1346,6 +1384,8 @@ SocialCalc.UpdateSortRangeProposal = function(editor) {
 //
 
 SocialCalc.LoadColumnChoosers = function(spreadsheet) {
+
+   var SCLoc = SocialCalc.LocalizeString;
 
    var sortrange, nrange, rparts, col, colname, sele, oldindex;
 
@@ -1366,16 +1406,16 @@ SocialCalc.LoadColumnChoosers = function(spreadsheet) {
    sele = document.getElementById(spreadsheet.idPrefix+"majorsort");
    oldindex = sele.selectedIndex;
    sele.options.length = 0;
-   sele.options[sele.options.length] = new Option("[none]", "");
+   sele.options[sele.options.length] = new Option(SCLoc("[None]"), "");
    for (var col=range.cr1.col; col<=range.cr2.col; col++) {
       colname = SocialCalc.rcColname(col);
-      sele.options[sele.options.length] = new Option("Column "+colname, colname);
+      sele.options[sele.options.length] = new Option(SCLoc("Column ")+colname, colname);
       }
    sele.selectedIndex = oldindex > 1 && oldindex <= (range.cr2.col-range.cr1.col+1) ? oldindex : 1; // restore what was there if reasonable
    sele = document.getElementById(spreadsheet.idPrefix+"minorsort");
    oldindex = sele.selectedIndex;
    sele.options.length = 0;
-   sele.options[sele.options.length] = new Option("[none]", "");
+   sele.options[sele.options.length] = new Option(SCLoc("[None]"), "");
    for (var col=range.cr1.col; col<=range.cr2.col; col++) {
       colname = SocialCalc.rcColname(col);
       sele.options[sele.options.length] = new Option(colname, colname);
@@ -1384,7 +1424,7 @@ SocialCalc.LoadColumnChoosers = function(spreadsheet) {
    sele = document.getElementById(spreadsheet.idPrefix+"lastsort");
    oldindex = sele.selectedIndex;
    sele.options.length = 0;
-   sele.options[sele.options.length] = new Option("[none]", "");
+   sele.options[sele.options.length] = new Option(SCLoc("[None]"), "");
    for (var col=range.cr1.col; col<=range.cr2.col; col++) {
       colname = SocialCalc.rcColname(col);
       sele.options[sele.options.length] = new Option(colname, colname);
@@ -1486,7 +1526,7 @@ SocialCalc.DoCmd = function(obj, which) {
             spreadsheet.sortrange = lele.options[lele.selectedIndex].value;
             }
          ele = document.getElementById(spreadsheet.idPrefix+"sortbutton");
-         ele.value = "Sort "+spreadsheet.sortrange;
+         ele.value = SocialCalc.LocalizeString("Sort ")+spreadsheet.sortrange;
          ele.style.visibility = "visible";
          SocialCalc.LoadColumnChoosers(spreadsheet);
          if (obj && obj.blur) obj.blur();
@@ -1635,6 +1675,8 @@ SocialCalc.SpreadsheetCmdSLookup = {
  'borderon': '1px solid rgb(0,0,0)',
  'borderoff': ''
  }
+
+/******* NO LONGER USED
 
 SocialCalc.SpreadsheetCmdTable = {
  cmd: [
@@ -1799,7 +1841,7 @@ SocialCalc.SpreadsheetCmdTable = {
    ]
   }
  }
-
+*********/
 
 //
 // SocialCalc.SpreadsheetControlExecuteCommand(obj, combostr, sstr)
@@ -1960,20 +2002,20 @@ SocialCalc.SpreadsheetControl.DoFunctionList = function() {
 
    scf.FillFunctionInfo();
 
-   str = '<table><tr><td><span style="font-size:x-small;font-weight:bold">Category</span><br>'+
+   str = '<table><tr><td><span style="font-size:x-small;font-weight:bold">%loc!Category!</span><br>'+
       '<select id="'+idp+'class" size="'+fcl.length+'" style="width:120px;" onchange="SocialCalc.SpreadsheetControl.FunctionClassChosen(this.options[this.selectedIndex].value);">';
    for (i=0; i<fcl.length; i++) {
       str += '<option value="'+fcl[i]+'"'+(i==0?' selected>':'>')+SocialCalc.special_chars(scf.FunctionClasses[fcl[i]].name)+'</option>';
       }
-   str += '</select></td><td>&nbsp;&nbsp;</td><td id="'+idp+'list"><span style="font-size:x-small;font-weight:bold">Functions</span><br>'+
+   str += '</select></td><td>&nbsp;&nbsp;</td><td id="'+idp+'list"><span style="font-size:x-small;font-weight:bold">%loc!Functions!</span><br>'+
       '<select id="'+idp+'name" size="'+fcl.length+'" style="width:240px;" '+
       'onchange="SocialCalc.SpreadsheetControl.FunctionChosen(this.options[this.selectedIndex].value);" ondblclick="SocialCalc.SpreadsheetControl.DoFunctionPaste();">';
    str += SocialCalc.SpreadsheetControl.GetFunctionNamesStr("all");
    str += '</td></tr><tr><td colspan="3">'+
           '<div id="'+idp+'desc" style="width:380px;height:80px;overflow:auto;font-size:x-small;">'+SocialCalc.SpreadsheetControl.GetFunctionInfoStr(scf.FunctionClasses[fcl[0]].items[0])+'</div>'+
           '<div style="width:380px;text-align:right;padding-top:6px;font-size:small;">'+
-          '<input type="button" value="Paste" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoFunctionPaste();">&nbsp;'+
-          '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideFunctions();"></div>'+
+          '<input type="button" value="%loc!Paste!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoFunctionPaste();">&nbsp;'+
+          '<input type="button" value="%loc!Cancel!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideFunctions();"></div>'+
           '</td></tr></table>';
 
    var main = document.createElement("div");
@@ -1991,10 +2033,14 @@ SocialCalc.SpreadsheetControl.DoFunctionList = function() {
 
    main.style.width = "400px";
 
-   main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
-      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Function List"+'</td>'+
+   str = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;%loc!Function List!"+'</td>'+
       '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideFunctions();">&nbsp;X&nbsp;</td></tr></table>'+
       '<div style="background-color:#DDD;">'+str+'</div>';
+
+   str = SocialCalc.LocalizeSubstrings(str);
+
+   main.innerHTML = str;
 
    SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
                   MouseUp: SocialCalc.DragFunctionPosition,
@@ -2115,6 +2161,8 @@ SocialCalc.SpreadsheetControl.DoFunctionPaste = function() {
 
 SocialCalc.SpreadsheetControl.DoMultiline = function() {
 
+   var SCLocSS = SocialCalc.LocalizeSubstrings;
+
    var str, ele, text;
 
    var scc = SocialCalc.Constants;
@@ -2149,10 +2197,10 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
 
    str = '<textarea id="'+idp+'textarea" style="width:380px;height:120px;margin:10px 0px 0px 6px;">'+text+'</textarea>'+
          '<div style="width:380px;text-align:right;padding:6px 0px 4px 6px;font-size:small;">'+
-         '<input type="button" value="Set Cell Contents" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilinePaste();">&nbsp;'+
-         '<input type="button" value="Clear" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilineClear();">&nbsp;'+
-         '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();"></div>'+
-         '</div>';
+         SCLocSS('<input type="button" value="%loc!Set Cell Contents!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilinePaste();">&nbsp;'+
+         '<input type="button" value="%loc!Clear!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoMultilineClear();">&nbsp;'+
+         '<input type="button" value="%loc!Cancel!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();"></div>'+
+         '</div>');
 
    var main = document.createElement("div");
    main.id = idp+"dialog";
@@ -2170,7 +2218,8 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
    main.style.width = "400px";
 
    main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
-      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Multi-line Input Box"+'</td>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+
+      SCLocSS("&nbsp;%loc!Multi-line Input Box!")+'</td>'+
       '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();">&nbsp;X&nbsp;</td></tr></table>'+
       '<div style="background-color:#DDD;">'+str+'</div>';
 
@@ -2265,6 +2314,8 @@ SocialCalc.SpreadsheetControl.DoMultilinePaste = function() {
 
 SocialCalc.SpreadsheetControl.DoLink = function() {
 
+   var SCLoc = SocialCalc.LocalizeString;
+
    var str, ele, text, cell, setformat, popup;
 
    var scc = SocialCalc.Constants;
@@ -2314,26 +2365,26 @@ SocialCalc.SpreadsheetControl.DoLink = function() {
    popup = parts.newwin ? " checked" : "";
 
    str = '<div style="padding:6px 0px 4px 6px;">'+
-         '<span style="font-size:smaller;">Description</span><br>'+
+         '<span style="font-size:smaller;">'+SCLoc("Description")+'</span><br>'+
          '<input type="text" id="'+idp+'desc" style="width:380px;" value="'+SocialCalc.special_chars(parts.desc)+'"><br>'+
-         '<span style="font-size:smaller;">URL</span><br>'+
+         '<span style="font-size:smaller;">'+SCLoc("URL")+'</span><br>'+
          '<input type="text" id="'+idp+'url" style="width:380px;" value="'+SocialCalc.special_chars(parts.url)+'"><br>';
    if (SocialCalc.Callbacks.MakePageLink) { // only show if handling pagenames here
-      str += '<span style="font-size:smaller;">Page Name</span><br>'+
+      str += '<span style="font-size:smaller;">'+SCLoc("Page Name")+'</span><br>'+
              '<input type="text" id="'+idp+'pagename" style="width:380px;" value="'+SocialCalc.special_chars(parts.pagename)+'"><br>'+
-             '<span style="font-size:smaller;">Workspace</span><br>'+
+             '<span style="font-size:smaller;">'+SCLoc("Workspace")+'</span><br>'+
              '<input type="text" id="'+idp+'workspace" style="width:380px;" value="'+SocialCalc.special_chars(parts.workspace)+'"><br>';
       }
-   str +='<input type="checkbox" id="'+idp+'format"'+setformat+'>&nbsp;'+
-         '<span style="font-size:smaller;">Set to Link format</span><br>'+
+   str += SocialCalc.LocalizeSubstrings('<input type="checkbox" id="'+idp+'format"'+setformat+'>&nbsp;'+
+         '<span style="font-size:smaller;">%loc!Set to Link format!</span><br>'+
          '<input type="checkbox" id="'+idp+'popup"'+popup+'>&nbsp;'+
-         '<span style="font-size:smaller;">Show in new browser window</span>'+
+         '<span style="font-size:smaller;">%loc!Show in new browser window!</span>'+
          '</div>'+
          '<div style="width:380px;text-align:right;padding:6px 0px 4px 6px;font-size:small;">'+
-         '<input type="button" value="Set Cell Contents" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkPaste();">&nbsp;'+
-         '<input type="button" value="Clear" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkClear();">&nbsp;'+
-         '<input type="button" value="Cancel" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideLink();"></div>'+
-         '</div>';
+         '<input type="button" value="%loc!Set Cell Contents!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkPaste();">&nbsp;'+
+         '<input type="button" value="%loc!Clear!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.DoLinkClear();">&nbsp;'+
+         '<input type="button" value="%loc!Cancel!" style="font-size:smaller;" onclick="SocialCalc.SpreadsheetControl.HideLink();"></div>'+
+         '</div>');
 
    var main = document.createElement("div");
    main.id = idp+"dialog";
@@ -2351,7 +2402,7 @@ SocialCalc.SpreadsheetControl.DoLink = function() {
    main.style.width = "400px";
 
    main.innerHTML = '<table cellspacing="0" cellpadding="0" style="border-bottom:1px solid black;"><tr>'+
-      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;Link Input Box"+'</td>'+
+      '<td style="font-size:10px;cursor:default;width:100%;background-color:#999;color:#FFF;">'+"&nbsp;"+SCLoc("Link Input Box")+'</td>'+
       '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideLink();">&nbsp;X&nbsp;</td></tr></table>'+
       '<div style="background-color:#DDD;">'+str+'</div>';
 
@@ -2441,7 +2492,7 @@ SocialCalc.SpreadsheetControl.DoLinkPaste = function() {
 
    if (pagenameele && pagenameele.value) {
       if (workspaceele.value) {
-         text = descele.value+"{"+workspaceele.value+obsym+pagenameele.value+cbsym+"]}";
+         text = descele.value+"{"+workspaceele.value+obsym+pagenameele.value+cbsym+"}";
          }
       else {
          text = descele.value+obsym+pagenameele.value+cbsym;
@@ -2541,7 +2592,7 @@ SocialCalc.SpreadsheetControlSortOnclick = function(s, t) {
       }
    namelist.sort();
    nl.length = 0;
-   nl.options[0] = new Option("[select range]");
+   nl.options[0] = new Option(SocialCalc.LocalizeString("[select range]"));
    for (i=0; i<namelist.length; i++) {
       name = namelist[i];
       nl.options[i+1] = new Option(name, name);
@@ -2598,7 +2649,7 @@ SocialCalc.SpreadsheetControlSortLoad = function(editor, setting, line, flags) {
    spreadsheet.sortrange = SocialCalc.decodeFromSave(parts[1]);
    ele = document.getElementById(spreadsheet.idPrefix+"sortbutton");
    if (spreadsheet.sortrange) {
-      ele.value = "Sort "+spreadsheet.sortrange;
+      ele.value = SocialCalc.LocalizeString("Sort ")+spreadsheet.sortrange;
       ele.style.visibility = "visible";
       }
    else {
@@ -2678,6 +2729,7 @@ SocialCalc.SpreadsheetControlNamesOnclick = function(s, t) {
    }
 
 SocialCalc.SpreadsheetControlNamesFillNameList = function() {
+   var SCLoc = SocialCalc.LocalizeString;
    var name, i;
    var namelist = [];
    var s=SocialCalc.GetSpreadsheetControlObject();
@@ -2689,10 +2741,10 @@ SocialCalc.SpreadsheetControlNamesFillNameList = function() {
    namelist.sort();
    nl.length = 0;
    if (namelist.length > 0) {
-      nl.options[0] = new Option("[New]");
+      nl.options[0] = new Option(SCLoc("[New]"));
       }
    else {
-      nl.options[0] = new Option("[None]");
+      nl.options[0] = new Option(SCLoc("[None]"));
       }
    for (i=0; i<namelist.length; i++) {
       name = namelist[i];
@@ -3194,6 +3246,7 @@ SocialCalc.SettingsControls.PopupListInitialize = function(panelobj, ctrlname) {
    var i, val, pos, otext;
    var sc = SocialCalc.SettingsControls;
    var initialdata = panelobj[ctrlname].initialdata || sc.Controls[panelobj[ctrlname].type].InitialData || "";
+   initialdata = SocialCalc.LocalizeSubstrings(initialdata);
    var optionvals = initialdata.split(/\|/);
 
    var options = [];
@@ -3208,11 +3261,11 @@ SocialCalc.SettingsControls.PopupListInitialize = function(panelobj, ctrlname) {
 
          }
       otext = SocialCalc.special_chars(otext);
-      if (otext == "Custom") {
-         options[i] = {o: otext, v: val.substring(pos+1), a:{custom: true}};
+      if (otext == "[custom]") {
+         options[i] = {o: SocialCalc.Constants.s_PopupListCustom, v: val.substring(pos+1), a:{custom: true}};
          }
       else if (otext == "[cancel]") {
-         options[i] = {o: "[Cancel]", v: "", a:{cancel: true}};
+         options[i] = {o: SocialCalc.Constants.s_PopupListCancel, v: "", a:{cancel: true}};
          }
       else if (otext == "[break]") {
          options[i] = {o: "-----", v: "", a:{skip: true}};

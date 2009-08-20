@@ -913,6 +913,8 @@ SocialCalc.EditorStepDone = function() {
 
 SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
 
+   var scc = SocialCalc.Constants;
+
    var sstr, progress, coord, circ, r, c, cell, sum, ele;
 
    progress = "";
@@ -926,19 +928,19 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
          params.command = true;
          document.body.style.cursor = "progress";
          editor.griddiv.style.cursor = "progress";
-         progress = "Executing...";
+         progress = scc.s_statusline_executing;
          break;
       case "cmdend":
          params.command = false;
          break;
       case "schedrender":
-         progress = "Displaying...";
+         progress = scc.s_statusline_displaying;
          break;
       case "renderdone":
          progress = " ";
          break;
       case "schedposcalc":
-         progress = "Displaying...";
+         progress = scc.s_statusline_displaying;
          break;
       case "cmdendnorender":
       case "doneposcalc":
@@ -946,22 +948,22 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
          editor.griddiv.style.cursor = "default";
          break;
       case "calcorder":
-         progress = "Ordering..."+Math.floor(100*arg.count/(arg.total||1))+"%";
+         progress = scc.s_statusline_ordering+Math.floor(100*arg.count/(arg.total||1))+"%";
          break;
       case "calcstep":
-         progress = "Calculating..."+Math.floor(100*arg.count/(arg.total||1))+"%";
+         progress = scc.s_statusline_calculating+Math.floor(100*arg.count/(arg.total||1))+"%";
          break;
       case "calcloading":
-         progress = "Calculating... Loading Sheet: "+arg.sheetname;
+         progress = scc.s_statusline_calculatingls+": "+arg.sheetname;
          break;
       case "calcserverfunc":
-         progress = "Calculating..."+Math.floor(100*arg.count/(arg.total||1))+"%, doing server function "+arg.funcname+" in cell "+arg.coord;
+         progress = scc.s_statusline_calculating+Math.floor(100*arg.count/(arg.total||1))+"%, "+scc.s_statusline_doingserverfunc+arg.funcname+scc.s_statusline_incell+arg.coord;
          break;
       case "calcstart":
          params.calculating = true;
          document.body.style.cursor = "progress";
          editor.griddiv.style.cursor = "progress"; // griddiv has an explicit cursor style
-         progress = "Calculation start...";
+         progress = scc.s_statusline_calcstart;
          break;
       case "calccheckdone":
          break;
@@ -974,7 +976,7 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
       }
 
    if (!progress && params.calculating) {
-      progress = "Calculating...";
+      progress = scc.s_statusline_calculating;
       }
 
    // if there is a range, calculate sum (not during busy times)
@@ -996,18 +998,18 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
       coord = SocialCalc.crToCoord(editor.range.left, editor.range.top) + ":" +
          SocialCalc.crToCoord(editor.range.right, editor.range.bottom);
       progress = coord + " (" + (editor.range.right-editor.range.left+1) + "x" + (editor.range.bottom-editor.range.top+1) +
-                 ") SUM=" + sum + " " + progress;
+                 ") "+scc.s_statusline_sum+"=" + sum + " " + progress;
       }
    sstr = editor.ecell.coord+" &nbsp; "+progress;
 
    if (!params.calculating && editor.context.sheetobj.attribs.needsrecalc=="yes") {
-      sstr += ' &nbsp; <span style="color:#999;">(Recalc needed)</span>';
+      sstr += ' &nbsp; '+scc.s_statusline_recalcneeded;
       }
 
    circ = editor.context.sheetobj.attribs.circularreferencecell;
    if (circ) {
       circ = circ.replace(/\|/, " referenced by ");
-      sstr += ' &nbsp; <span style="color:red;">Circular reference: ' + circ + '</span>';
+      sstr += ' &nbsp; '+scc.s_statusline_circref + circ + '</span>';
       }
 
    return sstr;
@@ -2067,16 +2069,16 @@ SocialCalc.MoveECell = function(editor, newcell) {
    editor.UpdateCellCSS(cell, editor.ecell.row, editor.ecell.col);
    editor.SetECellHeaders("selected");
 
+   for (f in editor.StatusCallback) { // let status line, etc., know
+      editor.StatusCallback[f].func(editor, "moveecell", newcell, editor.StatusCallback[f].params);
+      }
+
    if (editor.busy) {
       editor.ensureecell = true; // wait for when not busy
       }
    else {
       editor.ensureecell = false;
       editor.EnsureECellVisible();
-      }
-
-   for (f in editor.StatusCallback) {
-      editor.StatusCallback[f].func(editor, "moveecell", newcell, editor.StatusCallback[f].params);
       }
 
    return newcell;

@@ -67,6 +67,11 @@
 
    SocialCalc.Popup.imagePrefix = "images/sc-"; // image prefix
 
+   // Override this for localization
+
+   SocialCalc.Popup.LocalizeString = function(str) {return str;};
+
+
 // * * * * * * * * * * * * * * * *
 //
 // GENERAL ROUTINES
@@ -678,6 +683,8 @@ SocialCalc.Popup.Types.List.MakeList = function(type, id) {
 
 SocialCalc.Popup.Types.List.MakeCustom = function(type, id) {
 
+   var SPLoc = SocialCalc.Popup.LocalizeString;
+
    var i, ele, o, bg;
 
    var sp = SocialCalc.Popup;
@@ -694,9 +701,9 @@ SocialCalc.Popup.Types.List.MakeCustom = function(type, id) {
 
    str = '<div style="white-space:nowrap;"><br>'+
          '<input id="customvalue" value="'+val+'"><br><br>'+
-         '<input '+style+' type="button" value="OK" onclick="SocialCalc.Popup.Types.List.CustomOK(\''+id+'\');return false;">'+
-         '<input '+style+' type="button" value="List" onclick="SocialCalc.Popup.Types.List.CustomToList(\''+id+'\');">'+
-         '<input '+style+' type="button" value="Cancel" onclick="SocialCalc.Popup.Close();">'+
+         '<input '+style+' type="button" value="'+SPLoc("OK")+'" onclick="SocialCalc.Popup.Types.List.CustomOK(\''+id+'\');return false;">'+
+         '<input '+style+' type="button" value="'+SPLoc("List")+'" onclick="SocialCalc.Popup.Types.List.CustomToList(\''+id+'\');">'+
+         '<input '+style+' type="button" value="'+SPLoc("Cancel")+'" onclick="SocialCalc.Popup.Close();">'+
          '<br></div>';
 
    return str;
@@ -1017,14 +1024,16 @@ SocialCalc.Popup.Types.ColorChooser.MakeCustom = function(type, id) {
    var spc = sp.Controls;
    var spcdata = spc[id].data;
 
+   var SPLoc = sp.LocalizeString;
+
    var style = 'style="font-size:smaller;"';
 
    var str = "";
 
    str = '<div style="white-space:nowrap;"><br>'+
          '#<input id="customvalue" style="width:75px;" value="'+spcdata.value+'"><br><br>'+
-         '<input '+style+' type="button" value="OK" onclick="SocialCalc.Popup.Types.ColorChooser.CustomOK(\''+id+'\');return false;">'+
-         '<input '+style+' type="button" value="Grid" onclick="SocialCalc.Popup.Types.ColorChooser.CustomToGrid(\''+id+'\');">'+
+         '<input '+style+' type="button" value="'+SPLoc("OK")+'" onclick="SocialCalc.Popup.Types.ColorChooser.CustomOK(\''+id+'\');return false;">'+
+         '<input '+style+' type="button" value="'+SPLoc("Grid")+'" onclick="SocialCalc.Popup.Types.ColorChooser.CustomToGrid(\''+id+'\');">'+
          '<br></div>';
 
    return str;
@@ -1105,6 +1114,7 @@ SocialCalc.Popup.Types.ColorChooser.CreateGrid = function (type, id) {
    var sp = SocialCalc.Popup;
    var spt = sp.Types;
    var spc = sp.Controls;
+   var SPLoc = sp.LocalizeString;
    var spcdata = spc[id].data;
    spcdata.grid = {};
    var grid = spcdata.grid;
@@ -1148,9 +1158,9 @@ SocialCalc.Popup.Types.ColorChooser.CreateGrid = function (type, id) {
    ele = document.createElement("div");
    ele.style.marginTop = "3px";
    ele.innerHTML = '<table cellspacing="0" cellpadding="0"><tr>'+
-      '<td style="width:17px;background-color:#FFF;background-image:url('+sp.imagePrefix+'defaultcolor.gif);height:16px;font-size:10px;cursor:pointer;" title="Default">&nbsp;</td>'+
-      '<td style="width:23px;height:16px;font-size:10px;text-align:center;cursor:pointer;" title="Custom">#</td>'+
-      '<td style="width:60px;height:16px;font-size:10px;text-align:center;cursor:pointer;">OK</td>'+
+      '<td style="width:17px;background-color:#FFF;background-image:url('+sp.imagePrefix+'defaultcolor.gif);height:16px;font-size:10px;cursor:pointer;" title="'+SPLoc("Default")+'">&nbsp;</td>'+
+      '<td style="width:23px;height:16px;font-size:10px;text-align:center;cursor:pointer;" title="'+SPLoc("Custom")+'">#</td>'+
+      '<td style="width:60px;height:16px;font-size:10px;text-align:center;cursor:pointer;">'+SPLoc("OK")+'</td>'+
       '</tr></table>';
    grid.defaultbox = ele.firstChild.firstChild.firstChild.childNodes[0];
    grid.defaultbox.onclick = spt.ColorChooser.DefaultClicked;
@@ -1307,7 +1317,8 @@ SocialCalc.Popup.Types.ColorChooser.GridMouseDown = function(e) {
    var gpos = SocialCalc.GetElementPosition(grid.table);
    var row = Math.floor((clientY-gpos.top)/10);
    var col = Math.floor((clientX-gpos.left)/20);
-
+   row = row < 0 ? 0 : (row > 15 ? 15 : row);
+   col = col < 0 ? 0 : (col > 4 ? 4 : col);
    var color = sptc.gridToG(grid,row,col).ele.style.backgroundColor;
    var newrgb = sp.splitRGB(color);
    var oldrgb = sp.splitRGB(spcdata.value);

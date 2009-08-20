@@ -2577,7 +2577,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             }
          else if (what == "delete") {
             if (saveundo) {
-               if (sheet.names[name].desc) changes.AddUndo("name define "+name+" "+sheet.names[name].desc);
+               if (sheet.names[name].desc) changes.AddUndo("name desc "+name+" "+sheet.names[name].desc);
                changes.AddUndo("name define "+name+" "+sheet.names[name].definition);
                }
             delete sheet.names[name];

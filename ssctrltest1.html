@@ -38,6 +38,7 @@ body
 <input class="hide" type="button" value="New Copy" onclick="newcopy();" class="smaller">
 <input class="hide" type="button" value="Sum" onclick="dosum();" class="smaller">
 <input class="hide" type="button" value="Sum2" onclick="dosum2();" class="smaller">
+<input type="button" value="Loc Constants" onclick="doLocConstants();" class="smaller">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">
@@ -88,6 +89,8 @@ function addmsg(msg, clear) {
    scc.ISCButtonBorderHover = "#99"+b4+"";
    scc.ISCButtonBorderDown = "#FFF";
    scc.ISCButtonDownBackground = "#88"+b5+"";
+
+   SocialCalc.Popup.LocalizeString = SocialCalc.LocalizeString; // needed for localization
 
    var spreadsheet = new SocialCalc.SpreadsheetControl();
    var savestr = document.getElementById("savestr");
@@ -312,6 +315,30 @@ function dosum2() {
    editor.EditorAddToInput(cmd, "=");
 
   }
+
+function doLocConstants() {
+
+   var str = "";
+   var cname, i, ctname, cval;
+   var cnames = [];
+   for (cname in SocialCalc.LocalizeStringList) {
+      cnames.push(cname);
+      }
+   cnames.sort();
+   for (i=0; i<cnames.length; i++) {
+      cname = cnames[i];
+      ctname = "s_loc_"+cname.toLowerCase().replace(/\s/g, "_").replace(/\W/g, "X");
+      cval = SocialCalc.Constants[ctname];
+//      str += ctname + ": ";
+//      str += '"' + SocialCalc.LocalizeStringList[cname] + '",\n';
+      if (!cval) {
+         str += ctname + ': "' + cname + '",\n';
+         }
+      }
+   if (!str) str = "All constants were pre-defined.";
+   addmsg(str);
+   alert(str);
+   }
 
 </script>
 </body>

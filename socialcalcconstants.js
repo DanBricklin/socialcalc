@@ -3,7 +3,7 @@
 // The module of the SocialCalc package with customizable constants, strings, etc.
 // This is where most of the common localizations are done.
 //
-// (c) Copyright 2008 Socialtext, Inc.
+// (c) Copyright 2008, 2009 Socialtext, Inc.
 // All Rights Reserved.
 //
 // The contents of this file are subject to the Artistic License 2.0; you may not
@@ -34,6 +34,8 @@ if (!SocialCalc) SocialCalc = {};
 
 // *************************************
 //
+// TO LEARN HOW TO LOCALIZE OR CUSTOMIZE SOCIALCALC, PLEASE READ THIS:
+//
 // The constants are all properties of the SocialCalc.Constants object.
 // They are grouped here by what they are for, which module uses them, etc.
 //
@@ -49,10 +51,18 @@ if (!SocialCalc) SocialCalc = {};
 // The exceptions are:
 //    TooltipOffsetX and TooltipOffsetY, as described with their definitions.
 //
+// SocialCalc IS NOT DESIGNED FOR USE WITH A TRANSLATION FUNCTION each time a string
+// is used. Instead, language translations may be done by modifying this object.
+//
 // To customize SocialCalc, you may either replace this file with a modified version
 // or you can overwrite the values before use. An example would be to
 // iterate over all the properties looking for names that start with "s_" and
-// use some other mechanism to obtain a localized string.
+// use some other mechanism to obtain a localized string and replace the values
+// here with those translated values.
+//
+// There is also a function, SocialCalc.ConstantsSetClasses, that may be used
+// to easily switch SocialCalc from using explicit CSS styles for many things
+// to using CSS classes. See the function, below, for more information.
 //
 // *************************************
 
@@ -177,6 +187,20 @@ SocialCalc.Constants = {
    defaultTableControlThickness: 20, // the short size for the scrollbars, etc. (numeric in pixels)
    cteGriddivClass: "", // if present, the class for the TableEditor griddiv element
 
+   //** SocialCalc.EditorGetStatuslineString -- strings shown on status line
+
+   s_statusline_executing: "Executing...",
+   s_statusline_displaying: "Displaying...",
+   s_statusline_ordering: "Ordering...",
+   s_statusline_calculating: "Calculating...",
+   s_statusline_calculatingls: "Calculating... Loading Sheet...",
+   s_statusline_doingserverfunc: "doing server function ",
+   s_statusline_incell: " in cell ",
+   s_statusline_calcstart: "Calculation start...",
+   s_statusline_sum: "SUM",
+   s_statusline_recalcneeded: '<span style="color:#999;">(Recalc needed)</span>',
+   s_statusline_circref: '<span style="color:red;">Circular reference: ',
+
    //** SocialCalc.InputBoxDisplayCellContents
 
    s_inputboxdisplaymultilinetext: "[Multi-line text: Click icon on right to edit]",
@@ -288,12 +312,198 @@ SocialCalc.Constants = {
    SCStatuslineheight: 20, // in pixels
    SCStatuslineCSS: "font-size:10px;padding:3px 0px;",
 
+   // Constants for default Format tab (settings)
+   //
+   // *** EVEN THOUGH THESE DON'T START WITH s_: ***
+   //
+   // These should be carefully checked for localization. Make sure you understand what they do and how they work!
+   // The first part of "first:second|first:second|..." is what is displayed and the second is the value to be used.
+   // The value is normally not translated -- only the displayed part. The [cancel], [break], etc., are not translated --
+   // they are commands to SocialCalc.SettingsControls.PopupListInitialize 
+
+   SCFormatNumberFormats: "[cancel]:|[break]:|%loc!Default!:|[custom]:|%loc!Automatic!:general|%loc!Auto w/ commas!:[,]General|[break]:|"+
+            "00:00|000:000|0000:0000|00000:00000|[break]:|%loc!Formula!:formula|%loc!Hidden!:hidden|[newcol]:"+
+            "1234:0|1,234:#,##0|1,234.5:#,##0.0|1,234.56:#,##0.00|1,234.567:#,##0.000|1,234.5678:#,##0.0000|"+
+            "[break]:|1,234%:#,##0%|1,234.5%:#,##0.0%|1,234.56%:#,##0.00%|"+
+            "[newcol]:|$1,234:$#,##0|$1,234.5:$#,##0.0|$1,234.56:$#,##0.00|[break]:|"+
+            "(1,234):#,##0_);(#,##0)|(1,234.5):#,##0.0_);(#,##0.0)|(1,234.56):#,##0.00_);(#,##0.00)|[break]:|"+
+            "($1,234):#,##0_);($#,##0)|($1,234.5):$#,##0.0_);($#,##0.0)|($1,234.56):$#,##0.00_);($#,##0.00)|"+
+            "[newcol]:|1/4/06:m/d/yy|01/04/2006:mm/dd/yyyy|2006-01-04:yyyy-mm-dd|4-Jan-06:d-mmm-yy|04-Jan-2006:dd-mmm-yyyy|January 4, 2006:mmmm d, yyyy|"+
+            "[break]:|1\\c23:h:mm|1\\c23 PM:h:mm AM/PM|1\\c23\\c45:h:mm:ss|01\\c23\\c45:hh:mm:ss|26\\c23 (h\\cm):[hh]:mm|69\\c45 (m\\cs):[mm]:ss|69 (s):[ss]|"+
+            "[newcol]:|2006-01-04 01\\c23\\c45:yyyy-mm-dd hh:mm:ss|January 4, 2006:mmmm d, yyyy hh:mm:ss|Wed:ddd|Wednesday:dddd|",
+   SCFormatTextFormats: "[cancel]:|[break]:|%loc!Default!:|[custom]:|%loc!Automatic!:general|%loc!Plain Text!:text-plain|"+
+            "HTML:text-html|%loc!Link!:text-link|%loc!Formula!:formula|%loc!Hidden!:hidden|",
+   SCFormatPadsizes: "[cancel]:|[break]:|%loc!Default!:|[custom]:|%loc!No padding!:0px|"+
+            "[newcol]:|1 pixel:1px|2 pixels:2px|3 pixels:3px|4 pixels:4px|5 pixels:5px|"+
+            "6 pixels:6px|7 pixels:7px|8 pixels:8px|[newcol]:|9 pixels:9px|10 pixels:10px|11 pixels:11px|"+
+            "12 pixels:12px|13 pixels:13px|14 pixels:14px|16 pixels:16px|"+
+            "18 pixels:18px|[newcol]:|20 pixels:20px|22 pixels:22px|24 pixels:24px|28 pixels:28px|36 pixels:36px|",
+   SCFormatFontsizes: "[cancel]:|[break]:|%loc!Default!:|[custom]:|X-Small:x-small|Small:small|Medium:medium|Large:large|X-Large:x-large|"+
+                  "[newcol]:|6pt:6pt|7pt:7pt|8pt:8pt|9pt:9pt|10pt:10pt|11pt:11pt|12pt:12pt|14pt:14pt|16pt:16pt|"+
+                  "[newcol]:|18pt:18pt|20pt:20pt|22pt:22pt|24pt:24pt|28pt:28pt|36pt:36pt|48pt:48pt|72pt:72pt|"+
+                  "[newcol]:|8 pixels:8px|9 pixels:9px|10 pixels:10px|11 pixels:11px|"+
+                  "12 pixels:12px|13 pixels:13px|14 pixels:14px|[newcol]:|16 pixels:16px|"+
+                  "18 pixels:18px|20 pixels:20px|22 pixels:22px|24 pixels:24px|28 pixels:28px|36 pixels:36px|",
+   SCFormatFontfamilies: "[cancel]:|[break]:|%loc!Default!:|[custom]:|Verdana:Verdana,Arial,Helvetica,sans-serif|"+
+                  "Arial:arial,helvetica,sans-serif|Courier:'Courier New',Courier,monospace|",
+   SCFormatFontlook: "[cancel]:|[break]:|%loc!Default!:|%loc!Normal!:normal normal|%loc!Bold!:normal bold|%loc!Italic!:italic normal|"+
+                  "%loc!Bold Italic!:italic bold",
+   SCFormatTextAlignhoriz:  "[cancel]:|[break]:|%loc!Default!:|%loc!Left!:left|%loc!Center!:center|%loc!Right!:right|",
+   SCFormatNumberAlignhoriz:  "[cancel]:|[break]:|%loc!Default!:|%loc!Left!:left|%loc!Center!:center|%loc!Right!:right|",
+   SCFormatAlignVertical: "[cancel]:|[break]:|%loc!Default!:|%loc!Top!:top|%loc!Middle!:middle|%loc!Bottom!:bottom|",
+   SCFormatColwidth: "[cancel]:|[break]:|%loc!Default!:|[custom]:|[newcol]:|"+
+                  "20 pixels:20|40:40|60:60|80:80|100:100|120:120|140:140|160:160|"+
+                  "[newcol]:|180 pixels:180|200:200|220:220|240:240|260:260|280:280|300:300|",
+   SCFormatRecalc: "[cancel]:|[break]:|%loc!Auto!:|%loc!Manual!:off|",
+
    //*** SocialCalc.InitializeSpreadsheetControl
 
    ISCButtonBorderNormal: "#404040",
    ISCButtonBorderHover: "#999",
    ISCButtonBorderDown: "#FFF",
    ISCButtonDownBackground: "#888",
+
+   //*** SocialCalc.SettingsControls.PopupListInitialize
+
+   s_PopupListCancel: "[Cancel]",
+   s_PopupListCustom: "Custom",
+
+   // ***
+   //
+   // s_loc_ constants accessed by SocialCalc.LocalizeString and SocialCalc.LocalizeSubstrings
+   //
+   // Used extensively by socialcalcspreadsheetcontrol.js
+   //
+   // ***
+
+   s_loc_align_center: "Align Center",
+   s_loc_align_left: "Align Left",
+   s_loc_align_right: "Align Right",
+   s_loc_alignment: "Alignment",
+   s_loc_audit: "Audit",
+   s_loc_audit_trail_this_session: "Audit Trail This Session",
+   s_loc_auto: "Auto",
+   s_loc_auto_sum: "Auto Sum",
+   s_loc_auto_wX_commas: "Auto w/ commas",
+   s_loc_automatic: "Automatic",
+   s_loc_background: "Background",
+   s_loc_bold: "Bold",
+   s_loc_bold_XampX_italics: "Bold &amp; Italics",
+   s_loc_bold_italic: "Bold Italic",
+   s_loc_borders: "Borders",
+   s_loc_borders_off: "Borders Off",
+   s_loc_borders_on: "Borders On",
+   s_loc_bottom: "Bottom",
+   s_loc_bottom_border: "Bottom Border",
+   s_loc_cell_settings: "CELL SETTINGS",
+   s_loc_csv_format: "CSV format",
+   s_loc_cancel: "Cancel",
+   s_loc_category: "Category",
+   s_loc_center: "Center",
+   s_loc_clear: "Clear",
+   s_loc_clear_socialcalc_clipboard: "Clear SocialCalc Clipboard",
+   s_loc_clipboard: "Clipboard",
+   s_loc_color: "Color",
+   s_loc_column_: "Column ",
+   s_loc_comment: "Comment",
+   s_loc_copy: "Copy",
+   s_loc_custom: "Custom",
+   s_loc_cut: "Cut",
+   s_loc_default: "Default",
+   s_loc_default_alignment: "Default Alignment",
+   s_loc_default_column_width: "Default Column Width",
+   s_loc_default_font: "Default Font",
+   s_loc_default_format: "Default Format",
+   s_loc_default_padding: "Default Padding",
+   s_loc_delete: "Delete",
+   s_loc_delete_column: "Delete Column",
+   s_loc_delete_contents: "Delete Contents",
+   s_loc_delete_row: "Delete Row",
+   s_loc_description: "Description",
+   s_loc_display_clipboard_in: "Display Clipboard in",
+   s_loc_down: "Down",
+   s_loc_edit: "Edit",
+   s_loc_existing_names: "Existing Names",
+   s_loc_family: "Family",
+   s_loc_fill_down: "Fill Down",
+   s_loc_fill_right: "Fill Right",
+   s_loc_font: "Font",
+   s_loc_format: "Format",
+   s_loc_formula: "Formula",
+   s_loc_function_list: "Function List",
+   s_loc_functions: "Functions",
+   s_loc_grid: "Grid",
+   s_loc_hidden: "Hidden",
+   s_loc_horizontal: "Horizontal",
+   s_loc_insert_column: "Insert Column",
+   s_loc_insert_row: "Insert Row",
+   s_loc_italic: "Italic",
+   s_loc_last_sort: "Last Sort",
+   s_loc_left: "Left",
+   s_loc_left_border: "Left Border",
+   s_loc_link: "Link",
+   s_loc_link_input_box: "Link Input Box",
+   s_loc_list: "List",
+   s_loc_load_socialcalc_clipboard_with_this: "Load SocialCalc Clipboard With This",
+   s_loc_major_sort: "Major Sort",
+   s_loc_manual: "Manual",
+   s_loc_merge_cells: "Merge Cells",
+   s_loc_middle: "Middle",
+   s_loc_minor_sort: "Minor Sort",
+   s_loc_move_insert: "Move Insert",
+   s_loc_move_paste: "Move Paste",
+   s_loc_multiXline_input_box: "Multi-line Input Box",
+   s_loc_name: "Name",
+   s_loc_names: "Names",
+   s_loc_no_padding: "No padding",
+   s_loc_normal: "Normal",
+   s_loc_number: "Number",
+   s_loc_number_horizontal: "Number Horizontal",
+   s_loc_ok: "OK",
+   s_loc_padding: "Padding",
+   s_loc_page_name: "Page Name",
+   s_loc_paste: "Paste",
+   s_loc_paste_formats: "Paste Formats",
+   s_loc_plain_text: "Plain Text",
+   s_loc_recalc: "Recalc",
+   s_loc_recalculation: "Recalculation",
+   s_loc_redo: "Redo",
+   s_loc_right: "Right",
+   s_loc_right_border: "Right Border",
+   s_loc_sheet_settings: "SHEET SETTINGS",
+   s_loc_save: "Save",
+   s_loc_save_to: "Save to",
+   s_loc_set_cell_contents: "Set Cell Contents",
+   s_loc_set_cells_to_sort: "Set Cells To Sort",
+   s_loc_set_value_to: "Set Value To",
+   s_loc_set_to_link_format: "Set to Link format",
+   s_loc_setXclear_move_from: "Set/Clear Move From",
+   s_loc_show_cell_settings: "Show Cell Settings",
+   s_loc_show_sheet_settings: "Show Sheet Settings",
+   s_loc_show_in_new_browser_window: "Show in new browser window",
+   s_loc_size: "Size",
+   s_loc_socialcalcXsave_format: "SocialCalc-save format",
+   s_loc_sort: "Sort",
+   s_loc_sort_: "Sort ",
+   s_loc_sort_cells: "Sort Cells",
+   s_loc_swap_colors: "Swap Colors",
+   s_loc_tabXdelimited_format: "Tab-delimited format",
+   s_loc_text: "Text",
+   s_loc_text_horizontal: "Text Horizontal",
+   s_loc_this_is_aXbrXsample: "This is a<br>sample",
+   s_loc_top: "Top",
+   s_loc_top_border: "Top Border",
+   s_loc_undone_steps: "UNDONE STEPS",
+   s_loc_url: "URL",
+   s_loc_undo: "Undo",
+   s_loc_unmerge_cells: "Unmerge Cells",
+   s_loc_up: "Up",
+   s_loc_value: "Value",
+   s_loc_vertical: "Vertical",
+   s_loc_workspace: "Workspace",
+   s_loc_XnewX: "[New]",
+   s_loc_XnoneX: "[None]",
+   s_loc_Xselect_rangeX: "[select range]",
 
 //
 // SocialCalc Format Number module, formatnumber2.js:
