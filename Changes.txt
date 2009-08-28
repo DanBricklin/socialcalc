@@ -587,6 +587,9 @@ Added SocialCalc.LocalizeString and SocialCalc.LocalizeSubstrings to socialcalcs
 Made use of LocalizeString and LocalizeSubstrings in socialcalcspreadsheetcontrol.js, ssctrltest1.html, OLPC code, etc.
 This should finish the main localization enablement of SocialCalc in JavaScript.
 
+2009-08-27:
+Removed extra " in SocialCalcServersideUtilities.pm that was messing up spans, etc.
+
 
 TO DO:
 

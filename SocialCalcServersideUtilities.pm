@@ -1047,7 +1047,7 @@ sub RenderCell {
    $outstr .= "<td";
 
    if ($tagstr) {
-      $outstr .= qq! $tagstr"!;
+      $outstr .= qq! $tagstr!;
       }
 
    if ($classstr) {
