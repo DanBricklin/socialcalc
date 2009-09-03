@@ -311,8 +311,9 @@ SocialCalc.Sheet.prototype.GetAssuredCell = function(coord) {
    };
 SocialCalc.Sheet.prototype.ParseSheetSave = function(savedsheet) {SocialCalc.ParseSheetSave(savedsheet,this);};
 SocialCalc.Sheet.prototype.CellFromStringParts = function(cell, parts, j) {return SocialCalc.CellFromStringParts(this, cell, parts, j);};
-SocialCalc.Sheet.prototype.CreateSheetSave = function(range) {return SocialCalc.CreateSheetSave(this, range);};
+SocialCalc.Sheet.prototype.CreateSheetSave = function(range, canonicalize) {return SocialCalc.CreateSheetSave(this, range, canonicalize);};
 SocialCalc.Sheet.prototype.CellToString = function(cell) {return SocialCalc.CellToString(this, cell);};
+SocialCalc.Sheet.prototype.CanonicalizeSheet = function(full) {return SocialCalc.CanonicalizeSheet(this, full);};
 SocialCalc.Sheet.prototype.EncodeCellAttributes = function(coord) {return SocialCalc.EncodeCellAttributes(this, coord);};
 SocialCalc.Sheet.prototype.EncodeSheetAttributes = function() {return SocialCalc.EncodeSheetAttributes(this);};
 SocialCalc.Sheet.prototype.DecodeCellAttributes = function(coord, attribs, range) {return SocialCalc.DecodeCellAttributes(this, coord, attribs, range);};
@@ -695,35 +696,40 @@ SocialCalc.CellFromStringParts = function(sheet, cell, parts, j) {
    }
 
 
-SocialCalc.sheetfields = ["lastcol", "lastrow", "defaultcolwidth", "defaultrowheight",
-                   "defaulttextformat", "defaultnontextformat", "defaulttextvalueformat", "defaultnontextvalueformat",
-                   "defaultlayout", "defaultfont", "defaultcolor", "defaultbgcolor",
-                   "circularreferencecell", "recalc", "needsrecalc"];
-SocialCalc.sheetfieldsshort = ["c", "r", "w", "h",
-                   "tf", "ntf", "tvf", "ntvf",
-                   "layout", "font", "color", "bgcolor",
-                   "circularreferencecell", "recalc", "needsrecalc"];
+SocialCalc.sheetfields = ["defaultrowheight", "defaultcolwidth", "circularreferencecell", "recalc", "needsrecalc"];
+SocialCalc.sheetfieldsshort = ["h", "w", "circularreferencecell", "recalc", "needsrecalc"];
+
+SocialCalc.sheetfieldsxlat = ["defaulttextformat", "defaultnontextformat",
+                              "defaulttextvalueformat", "defaultnontextvalueformat",
+                              "defaultcolor", "defaultbgcolor", "defaultfont", "defaultlayout"];
+SocialCalc.sheetfieldsxlatshort = ["tf", "ntf", "tvf", "ntvf", "color", "bgcolor", "font", "layout"];
+SocialCalc.sheetfieldsxlatxlt = ["cellformat", "cellformat", "valueformat", "valueformat",
+                                  "color", "color", "font", "layout"];
 
 //
-// sheetstr = SocialCalc.CreateSheetSave(sheetobj, range)
+// sheetstr = SocialCalc.CreateSheetSave(sheetobj, range, canonicalize)
 //
 // Creates a text representation of the sheetobj data.
 // If the range is present then only those cells are saved
 // (as clipboard data with "copiedfrom" set).
 //
 
-SocialCalc.CreateSheetSave = function(sheetobj, range) {
+SocialCalc.CreateSheetSave = function(sheetobj, range, canonicalize) {
 
    var cell, cr1, cr2, row, col, coord, attrib, line, value, formula, i, t, r, b, l, name, blanklen;
    var result=[];
 
    var prange;
+
+   sheetobj.CanonicalizeSheet(canonicalize || SocialCalc.Constants.doCanonicalizeSheet);
+   var xlt = sheetobj.xlt;
+
    if (range) {
       prange = SocialCalc.ParseRange(range);
       }
    else {
       prange = {cr1: {row: 1, col:1},
-                cr2: {row: sheetobj.attribs.lastrow, col: sheetobj.attribs.lastcol}};
+                cr2: {row: xlt.maxrow, col: xlt.maxcol}};
       }
    cr1 = prange.cr1;
    cr2 = prange.cr2;
@@ -742,7 +748,7 @@ SocialCalc.CreateSheetSave = function(sheetobj, range) {
          }
       }
 
-   for (col=1; col <= sheetobj.attribs.lastcol; col++) {
+   for (col=1; col <= xlt.maxcol; col++) {
       coord = SocialCalc.rcColname(col);
       if (sheetobj.colattribs.width[coord])
          result.push("col:"+coord+":w:"+sheetobj.colattribs.width[coord]);
@@ -750,48 +756,55 @@ SocialCalc.CreateSheetSave = function(sheetobj, range) {
          result.push("col:"+coord+":hide:"+sheetobj.colattribs.hide[coord]);
       }
 
-   for (row=1; row <= sheetobj.attribs.lastrow; row++) {
+   for (row=1; row <= xlt.maxrow; row++) {
       if (sheetobj.rowattribs.height[row])
          result.push("row:"+row+":h:"+sheetobj.rowattribs.height[row]);
       if (sheetobj.rowattribs.hide[row])
          result.push("row:"+row+":hide:"+sheetobj.rowattribs.hide[row]);
       }
 
-   line="sheet";
-   for (i=0; i<SocialCalc.sheetfields.length; i++) {
+   line="sheet:c:"+xlt.maxcol+":r:"+xlt.maxrow;
+
+   for (i=0; i<SocialCalc.sheetfields.length; i++) { // non-xlated values
       value = SocialCalc.encodeForSave(sheetobj.attribs[SocialCalc.sheetfields[i]]);
       if (value) line+=":"+SocialCalc.sheetfieldsshort[i]+":"+value;
       }
+   for (i=0; i<SocialCalc.sheetfieldsxlat.length; i++) { // xlated values
+      value = sheetobj.attribs[SocialCalc.sheetfieldsxlat[i]];
+      if (value) line+=":"+SocialCalc.sheetfieldsxlatshort[i]+":"+xlt[SocialCalc.sheetfieldsxlatxlt[i]+"sxlat"][value];
+      }
+
    result.push(line);
 
-   for (name in sheetobj.names) {
+   for (i=1;i<xlt.newborderstyles.length;i++) {
+      result.push("border:"+i+":"+xlt.newborderstyles[i]);
+      }
+
+   for (i=1;i<xlt.newcellformats.length;i++) {
+      result.push("cellformat:"+i+":"+SocialCalc.encodeForSave(xlt.newcellformats[i]));
+      }
+
+   for (i=1;i<xlt.newcolors.length;i++) {
+      result.push("color:"+i+":"+xlt.newcolors[i]);
+      }
+
+   for (i=1;i<xlt.newfonts.length;i++) {
+      result.push("font:"+i+":"+xlt.newfonts[i]);
+      }
+
+   for (i=1;i<xlt.newlayouts.length;i++) {
+      result.push("layout:"+i+":"+xlt.newlayouts[i]);
+      }
+
+   for (i=1;i<xlt.newvalueformats.length;i++) {
+      result.push("valueformat:"+i+":"+SocialCalc.encodeForSave(xlt.newvalueformats[i]));
+      }
+
+   for (i=0; i<xlt.namesorder.length; i++) {
+      name = xlt.namesorder[i];
       result.push("name:"+SocialCalc.encodeForSave(name).toUpperCase()+":"+
                    SocialCalc.encodeForSave(sheetobj.names[name].desc)+":"+
                    SocialCalc.encodeForSave(sheetobj.names[name].definition));
-      }
-
-   for (i=1;i<sheetobj.layouts.length;i++) {
-      result.push("layout:"+i+":"+sheetobj.layouts[i]);
-      }
-
-   for (i=1;i<sheetobj.fonts.length;i++) {
-      result.push("font:"+i+":"+sheetobj.fonts[i]);
-      }
-
-   for (i=1;i<sheetobj.colors.length;i++) {
-      result.push("color:"+i+":"+sheetobj.colors[i]);
-      }
-
-   for (i=1;i<sheetobj.borderstyles.length;i++) {
-      result.push("border:"+i+":"+sheetobj.borderstyles[i]);
-      }
-
-   for (i=1;i<sheetobj.cellformats.length;i++) {
-      result.push("cellformat:"+i+":"+SocialCalc.encodeForSave(sheetobj.cellformats[i]));
-      }
-
-   for (i=1;i<sheetobj.valueformats.length;i++) {
-      result.push("valueformat:"+i+":"+SocialCalc.encodeForSave(sheetobj.valueformats[i]));
       }
 
    if (range) {
@@ -800,6 +813,8 @@ SocialCalc.CreateSheetSave = function(sheetobj, range) {
       }
 
    result.push(""); // one extra to get extra \n
+
+   delete sheetobj.xlt; // clean up
 
    return result.join("\n");
    }
@@ -810,7 +825,7 @@ SocialCalc.CreateSheetSave = function(sheetobj, range) {
 
 SocialCalc.CellToString = function(sheet, cell) {
 
-   var cell, line, value, formula, t, r, b, l;
+   var cell, line, value, formula, t, r, b, l, xlt;
 
    line = "";
 
@@ -842,15 +857,30 @@ SocialCalc.CellToString = function(sheet, cell) {
    r = cell.br || "";
    b = cell.bb || "";
    l = cell.bl || "";
-   if (t || r || b || l)
+
+   if (sheet.xlt) { // if have canonical save info
+      xlt = sheet.xlt;
+      if (t || r || b || l)
+      line += ":b:"+xlt.borderstylesxlat[t||0]+":"+xlt.borderstylesxlat[r||0]+":"+xlt.borderstylesxlat[b||0]+":"+xlt.borderstylesxlat[l||0];
+      if (cell.layout) line += ":l:"+xlt.layoutsxlat[cell.layout];
+      if (cell.font) line += ":f:"+xlt.fontsxlat[cell.font];
+      if (cell.color) line += ":c:"+xlt.colorsxlat[cell.color];
+      if (cell.bgcolor) line += ":bg:"+xlt.colorsxlat[cell.bgcolor];
+      if (cell.cellformat) line += ":cf:"+xlt.cellformatsxlat[cell.cellformat];
+      if (cell.textvalueformat) line += ":tvf:"+xlt.valueformatsxlat[cell.textvalueformat];
+      if (cell.nontextvalueformat) line += ":ntvf:"+xlt.valueformatsxlat[cell.nontextvalueformat];
+      }
+   else {
+      if (t || r || b || l)
       line += ":b:"+t+":"+r+":"+b+":"+l;
-   if (cell.layout) line += ":l:"+cell.layout;
-   if (cell.font) line += ":f:"+cell.font;
-   if (cell.color) line += ":c:"+cell.color;
-   if (cell.bgcolor) line += ":bg:"+cell.bgcolor;
-   if (cell.cellformat) line += ":cf:"+cell.cellformat;
-   if (cell.textvalueformat) line += ":tvf:"+cell.textvalueformat;
-   if (cell.nontextvalueformat) line += ":ntvf:"+cell.nontextvalueformat;
+      if (cell.layout) line += ":l:"+cell.layout;
+      if (cell.font) line += ":f:"+cell.font;
+      if (cell.color) line += ":c:"+cell.color;
+      if (cell.bgcolor) line += ":bg:"+cell.bgcolor;
+      if (cell.cellformat) line += ":cf:"+cell.cellformat;
+      if (cell.textvalueformat) line += ":tvf:"+cell.textvalueformat;
+      if (cell.nontextvalueformat) line += ":ntvf:"+cell.nontextvalueformat;
+      }
    if (cell.colspan) line += ":colspan:"+cell.colspan;
    if (cell.rowspan) line += ":rowspan:"+cell.rowspan;
    if (cell.cssc) line += ":cssc:"+cell.cssc;
@@ -859,6 +889,186 @@ SocialCalc.CellToString = function(sheet, cell) {
    if (cell.comment) line += ":comment:"+SocialCalc.encodeForSave(cell.comment);
 
    return line;
+
+   }
+
+//
+// SocialCalc.CanonicalizeSheet(sheetobj, full)
+//
+// Goes through the sheet and fills in sheetobj.xlt with the following:
+//
+//   .maxrow, .maxcol - lastrow and lastcol are as small as possible
+//   .newlayouts - new version of sheetobj.layouts without unused ones and all in ascending order
+//   .layoutsxlat - maps old layouts index to new one
+//   same ".new" and ".xlat" for fonts, colors, borderstyles, cell and value formats
+//   .namesorder - array with names sorted
+//
+// If full or SocialCalc.Constants.doCanonicalizeSheet are not true, then the values will leave things unchanged (to save time, etc.)
+//
+// sheetobj.xlt should be deleted when you are finished using it
+//
+
+SocialCalc.CanonicalizeSheet = function(sheetobj, full) {
+
+   var l, coord, cr, cell, filled, an, a, newa, newxlat, used, ahash, i, v;
+   var maxrow = 0;
+   var maxcol = 0;
+   var alist = ["borderstyle", "cellformat", "color", "font", "layout", "valueformat"];
+
+   var xlt = {};
+
+   xlt.namesorder = []; // always return a sorted list
+   for (a in sheetobj.names) {
+      xlt.namesorder.push(a);
+      }
+   xlt.namesorder.sort();
+
+   if (!SocialCalc.Constants.doCanonicalizeSheet || !full) { // return make-no-changes values if not wanted
+      for (an=0; an<alist.length; an++) {
+         a = alist[an];
+         xlt["new"+a+"s"] = sheetobj[a+"s"];
+         l = sheetobj[a+"s"].length;
+         newxlat = new Array(l);
+         newxlat[0] = "";
+         for (i=1; i<l; i++) {
+            newxlat[i] = i;
+            }
+         xlt[a+"sxlat"] = newxlat;
+         }
+
+      xlt.maxrow = sheetobj.attribs.lastrow;
+      xlt.maxcol = sheetobj.attribs.lastcol;
+
+      sheetobj.xlt = xlt;
+
+      return;
+      }
+
+   for (an=0; an<alist.length; an++) {
+      a = alist[an];
+      xlt[a+"sUsed"] = {};
+      }
+
+   var colorsUsed = xlt.colorsUsed;
+   var borderstylesUsed = xlt.borderstylesUsed;
+   var fontsUsed = xlt.fontsUsed;
+   var layoutsUsed = xlt.layoutsUsed;
+   var cellformatsUsed = xlt.cellformatsUsed;
+   var valueformatsUsed = xlt.valueformatsUsed;
+
+   for (coord in sheetobj.cells) { // check all cells to see which values are used
+      cr = SocialCalc.coordToCr(coord);
+      cell = sheetobj.cells[coord];
+      filled = false;
+
+      if (cell.valuetype && cell.valuetype!="b") filled = true;
+
+      if (cell.color) {
+         colorsUsed[cell.color] = 1;
+         filled = true;
+         }
+
+      if (cell.bgcolor) {
+         colorsUsed[cell.bgcolor] = 1;
+         filled = true;
+         }
+
+      if (cell.bt) {
+         borderstylesUsed[cell.bt] = 1;
+         filled = true;
+         }
+      if (cell.br) {
+         borderstylesUsed[cell.br] = 1;
+         filled = true;
+         }
+      if (cell.bb) {
+         borderstylesUsed[cell.bb] = 1;
+         filled = true;
+         }
+      if (cell.bl) {
+         borderstylesUsed[cell.bl] = 1;
+         filled = true;
+         }
+
+      if (cell.layout) {
+         layoutsUsed[cell.layout] = 1;
+         filled = true;
+         }
+
+      if (cell.font) {
+         fontsUsed[cell.font] = 1;
+         filled = true;
+         }
+
+      if (cell.cellformat) {
+         cellformatsUsed[cell.cellformat] = 1;
+         filled = true;
+         }
+
+      if (cell.textvalueformat) {
+         valueformatsUsed[cell.textvalueformat] = 1;
+         filled = true;
+         }
+
+      if (cell.nontextvalueformat) {
+         valueformatsUsed[cell.nontextvalueformat] = 1;
+         filled = true;
+         }
+
+      if (filled) {
+         if (cr.row > maxrow) maxrow = cr.row;
+         if (cr.col > maxcol) maxcol = cr.col;
+         }
+      }
+
+   for (i=0; i<SocialCalc.sheetfieldsxlat.length; i++) { // do sheet values, too
+      v = sheetobj.attribs[SocialCalc.sheetfieldsxlat[i]];
+      if (v) {
+         xlt[SocialCalc.sheetfieldsxlatxlt[i]+"sUsed"][v] = 1;
+         }
+      }
+
+   a = {"height": 1, "hide": 1}; // look at explicit row settings
+   for (v in a) {
+      for (cr in sheetobj.rowattribs[v]) {
+         if (cr > maxrow) maxrow = cr;
+         }
+      }
+   a = {"hide": 1, "width": 1}; // look at explicit col settings
+   for (v in a) {
+      for (coord in sheetobj.colattribs[v]) {
+         cr = SocialCalc.coordToCr(coord+"1");
+         if (cr.col > maxcol) maxcol = cr.col;
+         }
+      }
+
+   for (an=0; an<alist.length; an++) { // go through the attribs we want
+      a = alist[an];
+
+      newa = [];
+      used = xlt[a+"sUsed"];
+      for (v in used) {
+         newa.push(sheetobj[a+"s"][v]);
+         }
+      newa.sort();
+      newa.unshift("");
+
+      newxlat = [""];
+      ahash = sheetobj[a+"hash"];
+
+      for (i=1; i<newa.length; i++) {
+         newxlat[ahash[newa[i]]] = i;
+         }
+
+      xlt[a+"sxlat"] = newxlat;
+      xlt["new"+a+"s"] = newa;
+
+      }
+
+   xlt.maxrow = maxrow || 1;
+   xlt.maxcol = maxcol || 1;
+
+   sheetobj.xlt = xlt; // leave for use by caller
 
    }
 

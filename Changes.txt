@@ -590,6 +590,11 @@ This should finish the main localization enablement of SocialCalc in JavaScript.
 2009-08-27:
 Removed extra " in SocialCalcServersideUtilities.pm that was messing up spans, etc.
 
+2009-09-03:
+Put in SocialCalc.CanonicalizeSheet to do a pass before save to minimize sheet extents, remove unused items from
+saved lists and alphabetize them. The saved data is upwards and downwards compatible.
+Added SocialCalc.Constants.doCanonicalizeSheet to turn this off.
+
 
 TO DO:
 

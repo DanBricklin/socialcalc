@@ -96,6 +96,10 @@ SocialCalc.Constants = {
 
    s_cfspUnknownCellType: "Unknown cell type item",
 
+   //*** SocialCalc.CanonicalizeSheet
+
+   doCanonicalizeSheet: true, // if true, do the canonicalization calculations
+
    //*** ExecuteSheetCommand
 
    s_escUnknownSheetCmd: "Unknown sheet command: ",

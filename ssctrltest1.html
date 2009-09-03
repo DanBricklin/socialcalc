@@ -39,6 +39,11 @@ body
 <input class="hide" type="button" value="Sum" onclick="dosum();" class="smaller">
 <input class="hide" type="button" value="Sum2" onclick="dosum2();" class="smaller">
 <input type="button" value="Loc Constants" onclick="doLocConstants();" class="smaller">
+<input type="button" value="Canonicalize" onclick="var t=new Date();var i;for(i=0;i<1;i++){spreadsheet.sheet.CanonicalizeSheet(true);}addmsg(((new Date()-t)/1000));" class="smaller">
+<input type="button" value="Canonical Save" onclick="alert(spreadsheet.sheet.CreateSheetSave(null,true));" class="smaller">
+<input type="button" value="Time Canonicalize" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.sheet.CanonicalizeSheet(true);}addmsg(((new Date()-t)/1000));" class="smaller">
+<input type="button" value="Time Save" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.CreateSpreadsheetSave();}addmsg(((new Date()-t)/1000));" class="smaller">
+<input type="button" value="Time C-Save" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.sheet.CreateSheetSave(null,true);}addmsg(((new Date()-t)/1000));" class="smaller">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">
