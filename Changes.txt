@@ -595,6 +595,9 @@ Put in SocialCalc.CanonicalizeSheet to do a pass before save to minimize sheet e
 saved lists and alphabetize them. The saved data is upwards and downwards compatible.
 Added SocialCalc.Constants.doCanonicalizeSheet to turn this off.
 
+2009-09-09:
+Added sampleWidth, sampleHeight, backgroundImage, backgroundImageDefault, and backgroundImageDisabled to color chooser attribs.
+
 
 TO DO:
 

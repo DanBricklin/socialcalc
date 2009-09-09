@@ -839,7 +839,12 @@ SocialCalc.Popup.Types.List.Cancel = function(type, id) {
 // attribs: {
 //    title: "popup title string",
 //    moveable: t/f,
-//    width: optional width, e.g., "100px",
+//    width: optional width, e.g., "100px", of popup chooser
+//    sampleWidth: optional width, e.g., "20px",
+//    sampleHeight: optional height, e.g., "20px",
+//    backgroundImage: optional background image for sample (transparent where want to show current color), e.g., "colorbg.gif"
+//    backgroundImageDefault: optional background image for sample when default (transparent shows white)
+//    backgroundImageDisabled: optional background image for sample when disabled (transparent shows gray)
 //    changedcallback: optional function(attribs, id, newvalue),
 //    ...
 //    }
@@ -865,6 +870,8 @@ SocialCalc.Popup.Types.ColorChooser.Create = function(type, id, attribs) {
    var spcdata = spcid.data;
 
    spcdata.attribs = attribs || {};
+   var spca = spcdata.attribs;
+
    spcdata.value = "";
 
    var ele = document.getElementById(id);
@@ -872,18 +879,21 @@ SocialCalc.Popup.Types.ColorChooser.Create = function(type, id, attribs) {
 
    spcdata.mainele = ele;
 
-   ele.innerHTML = '<div style="cursor:pointer;border:1px solid black;vertical-align:top;width:15px;height:15px;" onclick="SocialCalc.Popup.Types.ColorChooser.ControlClicked(\''+id+'\');">&nbsp;</div>';
+   ele.innerHTML = '<div style="cursor:pointer;border:1px solid black;vertical-align:top;width:'+
+                   (spca.sampleWidth || '15px')+';height:'+(spca.sampleHeight || '15px')+
+                   ';" onclick="SocialCalc.Popup.Types.ColorChooser.ControlClicked(\''+id+'\');">&nbsp;</div>';
 
    }
 
 SocialCalc.Popup.Types.ColorChooser.SetValue = function(type, id, value) {
 
-   var i;
+   var i, img, pos;
 
    var sp = SocialCalc.Popup;
    var spt = sp.Types;
    var spc = sp.Controls;
    var spcdata = spc[id].data;
+   var spca = spcdata.attribs;
 
    spcdata.value = value;
    spcdata.custom = false;
@@ -891,12 +901,27 @@ SocialCalc.Popup.Types.ColorChooser.SetValue = function(type, id, value) {
    if (spcdata.mainele && spcdata.mainele.firstChild) {
       if (spcdata.value) {
          spcdata.mainele.firstChild.style.backgroundColor = spcdata.value;
-         spcdata.mainele.firstChild.style.backgroundImage = "";
+         if (spca.backgroundImage) {
+            img = "url("+sp.imagePrefix+spca.backgroundImage+")";
+            }
+         else {
+            img = "";
+            }
+         pos = "center center";
          }
       else {
          spcdata.mainele.firstChild.style.backgroundColor = "#FFF";
-         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"defaultcolor.gif)";
+         if (spca.backgroundImageDefault) {
+            img = "url("+sp.imagePrefix+spca.backgroundImageDefault+")";
+            pos = "center center";
+            }
+         else {
+            img = "url("+sp.imagePrefix+"defaultcolor.gif)";
+            pos = "left top";
+            }
          }
+      spcdata.mainele.firstChild.style.backgroundPosition = pos;
+      spcdata.mainele.firstChild.style.backgroundImage = img;
       }
 
    }
@@ -910,13 +935,23 @@ SocialCalc.Popup.Types.ColorChooser.SetDisabled = function(type, id, disabled) {
    var spt = sp.Types;
    var spc = sp.Controls;
    var spcdata = spc[id].data;
+   var spca = spcdata.attribs;
 
    spcdata.disabled = disabled;
 
    if (spcdata.mainele && spcdata.mainele.firstChild) {
       if (disabled) {
          spcdata.mainele.firstChild.style.backgroundColor = "#DDD";
-         spcdata.mainele.firstChild.style.backgroundImage = "url("+sp.imagePrefix+"defaultcolor.gif)";
+         if (spca.backgroundImageDisabled) {
+            img = "url("+sp.imagePrefix+spca.backgroundImageDisabled+")";
+            pos = "center center";
+            }
+         else {
+            img = "url("+sp.imagePrefix+"defaultcolor.gif)";
+            pos = "left top";
+            }
+         spcdata.mainele.firstChild.style.backgroundPosition = pos;
+         spcdata.mainele.firstChild.style.backgroundImage = img;
          }
       else {
          sp.SetValue(id, spcdata.value);
