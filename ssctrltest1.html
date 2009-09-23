@@ -44,6 +44,7 @@ body
 <input type="button" value="Time Canonicalize" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.sheet.CanonicalizeSheet(true);}addmsg(((new Date()-t)/1000));" class="smaller">
 <input type="button" value="Time Save" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.CreateSpreadsheetSave();}addmsg(((new Date()-t)/1000));" class="smaller">
 <input type="button" value="Time C-Save" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.sheet.CreateSheetSave(null,true);}addmsg(((new Date()-t)/1000));" class="smaller">
+<input type="button" value="Time Encode" onclick="var t=new Date();var i;for(i=0;i<100;i++){spreadsheet.sheet.EncodeCellAttributes(spreadsheet.editor.ecell.coord);}addmsg(((new Date()-t)/1000));" class="smaller">
 <textarea id="savestr" style="display:none;"></textarea>
 <input type="hidden" name="newstr" id="newdata" value="">
 <input type="hidden" name="pagename" value="$pagename">

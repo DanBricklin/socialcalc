@@ -346,6 +346,96 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
    }
 
 //
+// SocialCalc.Popup.EnsurePosition(id, container)
+//
+// Utility function to make sure popup is positioned completely within container (both element objects)
+// and appropriate with respect to the main element controlling the popup.
+//
+
+SocialCalc.Popup.EnsurePosition = function(id, container) {
+
+   var sp = SocialCalc.Popup;
+   var spc = sp.Controls;
+   var spcdata = spc[id].data;
+
+   var main = spcdata.mainele.firstChild;
+   if (!main) {alert("No main popup element firstChild.");return};
+   var popup = spcdata.popupele;
+
+   function GetLayoutValues(ele) {
+      var r = SocialCalc.GetElementPositionWithScroll(ele);
+      r.height = ele.offsetHeight;
+      r.width = ele.offsetWidth;
+      r.bottom = r.top+r.height;
+      r.right = r.left+r.width;
+      return r;
+      }
+
+   var p = GetLayoutValues(popup);
+   var c = GetLayoutValues(container);
+   var m = GetLayoutValues(main);
+   var t = 0; // type of placement
+//addmsg("popup t/r/b/l/h/w= "+p.top+"/"+p.right+"/"+p.bottom+"/"+p.left+"/"+p.height+"/"+p.width);
+//addmsg("container t/r/b/l/h/w= "+c.top+"/"+c.right+"/"+c.bottom+"/"+c.left+"/"+c.height+"/"+c.width);
+//addmsg("main t/r/b/l/h/w= "+m.top+"/"+m.right+"/"+m.bottom+"/"+m.left+"/"+m.height+"/"+m.width);
+
+   // Check various layout cases in priority order
+
+   if (m.bottom+p.height < c.bottom && m.left+p.width < c.right) { // normal case: room on bottom and right
+      popup.style.top = m.bottom + "px";
+      popup.style.left = m.left + "px";
+      t = 1;
+      }
+
+   else if (m.top-p.height > c.top && m.left+p.width < c.right) { // room on top and right
+      popup.style.top = (m.top-p.height) + "px";
+      popup.style.left = m.left + "px";
+      t = 2;
+      }
+
+   else if (m.bottom+p.height < c.bottom && m.right-p.width > c.left) { // room on bottom and left
+      popup.style.top = m.bottom + "px";
+      popup.style.left = (m.right-p.width) + "px";
+      t = 3;
+      }
+
+   else if (m.top-p.height > c.top && m.right-p.width > c.left) { // room on top and left
+      popup.style.top = (m.top-p.height) + "px";
+      popup.style.left = (m.right-p.width) + "px";
+      t = 4;
+      }
+
+   else if (m.bottom+p.height < c.bottom && p.width < c.width) { // room on bottom and middle
+      popup.style.top = m.bottom + "px";
+      popup.style.left = (c.left+Math.floor((c.width-p.width)/2)) + "px";
+      t = 5;
+      }
+
+   else if (m.top-p.height > c.top && p.width < c.width) { // room on top and middle
+      popup.style.top = (m.top-p.height) + "px";
+      popup.style.left = (c.left+Math.floor((c.width-p.width)/2)) + "px";
+      t = 6;
+      }
+
+   else if (p.height < c.height && m.right+p.width < c.right) { // room on middle and right
+      popup.style.top = (c.top+Math.floor((c.height-p.height)/2)) + "px";
+      popup.style.left = m.right + "px";
+      t = 7;
+      }
+
+   else if (p.height < c.height && m.left-p.width > c.left) { // room on middle and left
+      popup.style.top = (c.top+Math.floor((c.height-p.height)/2)) + "px";
+      popup.style.left = (m.left-p.width) + "px";
+      t = 8;
+      }
+
+   else { // nothing works, so leave as it is
+      }
+//addmsg("Popup layout "+t);
+
+}
+
+//
 // ele = SocialCalc.Popup.DestroyPopupDiv(ele, dragregistered)
 //
 // Utility function to get rid of the main popup div.
@@ -442,6 +532,7 @@ SocialCalc.Popup.splitRGB = function(rgb) {
 //    title: "popup title string",
 //    moveable: t/f,
 //    width: optional width, e.g., "100px",
+//    ensureWithin: optional element object to ensure popup fits within if possible
 //    changedcallback: optional function(attribs, id, newvalue),
 //    ...
 //    }
@@ -613,8 +704,6 @@ SocialCalc.Popup.Types.List.Show = function(type, id) {
       spcdata.customele = ele.firstChild.firstChild.childNodes[1];
       spcdata.listdiv = null;
       spcdata.contentele = ele;
-
-      spcdata.popupele.appendChild(ele);
       }
    else {
       str = SocialCalc.Popup.Types.List.MakeList(type, id);
@@ -625,12 +714,16 @@ SocialCalc.Popup.Types.List.Show = function(type, id) {
       spcdata.customele = null;
       spcdata.listdiv = ele.firstChild;
       spcdata.contentele = ele;
-
-      spcdata.popupele.appendChild(ele);
       }
 
    if (spcdata.mainele && spcdata.mainele.firstChild) {
       spcdata.mainele.firstChild.disabled = true;
+      }
+
+   spcdata.popupele.appendChild(ele);
+
+   if (spcdata.attribs.ensureWithin) {
+      SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
       }
 
    }
@@ -730,6 +823,9 @@ SocialCalc.Popup.Types.List.ItemClicked = function(id, num) {
       spcdata.listdiv = null;
       spcdata.contentele = nele;
       spcdata.popupele.replaceChild(nele, oele);
+      if (spcdata.attribs.ensureWithin) {
+         SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
+         }
       return;
       }
 
@@ -762,6 +858,9 @@ SocialCalc.Popup.Types.List.CustomToList = function(id) {
    spcdata.contentele = nele;
    spcdata.popupele.replaceChild(nele, oele);
    
+   if (spcdata.attribs.ensureWithin) {
+      SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
+      }
    }
 
 
@@ -840,6 +939,7 @@ SocialCalc.Popup.Types.List.Cancel = function(type, id) {
 //    title: "popup title string",
 //    moveable: t/f,
 //    width: optional width, e.g., "100px", of popup chooser
+//    ensureWithin: optional element object to ensure popup fits within if possible
 //    sampleWidth: optional width, e.g., "20px",
 //    sampleHeight: optional height, e.g., "20px",
 //    backgroundImage: optional background image for sample (transparent where want to show current color), e.g., "colorbg.gif"
@@ -1030,8 +1130,6 @@ SocialCalc.Popup.Types.ColorChooser.Show = function(type, id) {
 
       spcdata.customele = ele.firstChild.firstChild.childNodes[2];
       spcdata.contentele = ele;
-
-      spcdata.popupele.appendChild(ele);
       }
    else {
       mainele = SocialCalc.Popup.Types.ColorChooser.CreateGrid(type, id);
@@ -1043,8 +1141,12 @@ SocialCalc.Popup.Types.ColorChooser.Show = function(type, id) {
 
       spcdata.customele = null;
       spcdata.contentele = ele;
+      }
 
-      spcdata.popupele.appendChild(ele);
+   spcdata.popupele.appendChild(ele);
+
+   if (spcdata.attribs.ensureWithin) {
+      SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
       }
 
    }
@@ -1350,7 +1452,8 @@ SocialCalc.Popup.Types.ColorChooser.GridMouseDown = function(e) {
    var clientX = event.clientX + viewport.horizontalScroll;
    var clientY = event.clientY + viewport.verticalScroll;
    var gpos = SocialCalc.GetElementPosition(grid.table);
-   var row = Math.floor((clientY-gpos.top)/10);
+   var row = Math.floor((clientY-gpos.top-2)/10); // -2 is to split the diff btw IE & FF
+   row = row < 0 ? 0 : row;
    var col = Math.floor((clientX-gpos.left)/20);
    row = row < 0 ? 0 : (row > 15 ? 15 : row);
    col = col < 0 ? 0 : (col > 4 ? 4 : col);
@@ -1443,6 +1546,10 @@ SocialCalc.Popup.Types.ColorChooser.CustomClicked = function(e) {
 
    spcdata.customele.value = sp.RGBToHex(spcdata.value);
 
+   if (spcdata.attribs.ensureWithin) {
+      SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
+      }
+
    }
 
 
@@ -1469,6 +1576,9 @@ SocialCalc.Popup.Types.ColorChooser.CustomToGrid = function(id) {
    spcdata.contentele = nele;
    spcdata.popupele.replaceChild(nele, oele);
    
+   if (spcdata.attribs.ensureWithin) {
+      SocialCalc.Popup.EnsurePosition(id, spcdata.attribs.ensureWithin);
+      }
    }
 
 

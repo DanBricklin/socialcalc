@@ -3444,7 +3444,8 @@ SocialCalc.SettingsControls.BorderSideInitialize = function(panelobj, ctrlname) 
 
    SocialCalc.Popup.Create("ColorChooser", idstart+"-color", {});
    SocialCalc.Popup.Initialize(idstart+"-color",
-      {attribs:{title: "&nbsp;", width: "106px", changedcallback: SocialCalc.SettingsControls.PopupChangeCallback, panelobj: panelobj}});
+      {attribs:{title: "&nbsp;", width: "106px", moveable: true,
+                changedcallback: SocialCalc.SettingsControls.PopupChangeCallback, panelobj: panelobj}});
 
    }
 

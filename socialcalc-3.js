@@ -5110,7 +5110,12 @@ SocialCalc.DetermineValueType = function(rawvalue) {
       }
    else if (tvalue.match(/^[-+]?\d*(?:\.)?\d*(?:[eE][-+]?\d+)?$/)) { // general number, including E
       value = tvalue - 0; // try converting to number
-      type = "n";
+      if (isNaN(value)) { // leave alone - catches things like plain "-"
+         value = rawvalue + "";
+         }
+      else {
+         type = "n";
+         }
       }
    else if (tvalue.match(/^[-+]?\d*(?:\.)?\d*\s*%$/)) { // percent form: 15.1%
       value = (tvalue.slice(0, -1) - 0) / 100; // convert and scale
