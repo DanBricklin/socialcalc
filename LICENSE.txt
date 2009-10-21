@@ -478,7 +478,7 @@ need not be linked to the Attribution URL but the "tool-tip" is still required.
 
 Attribution Copyright Notice:
 
- Copyright (C) 2008 Socialtext, Inc.
+ Copyright (C) 2009 Socialtext, Inc.
  All Rights Reserved.
 
 Attribution Phrase (not exceeding 10 words): SocialCalc

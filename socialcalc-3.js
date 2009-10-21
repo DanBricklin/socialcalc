@@ -4975,7 +4975,7 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
    if (!/^(text-|custom|hidden)/.test(valueformat)) valueformat="";
    if (valueformat=="" || valueformat=="General") { // determine format from type
       if (valuesubtype=="h") valueformat="text-html";
-      if (valuesubtype=="w") valueformat="text-wiki";
+      if (valuesubtype=="w" || valuesubtype=="r") valueformat="text-wiki";
       if (valuesubtype=="l") valueformat="text-link";
       if (!valuesubtype) valueformat="text-plain";
       }

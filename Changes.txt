@@ -604,6 +604,9 @@ Changed cursor position detection a bit in color chooser.
 Made border color chooser moveable.
 Fixed "-", ".", "e1" and other things being considered a number on input.
 
+2009-10-21:
+Added text subtype "tr" (text rich) to formula1.js TypeLookupTable and to socialcalc3.js format_text_for_display
+
 
 TO DO:
 

@@ -9,7 +9,7 @@ licenses as well as general legal notices.
     COPYRIGHT AND ATTRIBUTION NOTICES
 =========================================
 
-Copyright (C) 2008 Socialtext, Inc. 
+Copyright (C) 2009 Socialtext, Inc. 
 All Rights Reserved.
 
 image:sc-logo.gif
