@@ -607,6 +607,12 @@ Fixed "-", ".", "e1" and other things being considered a number on input.
 2009-10-21:
 Added text subtype "tr" (text rich) to formula1.js TypeLookupTable and to socialcalc3.js format_text_for_display
 
+2009-11-02:
+Minor change to SocialCalc.special_chars to clean up regex. Not a bug, but a minor performance thing.
+
+2009-11-03:
+Added text format Wikitext to SCFormatTextFormats in socialcalcconstants.js
+
 
 TO DO:
 

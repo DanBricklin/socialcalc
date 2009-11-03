@@ -4657,7 +4657,7 @@ SocialCalc.encodeForSave = function(s) {
 // 
 SocialCalc.special_chars = function(string) {
 
-   if (/[&|<|>|"]/.test(string)) { // only do "slow" replaces if something to replace
+   if (/[&<>"]/.test(string)) { // only do "slow" replaces if something to replace
       string = string.replace(/&/g, "&amp;");
       string = string.replace(/</g, "&lt;");
       string = string.replace(/>/g, "&gt;");
