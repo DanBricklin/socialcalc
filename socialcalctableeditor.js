@@ -5,7 +5,7 @@
 // The code module of the SocialCalc package that displays a scrolling grid with panes
 // and handles keyboard and mouse I/O.
 //
-// (c) Copyright 2008 Socialtext, Inc.
+// (c) Copyright 2008, 2009, 2010 Socialtext, Inc.
 // All Rights Reserved.
 //
 */
@@ -50,7 +50,7 @@ need not be linked to the Attribution URL but the "tool-tip" is still required.
 
 Attribution Copyright Notice:
 
- Copyright (C) 2008 Socialtext, Inc.
+ Copyright (C) 2010 Socialtext, Inc.
  All Rights Reserved.
 
 Attribution Phrase (not exceeding 10 words): SocialCalc
@@ -115,6 +115,8 @@ SocialCalc.TableEditor = function(context) {
    this.toplevel = null; // top level HTML element for this table editor
    this.fullgrid = null; // rendered editing context
 
+   this.noEdit = false; // if true, disable all edit UI and make read-only
+
    this.width = null;
    this.tablewidth = null;
    this.height = null;
@@ -127,12 +129,14 @@ SocialCalc.TableEditor = function(context) {
 
    this.logo = null;
 
+   this.cellhandles = null;
+
    // Dynamic properties:
 
    this.timeout = null; // if non-null, timer id for position calculations
    this.busy = false; // true when executing command, calculating, etc.
    this.ensureecell = false; // if true, ensure ecell is visible after timeout
-   this.deferredCommands = []; // commands to execute after busy
+   this.deferredCommands = []; // commands to execute after busy, in form: {cmdstr: "cmds", saveundo: t/f}
 
    this.gridposition = null; // screen coords of full grid
    this.headposition = null; // screen coords of upper left of grid within header rows
@@ -204,19 +208,20 @@ SocialCalc.TableEditor = function(context) {
             // get what to copy to clipboard
             cliptext = SocialCalc.ConvertSaveToOtherFormat(SocialCalc.CreateSheetSave(editor.context.sheetobj, sel), "tab");
 
-            if (charname == "[ctrl-c]") {
+            if (charname == "[ctrl-c]" || editor.noEdit) { // if copy or cut but in no edit
                cmd = "copy "+sel+" formulas";
                }
             else { // [ctrl-x]
                cmd = "cut "+sel+" formulas";
                }
-            editor.EditorScheduleSheetCommands(cmd); // queue up command to put on SocialCalc clipboard
+            editor.EditorScheduleSheetCommands(cmd, true, false); // queue up command to put on SocialCalc clipboard
 
             ta.style.display = "block";
             ta.value = cliptext; // must follow "block" setting for Webkit
             ta.focus();
             ta.select();
             window.setTimeout(function() {
+               if (!SocialCalc.GetSpreadsheetControlObject) return; // in case not loaded
                var s = SocialCalc.GetSpreadsheetControlObject();
                if (!s) return;
                var editor = s.editor;
@@ -229,6 +234,7 @@ SocialCalc.TableEditor = function(context) {
             return true;
 
          case "[ctrl-v]":
+            if (editor.noEdit) return true; // not if no edit
             ta = editor.pasteTextarea;
             ta.value = "";
             cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
@@ -241,6 +247,7 @@ SocialCalc.TableEditor = function(context) {
             ta.value = "";  // must follow "block" setting for Webkit
             ta.focus();
             window.setTimeout(function() {
+               if (!SocialCalc.GetSpreadsheetControlObject) return;
                var s = SocialCalc.GetSpreadsheetControlObject();
                if (!s) return;
                var editor = s.editor;
@@ -265,19 +272,20 @@ SocialCalc.TableEditor = function(context) {
                   cr = editor.ecell.coord;
                   }
                cmd += "paste "+cr+" formulas";
-               editor.EditorScheduleSheetCommands(cmd);
+               editor.EditorScheduleSheetCommands(cmd, true, false);
                SocialCalc.KeyboardFocus();
                }, 200);
             return true;
 
          case "[ctrl-z]":
-            editor.EditorScheduleSheetCommands("undo");
+            editor.EditorScheduleSheetCommands("undo", true, false);
             return false;
 
          case "[ctrl-s]": // !!!! temporary hack
             if (!SocialCalc.Constants.AllowCtrlS) break;
             window.setTimeout(
                function() {
+                  if (!SocialCalc.GetSpreadsheetControlObject) return;
                   var s = SocialCalc.GetSpreadsheetControlObject();
                   if (!s) return;
                   var editor = s.editor;
@@ -289,6 +297,13 @@ SocialCalc.TableEditor = function(context) {
                      if (newntvf.match(/^cmd:/)) {
                         cmd = newntvf.substring(4); // execute as command
                         }
+                     else if (newntvf.match(/^edit:/)) {
+                        cmd = newntvf.substring(5); // execute as command
+                        if (SocialCalc.CtrlSEditor) {
+                           SocialCalc.CtrlSEditor(cmd);
+                           }
+                        return;
+                        }
                      else {
                         if (editor.range.hasrange) {
                            sel = SocialCalc.crToCoord(editor.range.left, editor.range.top)+
@@ -299,7 +314,7 @@ SocialCalc.TableEditor = function(context) {
                            }
                         cmd = "set "+sel+" nontextvalueformat "+newntvf;
                         }
-                     editor.EditorScheduleSheetCommands(cmd);
+                     editor.EditorScheduleSheetCommands(cmd, true, false);
                      }
                   },
                200);
@@ -377,7 +392,7 @@ SocialCalc.TableEditor.prototype.SaveEditorSettings = function() {return SocialC
 SocialCalc.TableEditor.prototype.LoadEditorSettings = function(str, flags) {return SocialCalc.LoadEditorSettings(this, str, flags);};
 
 SocialCalc.TableEditor.prototype.EditorRenderSheet = function() {SocialCalc.EditorRenderSheet(this);};
-SocialCalc.TableEditor.prototype.EditorScheduleSheetCommands = function(cmdstr, ignoreundo) {SocialCalc.EditorScheduleSheetCommands(this, cmdstr, ignoreundo);};
+SocialCalc.TableEditor.prototype.EditorScheduleSheetCommands = function(cmdstr, saveundo, ignorebusy) {SocialCalc.EditorScheduleSheetCommands(this, cmdstr, saveundo, ignorebusy);};
 SocialCalc.TableEditor.prototype.ScheduleSheetCommands = function(cmdstr, saveundo) {
    this.context.sheetobj.ScheduleSheetCommands(cmdstr, saveundo);
    };
@@ -501,8 +516,12 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
 
    editor.toplevel.appendChild(editor.layouttable);
 
-   editor.inputEcho = new SocialCalc.InputEcho(editor);
-   AssignID(editor, editor.inputEcho.main, "inputecho");
+   if (!editor.noEdit) {
+      editor.inputEcho = new SocialCalc.InputEcho(editor);
+      AssignID(editor, editor.inputEcho.main, "inputecho");
+      }
+
+   editor.cellhandles = new SocialCalc.CellHandles(editor);
 
    ta = document.createElement("textarea"); // used for ctrl-c/ctrl-v where an invisible text area is needed
    SocialCalc.setStyles(ta, "display:none;position:absolute;height:1px;width:1px;opacity:0;filter:alpha(opacity=0);");
@@ -718,17 +737,17 @@ SocialCalc.EditorRenderSheet = function(editor) {
    }
 
 //
-// EditorScheduleSheetCommands(editor, cmdstr, ignorebusy)
+// EditorScheduleSheetCommands(editor, cmdstr, saveundo, ignorebusy)
 //
 
-SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr, ignorebusy) {
+SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr, saveundo, ignorebusy) {
 
    if (editor.state!="start" && !ignorebusy) { // ignore commands if editing a cell
       return;
       }
 
    if (editor.busy && !ignorebusy) { // hold off on commands if doing one
-      editor.deferredCommands.push(cmdstr);
+      editor.deferredCommands.push({cmdstr: cmdstr, saveundo: saveundo});
       return;
       }
 
@@ -747,7 +766,7 @@ SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr, ignorebusy) {
          break;
 
       default:
-         editor.context.sheetobj.ScheduleSheetCommands(cmdstr, true);
+         editor.context.sheetobj.ScheduleSheetCommands(cmdstr, saveundo);
          break;
       }
    }
@@ -761,7 +780,7 @@ SocialCalc.EditorScheduleSheetCommands = function(editor, cmdstr, ignorebusy) {
 
 SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor) {
 
-   var f, cell;
+   var f, cell, dcmd;
    var sheetobj = editor.context.sheetobj;
 
    var signalstatus = function(s) {
@@ -782,6 +801,9 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
          sheetobj.celldisplayneeded = "";
          break;
 
+      case "cmdextension":
+         break;
+
       case "cmdend":
          signalstatus(status);
 
@@ -798,7 +820,8 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
             }
 
          if (editor.deferredCommands.length) {
-            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift(), true);
+            dcmd = editor.deferredCommands.shift();
+            editor.EditorScheduleSheetCommands(dcmd.cmdstr, dcmd.saveundo, true);
             return;
             }
 
@@ -854,7 +877,8 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
       case "doneposcalc":
          if (editor.deferredCommands.length) {
             signalstatus(status);
-            editor.EditorScheduleSheetCommands(editor.deferredCommands.shift(), true);
+            dcmd = editor.deferredCommands.shift();
+            editor.EditorScheduleSheetCommands(dcmd.cmdstr, dcmd.saveundo, true);
             }
          else {
             editor.busy = false;
@@ -929,6 +953,9 @@ SocialCalc.EditorGetStatuslineString = function(editor, status, arg, params) {
          document.body.style.cursor = "progress";
          editor.griddiv.style.cursor = "progress";
          progress = scc.s_statusline_executing;
+         break;
+      case "cmdextension":
+         progress = "Command Extension: "+arg;
          break;
       case "cmdend":
          params.command = false;
@@ -1080,6 +1107,8 @@ SocialCalc.EditorMouseRegister = function(editor) {
       throw "Browser not supported";
       }
 
+   mouseinfo.ignore = false; // just in case
+
    return;
 
    }
@@ -1227,6 +1256,7 @@ SocialCalc.EditorMouseRange = function(editor, coord) {
             editor.inputBox.Blur();
             editor.inputBox.ShowInputBox(false);
             editor.state = "start";
+            editor.cellhandles.ShowCellHandles(true);
             editor.EditorSaveEdit();
             editor.inputBox.DisplayCellContents(null);
             }
@@ -1236,6 +1266,7 @@ SocialCalc.EditorMouseRange = function(editor, coord) {
          editor.inputBox.Blur();
          editor.inputBox.ShowInputBox(false);
          editor.state = "start";
+         editor.cellhandles.ShowCellHandles(true);
          editor.EditorSaveEdit();
          editor.inputBox.DisplayCellContents(null);
          break;
@@ -1255,10 +1286,21 @@ SocialCalc.ProcessEditorMouseMove = function(e) {
    var mouseinfo = SocialCalc.EditorMouseInfo;
    editor = mouseinfo.editor;
    if (!editor) return; // not us, ignore
+   if (mouseinfo.ignore) return; // ignore this
    element = mouseinfo.element;
 
    result = SocialCalc.GridMousePosition(editor, clientX, clientY); // get cell with move
-   if (!result || !result.coord) return;
+
+   if (!result) return;
+
+   if (result && !result.coord) {
+      SocialCalc.SetDragAutoRepeat(editor, result);
+      return;
+      }
+
+   SocialCalc.SetDragAutoRepeat(editor, null); // stop repeating if it was
+
+   if (!result.coord) return;
 
    if (result.coord!=mouseinfo.mouselastcoord) {
       if (!e.shiftKey && !editor.range.hasrange) {
@@ -1294,9 +1336,12 @@ SocialCalc.ProcessEditorMouseUp = function(e) {
    var mouseinfo = SocialCalc.EditorMouseInfo;
    editor = mouseinfo.editor;
    if (!editor) return; // not us, ignore
+   if (mouseinfo.ignore) return; // ignore this
    element = mouseinfo.element;
 
    result = SocialCalc.GridMousePosition(editor, clientX, clientY); // get cell with up
+
+   SocialCalc.SetDragAutoRepeat(editor, null); // stop repeating if it was
 
    if (!result) return;
 
@@ -1445,7 +1490,7 @@ SocialCalc.ProcessEditorColsizeMouseUp = function(e) {
    var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
    if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
 
-   editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize);
+   editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize, true, false);
 
    if (editor.timeout) window.clearTimeout(editor.timeout);
    editor.timeout = window.setTimeout(SocialCalc.FinishColsize, 1); // wait - Firefox 2 has a bug otherwise with next mousedown
@@ -1474,6 +1519,148 @@ SocialCalc.FinishColsize = function() {
 
    }
 
+//
+// Handle auto-repeat of dragging the cursor into the borders of the sheet
+//
+
+SocialCalc.AutoRepeatInfo = {
+
+   timer: null, // timer object for repeating
+   mouseinfo: null, // result from SocialCalc.GridMousePosition
+   repeatinterval: 1000, // milliseconds to wait between repeats
+   editor: null, // editor object to use when it repeats
+   repeatcallback: null // used instead of default when repeating (e.g., for cellhandles)
+                        // called as: repeatcallback(newcoord, direction)
+
+};
+
+// Control auto-repeat. If mouseinfo==null, cancel.
+
+SocialCalc.SetDragAutoRepeat = function(editor, mouseinfo, callback) {
+
+   var repeatinfo = SocialCalc.AutoRepeatInfo;
+   var coord, direction;
+
+   repeatinfo.repeatcallback = callback; // null in regular case
+
+   if (!mouseinfo) { // cancel
+      if (repeatinfo.timer) { // If was repeating, stop
+         window.clearTimeout(repeatinfo.timer); // cancel timer
+         repeatinfo.timer = null;
+         }
+      repeatinfo.mouseinfo = null;
+      return; // done
+      }
+
+   repeatinfo.editor = editor;
+
+   if (repeatinfo.mouseinfo) { // check for change while repeating
+      if (mouseinfo.rowheader || mouseinfo.rowfooter) {
+         if (mouseinfo.row != repeatinfo.mouseinfo.row) { // changed row while dragging sidewards
+            coord = SocialCalc.crToCoord(editor.ecell.col, mouseinfo.row); // change to it
+            if (repeatinfo.repeatcallback) {
+               if (mouseinfo.row < repeatinfo.mouseinfo.row) {
+                  direction = "left";
+                  }
+               else if (mouseinfo.row > repeatinfo.mouseinfo.row) {
+                  direction = "right";
+                  }
+               else {
+                  direction = "";
+                  }
+               repeatinfo.repeatcallback(coord, direction);
+               }
+            else {
+               editor.MoveECell(coord);
+               editor.MoveECell(coord);
+               editor.RangeExtend();
+               editor.EditorMouseRange(coord);
+               }
+            }            
+         }
+      else if (mouseinfo.colheader || mouseinfo.colfooter) {
+         if (mouseinfo.col != repeatinfo.mouseinfo.col) { // changed col while dragging vertically
+            coord = SocialCalc.crToCoord(mouseinfo.col, editor.ecell.row); // change to it
+            if (repeatinfo.repeatcallback) {
+               if (mouseinfo.row < repeatinfo.mouseinfo.row) {
+                  direction = "left";
+                  }
+               else if (mouseinfo.row > repeatinfo.mouseinfo.row) {
+                  direction = "right";
+                  }
+               else {
+                  direction = "";
+                  }
+               repeatinfo.repeatcallback(coord, direction);
+               }
+            else {
+               editor.MoveECell(coord);
+               editor.RangeExtend();
+               editor.EditorMouseRange(coord);
+               }
+            }            
+         }
+      }
+
+   repeatinfo.mouseinfo = mouseinfo;
+
+   if (mouseinfo.distance < 5) repeatinfo.repeatinterval = 333;
+   else if (mouseinfo.distance < 10) repeatinfo.repeatinterval = 250;
+   else if (mouseinfo.distance < 25) repeatinfo.repeatinterval = 100;
+   else if (mouseinfo.distance < 35) repeatinfo.repeatinterval = 75;
+   else { // too far - stop repeating
+      if (repeatinfo.timer) { // if repeating, cancel it
+         window.clearTimeout(repeatinfo.timer); // cancel timer
+         repeatinfo.timer = null;
+         }
+      return;
+      }
+
+   if (!repeatinfo.timer) { // start if not already running
+      repeatinfo.timer = window.setTimeout(SocialCalc.DragAutoRepeat, repeatinfo.repeatinterval);
+      }
+
+   return;
+
+   }
+
+//
+// DragAutoRepeat()
+//
+
+SocialCalc.DragAutoRepeat = function() {
+
+   var repeatinfo = SocialCalc.AutoRepeatInfo;
+   var mouseinfo = repeatinfo.mouseinfo;
+
+   var direction, coord, cr;
+
+   if (mouseinfo.rowheader) direction = "left";
+   else if (mouseinfo.rowfooter) direction = "right";
+   else if (mouseinfo.colheader) direction = "up";
+   else if (mouseinfo.colfooter) direction = "down";
+
+   if (repeatinfo.repeatcallback) {
+      cr = SocialCalc.coordToCr(repeatinfo.editor.ecell.coord);
+      if (direction == "left" && cr.col > 1) cr.col--;
+      else if (direction == "right") cr.col++;
+      else if (direction == "up" && cr.row > 1) cr.row--;
+      else if (direction == "down") cr.row++;
+      coord = SocialCalc.crToCoord(cr.col, cr.row);
+      repeatinfo.repeatcallback(coord, direction);
+      }
+   else {
+      coord = repeatinfo.editor.MoveECellWithKey("[a"+direction+"]shifted");
+      if (coord) repeatinfo.editor.EditorMouseRange(coord);
+      }
+
+   repeatinfo.timer = window.setTimeout(SocialCalc.DragAutoRepeat, repeatinfo.repeatinterval);
+
+   }
+
+//
+// Handling Clicking
+//
 
 SocialCalc.ProcessEditorDblClick = function(e) {
 
@@ -1537,7 +1724,7 @@ SocialCalc.EditorOpenCellEdit = function(editor) {
    var wval;
 
    if (!editor.ecell) return true; // no ecell
-   if (!editor.inputBox) return true; // no input box, so no editing
+   if (!editor.inputBox) return true; // no input box, so no editing (happens on noEdit)
    if (editor.inputBox.element.disabled) return true; // multi-line: ignore
    editor.inputBox.ShowInputBox(true);
    editor.inputBox.Focus();
@@ -1578,7 +1765,9 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             return !result;
             }
          if (ch=="[del]" || ch=="[backspace]") {
-            editor.EditorApplySetCommandsToRange("empty", "");
+            if (!editor.noEdit) {
+               editor.EditorApplySetCommandsToRange("empty", "");
+               }
             break;
             }
          if (ch=="[esc]") {
@@ -1593,6 +1782,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             }
 
          if (ch=="[f2]") {
+            if (editor.noEdit) return true;
             SocialCalc.EditorOpenCellEdit(editor);
             return false;
             }
@@ -1647,6 +1837,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             editor.inputBox.Blur();
             editor.inputBox.ShowInputBox(false);
             editor.state = "start";
+            editor.cellhandles.ShowCellHandles(true);
             if (ch != "[esc]") {
                editor.EditorSaveEdit();
                if (editor.ecell.coord != wval.ecoord) {
@@ -1670,6 +1861,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             wval.partialexpr = "";
             editor.RangeRemove();
             editor.MoveECell(wval.ecoord);
+            editor.inputBox.ShowInputBox(true); // make sure it's moved back if necessary
             return false;
             }
          if (ch=="[f2]") return false;
@@ -1677,7 +1869,10 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             editor.RangeRemove();
             }
          editor.MoveECell(wval.ecoord);
-         wval.partialexpr = ""; // not pointing
+         if (wval.partialexpr) {
+            editor.inputBox.ShowInputBox(true); // make sure it's moved back if necessary
+            wval.partialexpr = ""; // not pointing
+            }
          return true;
 
       case "inputboxdirect":
@@ -1686,6 +1881,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
             editor.inputBox.Blur();
             editor.inputBox.ShowInputBox(false);
             editor.state = "start";
+            editor.cellhandles.ShowCellHandles(true);
             if (ch == "[esc]") {
                editor.inputBox.DisplayCellContents();
                }
@@ -1707,6 +1903,7 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
 
       case "skip-and-start":
          editor.state = "start";
+         editor.cellhandles.ShowCellHandles(true);
          return false;
 
       default:
@@ -1720,6 +1917,8 @@ SocialCalc.EditorProcessKey = function(editor, ch, e) {
 SocialCalc.EditorAddToInput = function(editor, str, prefix) {
 
    var wval = editor.workingvalues;
+
+   if (editor.noEdit) return;
 
    switch (editor.state) {
       case "start":
@@ -1808,7 +2007,7 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
       }
 
    cmdline = "set "+wval.ecoord+" "+type+" "+value;
-   editor.EditorScheduleSheetCommands(cmdline);
+   editor.EditorScheduleSheetCommands(cmdline, true, false);
 
    return;
 
@@ -1831,11 +2030,11 @@ SocialCalc.EditorApplySetCommandsToRange = function(editor, cmd) {
    if (range.hasrange) {
       coord = SocialCalc.crToCoord(range.left, range.top)+":"+SocialCalc.crToCoord(range.right, range.bottom);
       line = "set "+coord+" "+cmd;
-      errortext = editor.EditorScheduleSheetCommands(line);
+      errortext = editor.EditorScheduleSheetCommands(line, true, false);
       }
    else {
       line = "set "+ecell.coord+" "+cmd;
-      errortext = editor.EditorScheduleSheetCommands(line);
+      errortext = editor.EditorScheduleSheetCommands(line, true, false);
       }
 
    editor.DisplayCellContents();
@@ -1861,6 +2060,8 @@ SocialCalc.EditorProcessMouseWheel = function(event, delta, mousewheelinfo, wobj
 // Returns an object with row and col numbers and coord (spans handled for coords),
 // and rowheader/colheader true if in header (where coord will be undefined).
 // If in colheader, will return coltoresize if on appropriate place in col header.
+// Also, there is rowfooter (on right) and colfooter (on bottom).
+// In row/col header/footer, returns "distance" as pixels over the edge.
 //
 
 SocialCalc.GridMousePosition = function(editor, clientX, clientY) { 
@@ -1887,10 +2088,12 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
    if (editor.headposition) {
       if (clientX < editor.headposition.left && clientX >= editor.gridposition.left) {
          result.rowheader = true;
+         result.distance = editor.headposition.left - clientX;
          return result;
          }
       else if (clientY < editor.headposition.top && clientY > editor.gridposition.top) { // > because of sizing row
          result.colheader = true;
+         result.distance = editor.headposition.top - clientY;
          result.coltoresize = col-(editor.colpositions[col]+editor.colwidth[col]/2>clientX?1:0) || 1;
          for (colpane=0; colpane<editor.context.colpanes.length; colpane++) {
             if (result.coltoresize >= editor.context.colpanes[colpane].first &&
@@ -1901,9 +2104,24 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
          delete result.coltoresize;
          return result;
          }
-      else if (clientX >= editor.verticaltablecontrol.controlborder ||
-               clientY >= editor.horizontaltablecontrol.controlborder ||
-               clientX < editor.gridposition.left || clientY <= editor.gridposition.top) {
+      else if (clientX >= editor.verticaltablecontrol.controlborder) {
+         result.rowfooter = true;
+         result.distance = clientX - editor.verticaltablecontrol.controlborder;
+         return result;
+         }
+      else if (clientY >= editor.horizontaltablecontrol.controlborder) {
+         result.colfooter = true;
+         result.distance = clientY - editor.horizontaltablecontrol.controlborder;
+         return result;
+         }
+      else if (clientX < editor.gridposition.left) {
+         result.rowheader = true;
+         result.distance = editor.headposition.left - clientX;
+         return result;
+         }
+      else if (clientY <= editor.gridposition.top) {
+         result.colheader = true;
+         result.distance = editor.headposition.top - clientY;
          return result;
          }
       else {
@@ -2055,6 +2273,7 @@ SocialCalc.MoveECell = function(editor, newcell) {
          }
       editor.UpdateCellCSS(cell, editor.ecell.row, editor.ecell.col);
       editor.SetECellHeaders(""); // set to regular col/rowname styles
+      editor.cellhandles.ShowCellHandles(false);
       }
    newcell = editor.context.cellskip[newcell] || newcell;
    editor.ecell = SocialCalc.coordToCr(newcell);
@@ -2109,6 +2328,9 @@ SocialCalc.EnsureECellVisible = function(editor) {
 
    if (vamount!=0 || hamount!=0) {
       editor.ScrollRelativeBoth(vamount, hamount);
+      }
+   else {
+      editor.cellhandles.ShowCellHandles(true);
       }
 
    }
@@ -2617,6 +2839,9 @@ SocialCalc.DoPositionCalculations = function() {
       editor.EnsureECellVisible(); // this could cause another redisplay
       }
 
+   editor.cellhandles.ShowCellHandles(true);
+
+
 //!!! Need to now check to see if this positioned controls out of the editing area
 //!!! (such as when there is a large wrapped cell and it pushes the pane boundary too far down).
 
@@ -3032,12 +3257,14 @@ SocialCalc.InputBox.prototype.DisplayCellContents = function(coord) {SocialCalc.
 SocialCalc.InputBox.prototype.ShowInputBox = function(show) {this.editor.inputEcho.ShowInputEcho(show);};
 SocialCalc.InputBox.prototype.GetText = function() {return this.element.value;};
 SocialCalc.InputBox.prototype.SetText = function(newtext) {
+   if (!this.element) return;
    this.element.value=newtext;
    this.editor.inputEcho.SetText(newtext+"_");
    };
 SocialCalc.InputBox.prototype.Focus = function() {SocialCalc.InputBoxFocus(this);};
 SocialCalc.InputBox.prototype.Blur = function() {return this.element.blur();};
 SocialCalc.InputBox.prototype.Select = function(t) {
+   if (!this.element) return;
    switch (t) {
       case "end":
          if (this.element.selectionStart!=undefined) {
@@ -3060,6 +3287,7 @@ SocialCalc.InputBoxDisplayCellContents = function(inputbox, coord) {
 
    var scc = SocialCalc.Constants;
 
+   if (!inputbox) return;
    if (!coord) coord = inputbox.editor.ecell.coord;
    var text = SocialCalc.GetCellContents(inputbox.editor.context.sheetobj, coord);
    if (text.indexOf("\n")!=-1) {
@@ -3082,6 +3310,7 @@ SocialCalc.InputBoxDisplayCellContents = function(inputbox, coord) {
 
 SocialCalc.InputBoxFocus = function(inputbox) {
 
+   if (!inputbox) return;
    inputbox.element.focus();
    var editor = inputbox.editor;
    editor.state = "input";
@@ -3192,6 +3421,7 @@ SocialCalc.ShowInputEcho = function(inputecho, show) {
    if (!editor) return;
 
    if (show) {
+      editor.cellhandles.ShowCellHandles(false);
       cell=SocialCalc.GetEditorCellElement(editor, editor.ecell.row, editor.ecell.col);
       if (cell) {
          position = SocialCalc.GetElementPosition(cell.element);
@@ -3268,6 +3498,863 @@ SocialCalc.InputEchoMouseDown = function(e) {
 //      return false;
       };
 
+
+// *************************************
+//
+// CellHandles class:
+//
+// This object creates and controls the elements around the cursor cell for dragging, etc.
+//
+// *************************************
+
+SocialCalc.CellHandles = function(editor) {
+
+   var scc = SocialCalc.Constants;
+   var functions;
+
+   if (editor.noEdit) return; // leave us with nothing
+
+   this.editor = editor; // the TableEditor this belongs to
+
+   this.noCursorSuffix = false;
+
+   this.draghandle = document.createElement("div");
+   SocialCalc.setStyles(this.draghandle, "display:none;position:absolute;zIndex:8;border:1px solid white;width:4px;height:4px;fontSize:1px;backgroundColor:#0E93D8;cursor:default;");
+   this.draghandle.innerHTML = '&nbsp;';
+   editor.toplevel.appendChild(this.draghandle);
+   SocialCalc.AssignID(editor, this.draghandle, "draghandle");
+
+   var imagetype = "png";
+   if (navigator.userAgent.match(/MSIE 6\.0/)) {
+      imagetype = "gif";
+      }
+
+   this.dragpalette = document.createElement("div");
+   SocialCalc.setStyles(this.dragpalette, "display:none;position:absolute;zIndex:8;width:90px;height:90px;fontSize:1px;textAlign:center;cursor:default;"+
+      "backgroundImage:url("+SocialCalc.Constants.defaultImagePrefix+"drag-handles."+imagetype+");");
+   this.dragpalette.innerHTML = '&nbsp;';
+   editor.toplevel.appendChild(this.dragpalette);
+   SocialCalc.AssignID(editor, this.dragpalette, "dragpalette");
+
+   this.dragtooltip = document.createElement("div");
+   SocialCalc.setStyles(this.dragtooltip, "display:none;position:absolute;zIndex:9;border:1px solid black;width:100px;height:auto;fontSize:10px;backgroundColor:#FFFFFF;");
+   this.dragtooltip.innerHTML = '&nbsp;';
+   editor.toplevel.appendChild(this.dragtooltip);
+   SocialCalc.AssignID(editor, this.dragtooltip, "dragtooltip");
+
+   this.fillinghandle = document.createElement("div");
+   SocialCalc.setStyles(this.fillinghandle, "display:none;position:absolute;zIndex:9;border:1px solid black;width:auto;height:14px;fontSize:10px;backgroundColor:#FFFFFF;");
+   this.fillinghandle.innerHTML = '&nbsp;';
+   editor.toplevel.appendChild(this.fillinghandle);
+   SocialCalc.AssignID(editor, this.fillinghandle, "fillinghandle");
+
+   if (this.draghandle.addEventListener) { // DOM Level 2 -- Firefox, et al
+      this.draghandle.addEventListener("mousemove", SocialCalc.CellHandlesMouseMoveOnHandle, false);
+      this.dragpalette.addEventListener("mousedown", SocialCalc.CellHandlesMouseDown, false);
+      this.dragpalette.addEventListener("mousemove", SocialCalc.CellHandlesMouseMoveOnHandle, false);
+      }
+   else if (this.draghandle.attachEvent) { // IE 5+
+      this.draghandle.attachEvent("onmousemove", SocialCalc.CellHandlesMouseMoveOnHandle);
+      this.dragpalette.attachEvent("onmousedown", SocialCalc.CellHandlesMouseDown);
+      this.dragpalette.attachEvent("onmousemove", SocialCalc.CellHandlesMouseMoveOnHandle);
+      }
+   else { // don't handle this
+      throw "Browser not supported";
+      }
+
+   }
+
+// Methods:
+
+SocialCalc.CellHandles.prototype.ShowCellHandles = function(show, moveshow) {return SocialCalc.ShowCellHandles(this, show, moveshow);};
+
+// Functions:
+
+SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
+
+   var cell, cell2, position, position2;
+   var editor = cellhandles.editor;
+   var doshow = false;
+   var row, col, viewport;
+
+   if (!editor) return;
+
+   do { // a block that can you can "break" out of easily
+
+      if (!show) break;
+
+      row = editor.ecell.row;
+      col = editor.ecell.col;
+
+      if (editor.state != "start") break;
+      if (row >= editor.lastvisiblerow) break;
+      if (col >= editor.lastvisiblecol) break;
+      if (row < editor.firstscrollingrow) break;
+      if (col < editor.firstscrollingcol) break;
+
+      if (editor.rowpositions[row+1]+20>editor.horizontaltablecontrol.controlborder) {
+         break;
+         }
+      if (editor.rowpositions[row+1]-10<editor.headposition.top) {
+         break;
+         }
+      if (editor.colpositions[col+1]+20>editor.verticaltablecontrol.controlborder) {
+         break;
+         }
+      if (editor.colpositions[col+1]-30<editor.headposition.left) {
+         break;
+         }
+
+      cellhandles.draghandle.style.left = (editor.colpositions[col+1]-1)+"px";
+      cellhandles.draghandle.style.top = (editor.rowpositions[row+1]-1)+"px";
+      cellhandles.draghandle.style.display = "block";
+
+      if (moveshow) {
+         cellhandles.draghandle.style.display = "none";
+         cellhandles.dragpalette.style.left = (editor.colpositions[col+1]-45)+"px";
+         cellhandles.dragpalette.style.top = (editor.rowpositions[row+1]-45)+"px";
+         cellhandles.dragpalette.style.display = "block";
+         viewport = SocialCalc.GetViewportInfo();
+         cellhandles.dragtooltip.style.right = (viewport.width-(editor.colpositions[col+1]-1))+"px";
+         cellhandles.dragtooltip.style.bottom = (viewport.height-(editor.rowpositions[row+1]-1))+"px";
+         cellhandles.dragtooltip.style.display = "none";
+         }
+
+      doshow = true;
+
+      }
+   while (false); // only do once
+
+   if (!doshow) {
+      cellhandles.draghandle.style.display = "none";
+      }
+   if (!moveshow) {
+      cellhandles.dragpalette.style.display = "none";
+      cellhandles.dragtooltip.style.display = "none";
+      }
+
+   }
+
+SocialCalc.CellHandlesMouseMoveOnHandle = function(e) {
+
+   var scc = SocialCalc.Constants;
+
+   var event = e || window.event;
+   var target = event.target || event.srcElement
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+   var clientY = event.clientY + viewport.verticalScroll;
+
+   editor = SocialCalc.Keyboard.focusTable; // get TableEditor doing keyboard stuff
+   if (!editor) return true; // we're not handling it -- let browser do default
+   var cellhandles = editor.cellhandles;
+   if (!cellhandles.editor) return true; // no handles
+
+   if (!editor.cellhandles.mouseDown) {
+      editor.cellhandles.ShowCellHandles(true, true); // show move handles, too
+
+      if (target == cellhandles.dragpalette) {
+         var whichhandle = SocialCalc.SegmentDivHit([24.0, 36.0], editor.cellhandles.dragpalette, clientX, clientY);
+         if (whichhandle==0) { // off of active part of palette
+            SocialCalc.CellHandlesHoverTimeout();
+            return;
+            }
+         if (cellhandles.tooltipstimer) {
+            window.clearTimeout(cellhandles.tooltipstimer);
+            cellhandles.tooltipstimer = null;
+            }
+         cellhandles.tooltipswhichhandle = whichhandle;
+         cellhandles.tooltipstimer = window.setTimeout(SocialCalc.CellHandlesTooltipsTimeout, 700);
+         }
+
+      if (cellhandles.timer) {
+         window.clearTimeout(cellhandles.timer);
+         cellhandles.timer = null;
+         }
+      cellhandles.timer = window.setTimeout(SocialCalc.CellHandlesHoverTimeout, 3000);
+   }
+
+   return;
+
+   }
+
+//
+// whichsegment = SocialCalc.SegmentDivHit(segtable, divWithMouseHit, x, y)
+//
+// Takes segtable = [upperleft quadrant, upperright, bottomright, bottomleft]
+//  where each quadrant is either:
+//      0 = ignore hits here
+//      number = return this value
+//      array = a new segtable for this subquadrant
+//
+// Alternatively, segtable can be:
+//  [diameter 1, diameter 2] and it returns 0 if no hit,
+//  -1, -2, -3, -4 for inner quadrants, and +1...+4 for outer quadrants
+//
+
+SocialCalc.SegmentDivHit = function(segtable, divWithMouseHit, x, y) {
+
+   var width = divWithMouseHit.offsetWidth;
+   var height = divWithMouseHit.offsetHeight;
+   var left = divWithMouseHit.offsetLeft;
+   var top = divWithMouseHit.offsetTop;
+   var v = 0;
+   var table = segtable;
+   var len = Math.sqrt(Math.pow(x-left-(width/2.0-.5), 2)+Math.pow(y-top-(height/2.0-.5), 2));
+
+   if (table.length==2) { // type 2 segtable
+      if (x >= left && x < left+width/2 && y >= top && y < top+height/2) { // upper left
+         if (len <= segtable[0]) v = -1;
+         else if (len <= segtable[1]) v = 1;
+         }
+      if (x >= left+width/2 && x < left+width && y >= top && y < top+height/2) { // upper right
+         if (len <= segtable[0]) v = -2;
+         else if (len <= segtable[1]) v = 2;
+         }
+      if (x >= left+width/2 && x < left+width && y >= top+height/2 && y < top+height) { // bottom right
+         if (len <= segtable[0]) v = -3;
+         else if (len <= segtable[1]) v = 3;
+         }
+      if (x >= left && x < left+width/2 && y >= top+height/2 && y < top+height) { // bottom right
+         if (len <= segtable[0]) v = -4;
+         else if (len <= segtable[1]) v = 4;
+         }
+      return v;
+      }
+
+   while (true) {
+      if (x >= left && x < left+width/2 && y >= top && y < top+height/2) { // upper left
+         quadrant += "1";
+         v = table[0];
+         if (typeof v == "number") {
+            break;
+            }
+         table = v;
+         width = width/2;
+         height = height/2;
+         continue;
+         }
+      if (x >= left+width/2 && x < left+width && y >= top && y < top+height/2) { // upper right
+         quadrant += "2";
+         v = table[1];
+         if (typeof v == "number") {
+            break;
+            }
+         table = v;
+         width = width/2;
+         left = left+width;
+         height = height/2;
+         continue;
+         }
+      if (x >= left+width/2 && x < left+width && y >= top+height/2 && y < top+height) { // bottom right
+         quadrant += "3";
+         v = table[2];
+         if (typeof v == "number") {
+            break;
+            }
+         table = v;
+         width = width/2;
+         left = left + width;
+         height = height/2;
+         top = top + height;
+         continue;
+         }
+      if (x >= left && x < left+width/2 && y >= top+height/2 && y < top+height) { // bottom right
+         quadrant += "4";
+         v = table[3];
+         if (typeof v == "number") {
+            break;
+            }
+         table = v;
+         width = width/2;
+         height = height/2;
+         top = top + height;
+         continue;
+         }
+      return 0; // didn't match
+      }
+
+//addmsg((x-divWithMouseHit.offsetLeft)+","+(y-divWithMouseHit.offsetTop)+"="+quadrant+" "+v);
+   return v;
+
+}
+
+SocialCalc.CellHandlesHoverTimeout = function() {
+
+   editor = SocialCalc.Keyboard.focusTable; // get TableEditor doing keyboard stuff
+   if (!editor) return true; // we're not handling it -- let browser do default
+   var cellhandles = editor.cellhandles;
+   if (cellhandles.timer) {
+      window.clearTimeout(cellhandles.timer);
+      cellhandles.timer = null;
+      }
+   if (cellhandles.tooltipstimer) {
+      window.clearTimeout(cellhandles.tooltipstimer);
+      cellhandles.tooltipstimer = null;
+      }
+   editor.cellhandles.ShowCellHandles(true, false); // hide move handles
+
+}
+
+SocialCalc.CellHandlesTooltipsTimeout = function() {
+
+   editor = SocialCalc.Keyboard.focusTable; // get TableEditor doing keyboard stuff
+   if (!editor) return true; // we're not handling it -- let browser do default
+   var cellhandles = editor.cellhandles;
+   if (cellhandles.tooltipstimer) {
+      window.clearTimeout(cellhandles.tooltipstimer);
+      cellhandles.tooltipstimer = null;
+      }
+
+   var whichhandle = cellhandles.tooltipswhichhandle;
+   if (whichhandle==0) { // off of active part of palette
+      SocialCalc.CellHandlesHoverTimeout();
+      return;
+      }
+   if (whichhandle==-3) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHfillAllTooltip;
+      }
+   else if (whichhandle==3) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHfillContentsTooltip;
+      }
+   else if (whichhandle==-2) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHmovePasteAllTooltip;
+      }
+   else if (whichhandle==-4) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHmoveInsertAllTooltip;
+      }
+   else if (whichhandle==2) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHmovePasteContentsTooltip;
+      }
+   else if (whichhandle==4) {
+      cellhandles.dragtooltip.innerHTML = scc.s_CHmoveInsertContentsTooltip;
+      }
+   else {
+      cellhandles.dragtooltip.innerHTML = "&nbsp;";
+      cellhandles.dragtooltip.style.display = "none";
+      return;
+      }
+
+   cellhandles.dragtooltip.style.display = "block";
+
+}
+
+SocialCalc.CellHandlesMouseDown = function(e) {
+
+   var scc = SocialCalc.Constants;
+   var editor, result, coord, textarea, wval, range;
+
+   var event = e || window.event;
+
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+   var clientY = event.clientY + viewport.verticalScroll;
+
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+
+   editor = SocialCalc.Keyboard.focusTable; // get TableEditor doing keyboard stuff
+   if (!editor) return true; // we're not handling it -- let browser do default
+
+   if (editor.busy) return; // don't do anything when busy (is this correct?)
+
+   var cellhandles = editor.cellhandles;
+
+   if (cellhandles.timer) { // cancel timer
+      window.clearTimeout(cellhandles.timer);
+      cellhandles.timer = null;
+      }
+   if (cellhandles.tooltipstimer) {
+      window.clearTimeout(cellhandles.tooltipstimer);
+      cellhandles.tooltipstimer = null;
+      }
+   cellhandles.dragtooltip.innerHTML = "&nbsp;";
+   cellhandles.dragtooltip.style.display = "none";
+
+   range = editor.range;
+ 
+   var whichhandle = SocialCalc.SegmentDivHit([24.0, 36.0], editor.cellhandles.dragpalette, clientX, clientY);
+   if (whichhandle==1 || whichhandle==-1 || whichhandle==0) {
+      cellhandles.ShowCellHandles(true, false); // hide move handles
+      return;
+      }
+
+   mouseinfo.ignore = true; // stop other code from looking at the mouse
+
+   if (whichhandle==-3) {
+      cellhandles.dragtype = "Fill";
+      mouseinfo.element = editor.cellhandles.fillhandle;
+      cellhandles.noCursorSuffix = false;
+      }
+   else if (whichhandle==3) {
+      cellhandles.dragtype = "FillC";
+      mouseinfo.element = editor.cellhandles.fillhandle;
+      cellhandles.noCursorSuffix = false;
+      }
+   else if (whichhandle==-2) {
+      cellhandles.dragtype = "Move";
+      mouseinfo.element = editor.cellhandles.movehandle1;
+      cellhandles.noCursorSuffix = true;
+      }
+   else if (whichhandle==-4) {
+      cellhandles.dragtype = "MoveI";
+      mouseinfo.element = editor.cellhandles.movehandle2;
+      cellhandles.noCursorSuffix = false;
+      }
+   else if (whichhandle==2) {
+      cellhandles.dragtype = "MoveC";
+      mouseinfo.element = editor.cellhandles.movehandle1;
+      cellhandles.noCursorSuffix = true;
+      }
+   else if (whichhandle==4) {
+      cellhandles.dragtype = "MoveIC";
+      mouseinfo.element = editor.cellhandles.movehandle2;
+      cellhandles.noCursorSuffix = false;
+      }
+
+   cellhandles.filltype = null;
+
+   switch (cellhandles.dragtype) {
+      case "Fill":
+      case "FillC":
+         if (!range.hasrange) {
+            editor.RangeAnchor();
+            }
+         break;
+
+      case "Move":
+      case "MoveI":
+      case "MoveC":
+      case "MoveIC":
+         if (!range.hasrange) {
+            editor.RangeAnchor();
+            }
+         editor.range2.top = editor.range.top;
+         editor.range2.right = editor.range.right;
+         editor.range2.bottom = editor.range.bottom;
+         editor.range2.left = editor.range.left;
+         editor.range2.hasrange = true;
+         editor.RangeRemove();
+         break;
+
+      default:
+         return; // not for us
+      }
+
+   cellhandles.fillinghandle.style.left = (clientX)+"px";
+   cellhandles.fillinghandle.style.top = (clientY - 17)+"px";
+   cellhandles.fillinghandle.innerHTML = scc.s_CHindicatorOperationLookup[cellhandles.dragtype]+
+                                         (scc.s_CHindicatorDirectionLookup[editor.cellhandles.filltype] || "");
+   cellhandles.fillinghandle.style.display = "block";
+
+   cellhandles.ShowCellHandles(true, false); // hide move handles
+   cellhandles.mouseDown = true;
+
+   mouseinfo.editor = editor; // remember for later
+
+   coord = editor.ecell.coord; // start with cell with handles
+
+   cellhandles.startingcoord = coord;
+   cellhandles.startingX = clientX;
+   cellhandles.startingY = clientY;
+
+   mouseinfo.mouselastcoord = coord;
+
+   SocialCalc.KeyboardSetFocus(editor);
+
+   if (document.addEventListener) { // DOM Level 2 -- Firefox, et al
+      document.addEventListener("mousemove", SocialCalc.CellHandlesMouseMove, true); // capture everywhere
+      document.addEventListener("mouseup", SocialCalc.CellHandlesMouseUp, true); // capture everywhere
+      }
+   else if (cellhandles.draghandle.attachEvent) { // IE 5+
+      cellhandles.draghandle.setCapture();
+      cellhandles.draghandle.attachEvent("onmousemove", SocialCalc.CellHandlesMouseMove);
+      cellhandles.draghandle.attachEvent("onmouseup", SocialCalc.CellHandlesMouseUp);
+      cellhandles.draghandle.attachEvent("onlosecapture", SocialCalc.CellHandlesMouseUp);
+      }
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   return;
+
+   }
+
+SocialCalc.CellHandlesMouseMove = function(e) {
+
+   var scc = SocialCalc.Constants;
+   var editor, element, result, coord, now, textarea, sheetobj, cellobj, wval;
+   var crstart, crend, cr, c, r;
+
+   var event = e || window.event;
+
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+   var clientY = event.clientY + viewport.verticalScroll;
+
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   editor = mouseinfo.editor;
+   if (!editor) return; // not us, ignore
+   var cellhandles = editor.cellhandles;
+
+   element = mouseinfo.element;
+
+   result = SocialCalc.GridMousePosition(editor, clientX, clientY); // get cell with move
+
+   if (!result) return;
+
+   if (result && !result.coord) {
+      SocialCalc.SetDragAutoRepeat(editor, result, SocialCalc.CellHandlesDragAutoRepeat);
+      return;
+      }
+
+   SocialCalc.SetDragAutoRepeat(editor, null); // stop repeating if it was
+
+   if (!result.coord) return;
+
+   crstart = SocialCalc.coordToCr(editor.cellhandles.startingcoord);
+   crend = SocialCalc.coordToCr(result.coord);
+
+   switch (cellhandles.dragtype) {
+      case "Fill":
+      case "FillC":
+
+         if (result.coord == cellhandles.startingcoord) { // reset when come back
+            cellhandles.filltype = null;
+            cellhandles.startingX = clientX;
+            cellhandles.startingY = clientY;
+            }
+         else {
+            if (cellhandles.filltype) { // moving and have already determined filltype
+               if (cellhandles.filltype=="Down") { // coerse to that
+                  crend.col = crstart.col;
+                  if (crend.row < crstart.row) crend.row = crstart.row;
+                  }
+               else {
+                  crend.row = crstart.row;
+                  if (crend.col < crstart.col) crend.col = crstart.col;
+                  }
+               }
+            else {
+               if (Math.abs(clientY - cellhandles.startingY) > 10) {
+                  cellhandles.filltype = "Down";
+                  }
+               else if (Math.abs(clientX - cellhandles.startingX) > 10) {
+                  cellhandles.filltype = "Right";
+                  }
+               crend.col = crstart.col; // until decide, leave it at start
+               crend.row = crstart.row;
+               }
+            }
+         result.coord = SocialCalc.crToCoord(crend.col, crend.row);
+         if (result.coord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(result.coord);
+            editor.RangeExtend();
+            }
+         break;
+
+      case "Move":
+      case "MoveC":
+         if (result.coord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(result.coord);
+            c = editor.range2.right - editor.range2.left + result.col;
+            r = editor.range2.bottom - editor.range2.top + result.row;
+            editor.RangeAnchor(SocialCalc.crToCoord(c, r));
+            editor.RangeExtend();
+            }
+         break;
+
+      case "MoveI":
+      case "MoveIC":
+         if (result.coord == cellhandles.startingcoord) { // reset when come back
+            cellhandles.filltype = null;
+            cellhandles.startingX = clientX;
+            cellhandles.startingY = clientY;
+            }
+         else {
+            if (cellhandles.filltype) { // moving and have already determined filltype
+               if (cellhandles.filltype=="Vertical") { // coerse to that
+                  crend.col = editor.range2.left;
+                  if (crend.row>=editor.range2.top && crend.row<=editor.range2.bottom+1) crend.row = editor.range2.bottom+2;
+                  }
+               else {
+                  crend.row = editor.range2.top;
+                  if (crend.col>=editor.range2.left && crend.col<=editor.range2.right+1) crend.col = editor.range2.right+2;
+                  }
+               }
+            else {
+               if (Math.abs(clientY - cellhandles.startingY) > 10) {
+                  cellhandles.filltype = "Vertical";
+                  }
+               else if (Math.abs(clientX - cellhandles.startingX) > 10) {
+                  cellhandles.filltype = "Horizontal";
+                  }
+               crend.col = crstart.col; // until decide, leave it at start
+               crend.row = crstart.row;
+               }
+            }
+         result.coord = SocialCalc.crToCoord(crend.col, crend.row);
+         if (result.coord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(result.coord);
+            if (!cellhandles.filltype) { // no fill type
+               editor.RangeRemove();
+               }
+            else {
+               c = editor.range2.right - editor.range2.left + crend.col;
+               r = editor.range2.bottom - editor.range2.top + crend.row;
+               editor.RangeAnchor(SocialCalc.crToCoord(c, r));
+               editor.RangeExtend();
+               }
+            }
+         break;
+
+      }
+
+
+   cellhandles.fillinghandle.style.left = (clientX)+"px";
+   cellhandles.fillinghandle.style.top = (clientY - 17)+"px";
+   cellhandles.fillinghandle.innerHTML = scc.s_CHindicatorOperationLookup[cellhandles.dragtype]+
+                                         (scc.s_CHindicatorDirectionLookup[editor.cellhandles.filltype] || "");
+   cellhandles.fillinghandle.style.display = "block";
+
+   mouseinfo.mouselastcoord = result.coord;
+
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   return;
+
+   }
+
+SocialCalc.CellHandlesDragAutoRepeat = function(coord, direction) {
+
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   var editor = mouseinfo.editor;
+   if (!editor) return; // not us, ignore
+   var cellhandles = editor.cellhandles;
+
+   var crstart = SocialCalc.coordToCr(editor.cellhandles.startingcoord);
+   var crend = SocialCalc.coordToCr(coord);
+
+   var newcoord, c, r;
+
+   var vscroll = 0;
+   var hscroll = 0;
+
+   if (direction == "left") hscroll = -1;
+   else if (direction == "right") hscroll = 1;
+   else if (direction == "up") vscroll = -1;
+   else if (direction == "down") vscroll = 1;
+   editor.ScrollRelativeBoth(vscroll, hscroll);
+
+
+   switch (cellhandles.dragtype) {
+      case "Fill":
+      case "FillC":
+         if (cellhandles.filltype) { // moving and have already determined filltype
+            if (cellhandles.filltype=="Down") { // coerse to that
+               crend.col = crstart.col;
+               if (crend.row < crstart.row) crend.row = crstart.row;
+               }
+            else {
+               crend.row = crstart.row;
+               if (crend.col < crstart.col) crend.col = crstart.col;
+               }
+            }
+         else {
+            crend.col = crstart.col; // until decide, leave it at start
+            crend.row = crstart.row;
+            }
+
+         newcoord = SocialCalc.crToCoord(crend.col, crend.row);
+         if (newcoord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(coord);
+            editor.RangeExtend();
+            }
+         break;
+
+      case "Move":
+      case "MoveC":
+         if (coord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(coord);
+            c = editor.range2.right - editor.range2.left + editor.ecell.col;
+            r = editor.range2.bottom - editor.range2.top + editor.ecell.row;
+            editor.RangeAnchor(SocialCalc.crToCoord(c, r));
+            editor.RangeExtend();
+            }
+         break;
+
+      case "MoveI":
+      case "MoveIC":
+         if (cellhandles.filltype) { // moving and have already determined filltype
+            if (cellhandles.filltype=="Vertical") { // coerse to that
+               crend.col = editor.range2.left;
+               if (crend.row>=editor.range2.top && crend.row<=editor.range2.bottom+1) crend.row = editor.range2.bottom+2;
+               }
+            else {
+               crend.row = editor.range2.top;
+               if (crend.col>=editor.range2.left && crend.col<=editor.range2.right+1) crend.col = editor.range2.right+2;
+               }
+            }
+         else {
+            crend.col = crstart.col; // until decide, leave it at start
+            crend.row = crstart.row;
+            }
+
+         newcoord = SocialCalc.crToCoord(crend.col, crend.row);
+         if (newcoord!=mouseinfo.mouselastcoord) {
+            editor.MoveECell(newcoord);
+            c = editor.range2.right - editor.range2.left + crend.col;
+            r = editor.range2.bottom - editor.range2.top + crend.row;
+            editor.RangeAnchor(SocialCalc.crToCoord(c, r));
+            editor.RangeExtend();
+            }
+         break;
+
+      }
+
+   mouseinfo.mouselastcoord = newcoord;
+
+   }
+
+SocialCalc.CellHandlesMouseUp = function(e) {
+
+   var editor, element, result, coord, now, textarea, sheetobj, cellobj, wval, cstr, cmdtype, cmdtype2;
+   var crstart, crend;
+   var sizec, sizer, deltac, deltar;
+
+   var event = e || window.event;
+
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+   var clientY = event.clientY + viewport.verticalScroll;
+
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   editor = mouseinfo.editor;
+   if (!editor) return; // not us, ignore
+   var cellhandles = editor.cellhandles;
+
+   element = mouseinfo.element;
+
+   mouseinfo.ignore = false;
+
+   result = SocialCalc.GridMousePosition(editor, clientX, clientY); // get cell with up
+
+   SocialCalc.SetDragAutoRepeat(editor, null); // stop repeating if it was
+
+   cellhandles.mouseDown = false;
+   cellhandles.noCursorSuffix = false;
+
+   cellhandles.fillinghandle.style.display = "none";
+
+   if (!result) result = {};
+   if (!result.coord) result.coord = editor.ecell.coord;
+
+   switch (cellhandles.dragtype) {
+      case "Fill":
+      case "Move":
+      case "MoveI":
+         cmdtype2 = " all";
+            break;
+      case "FillC":
+      case "MoveC":
+      case "MoveIC":
+         cmdtype2 = " formulas";
+         break;
+      }
+
+   switch (cellhandles.dragtype) {
+      case "Fill":
+      case "FillC":
+
+         crstart = SocialCalc.coordToCr(cellhandles.startingcoord);
+         crend = SocialCalc.coordToCr(result.coord);
+         if (cellhandles.filltype) {
+            if (cellhandles.filltype=="Down") {
+               crend.col = crstart.col;
+               }
+            else {
+               crend.row = crstart.row;
+               }
+            }
+         result.coord = SocialCalc.crToCoord(crend.col, crend.row);
+
+         editor.MoveECell(result.coord);
+         editor.RangeExtend();
+
+         if (editor.cellhandles.filltype=="Right") {
+            cmdtype = "right";
+            }
+         else {
+            cmdtype = "down";
+            }
+         cstr = "fill"+cmdtype+" "+SocialCalc.crToCoord(editor.range.left, editor.range.top)+
+                   ":"+SocialCalc.crToCoord(editor.range.right, editor.range.bottom)+cmdtype2;
+         editor.EditorScheduleSheetCommands(cstr, true, false);
+         break;
+
+      case "Move":
+      case "MoveC":
+         editor.context.cursorsuffix = "";
+         cstr = "movepaste "+
+                     SocialCalc.crToCoord(editor.range2.left, editor.range2.top) + ":" +
+                     SocialCalc.crToCoord(editor.range2.right, editor.range2.bottom)
+                     +" "+editor.ecell.coord+cmdtype2;
+         editor.EditorScheduleSheetCommands(cstr, true, false);
+         editor.Range2Remove();
+
+         break;
+
+      case "MoveI":
+      case "MoveIC":
+         editor.context.cursorsuffix = "";
+         sizec = editor.range2.right - editor.range2.left;
+         sizer = editor.range2.bottom - editor.range2.top;
+         deltac = editor.ecell.col - editor.range2.left;
+         deltar = editor.ecell.row - editor.range2.top;
+         cstr = "moveinsert "+
+                     SocialCalc.crToCoord(editor.range2.left, editor.range2.top) + ":" +
+                     SocialCalc.crToCoord(editor.range2.right, editor.range2.bottom)
+                     +" "+editor.ecell.coord+cmdtype2;
+         editor.EditorScheduleSheetCommands(cstr, true, false);
+         editor.Range2Remove();
+         editor.RangeRemove();
+         if (editor.cellhandles.filltype==" Horizontal" && deltac > 0) {
+            editor.MoveECell(SocialCalc.crToCoord(editor.ecell.col-sizec-1, editor.ecell.row));
+            }
+         else if (editor.cellhandles.filltype==" Vertical" && deltar > 0) {
+            editor.MoveECell(SocialCalc.crToCoord(editor.ecell.col, editor.ecell.row-sizer-1));
+            }
+         editor.RangeAnchor(SocialCalc.crToCoord(editor.ecell.col+sizec, editor.ecell.row+sizer));
+         editor.RangeExtend();
+
+         break;
+
+      }
+
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   if (document.removeEventListener) { // DOM Level 2
+      document.removeEventListener("mousemove", SocialCalc.CellHandlesMouseMove, true);
+      document.removeEventListener("mouseup", SocialCalc.CellHandlesMouseUp, true);
+      }
+   else if (cellhandles.draghandle.detachEvent) { // IE
+      cellhandles.draghandle.detachEvent("onlosecapture", SocialCalc.CellHandlesMouseUp);
+      cellhandles.draghandle.detachEvent("onmouseup", SocialCalc.CellHandlesMouseUp);
+      cellhandles.draghandle.detachEvent("onmousemove", SocialCalc.CellHandlesMouseMove);
+      cellhandles.draghandle.releaseCapture();
+      }
+
+   mouseinfo.editor = null;
+
+   return false;
+
+   }
 
 // *************************************
 //
@@ -3789,6 +4876,13 @@ SocialCalc.TCTDragFunctionStart = function(event, draginfo, dobj) {
 
    SocialCalc.DragFunctionStart(event, draginfo, dobj);
 
+   if (draginfo.thumbstatus) { // get rid of old one if mouseup was out of window
+      if (draginfo.thumbstatus.rowmsgele) draginfo.thumbstatus.rowmsgele = null;
+      if (draginfo.thumbstatus.rowpreviewele) draginfo.thumbstatus.rowpreviewele = null;
+      editor.toplevel.removeChild(draginfo.thumbstatus);
+      draginfo.thumbstatus = null;
+      }
+
    draginfo.thumbstatus = document.createElement("div");
 
    if (dobj.vertical) {
@@ -3932,8 +5026,8 @@ SocialCalc.TCTDragFunctionStop = function(event, draginfo, dobj) {
 
    editor.FitToEditTable();
 
-   draginfo.thumbstatus.rowmsgele = null;
-   draginfo.thumbstatus.rowpreviewele = null;
+   if (draginfo.thumbstatus.rowmsgele) draginfo.thumbstatus.rowmsgele = null;
+   if (draginfo.thumbstatus.rowpreviewele) draginfo.thumbstatus.rowpreviewele = null;
    editor.toplevel.removeChild(draginfo.thumbstatus);
    draginfo.thumbstatus = null;
 
@@ -4345,6 +5439,10 @@ SocialCalc.TooltipDisplay = function(tobj) {
    else { // on left side of screen
       tooltipinfo.popupElement.style.bottom = (tooltipinfo.viewport.height - tooltipinfo.clientY + offsetY)+"px";
       tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX)+"px";
+      }
+
+   if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
+      tooltipinfo.popupElement.style.bottom = (tooltipinfo.viewport.height - tooltipinfo.clientY + offsetY - 50)+"px";
       }
 
    document.body.appendChild(tooltipinfo.popupElement);

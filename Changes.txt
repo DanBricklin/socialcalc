@@ -613,6 +613,42 @@ Minor change to SocialCalc.special_chars to clean up regex. Not a bug, but a min
 2009-11-03:
 Added text format Wikitext to SCFormatTextFormats in socialcalcconstants.js
 
+2009-12-02:
+Added missing // to socialcalcspreadsheetcontrol.js setting of tabBackground.
+Set minOK to 0 just in case in formatnumber2.js.
+
+2010-01-14:
+Changed socialcalctableeditor.js to do auto-repeat in drag select.
+Made formula editing reset position of InputEcho after pointing in case cell position has changed.
+Added beginning of SocialCalc.CellHandles to socialcalctableeditor.js. Had test code, but now just returns.
+
+2010-02-09:
+Fixed bug where undo stack didn't always set changedrendervalues so moves/pastes/etc of merged cells messed up display
+
+2010-03-23:
+Finished changes to add editor.noEdit to socialcalctableeditor.js, including
+fixing thumb dragging to better handle mouse out of window, handling no socialcalcspreadsheetcontrol.js, 
+etc.
+
+2010-03-25:
+Added socialcalcviewer.js.
+Fixed bug in SocialCalc.InitializeSpreadsheetControl that didn't take padding into account when sizing status line.
+
+2010-04-13:
+Added CmdExtensions to socialcalc-3.js, and the startcmdextension command.
+
+2010-05-07:
+Implemented drag handles for fill/move using a single image with a round, segmented palette. Added sc-drag-handles.png.
+
+2010-05-12:
+Added SocialCalc.CtrlSEditor to socialcalctableeditor.js and socialcalcspreadsheetcontrol.js.
+Use "edit:partname" command to edit, "edit:" to list all parts and contents. No text deletes part.
+Added SocialCalc.OtherSaveParts to socialcalcspreadsheetcontrol.js.
+This all gives us a way to set startup macros, etc.
+
+2010-05-13:
+Fixed IE6 and IE7+ compatibility issues with drag palette. Uses .gif for IE6, .png otherwise.
+
 
 TO DO:
 

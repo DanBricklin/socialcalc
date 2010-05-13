@@ -5,7 +5,7 @@
 // The code module of the SocialCalc package that lets you embed a spreadsheet
 // control with toolbar, etc., into a web page.
 //
-// (c) Copyright 2008, 2009 Socialtext, Inc.
+// (c) Copyright 2008, 2009, 2010 Socialtext, Inc.
 // All Rights Reserved.
 //
 */
@@ -50,7 +50,7 @@ need not be linked to the Attribution URL but the "tool-tip" is still required.
 
 Attribution Copyright Notice:
 
- Copyright (C) 2008 Socialtext, Inc.
+ Copyright (C) 2010 Socialtext, Inc.
  All Rights Reserved.
 
 Attribution Phrase (not exceeding 10 words): SocialCalc
@@ -183,7 +183,7 @@ SocialCalc.SpreadsheetControl = function() {
    this.imagePrefix = scc.defaultImagePrefix; // prefix added to img src
 
    this.toolbarbackground = scc.SCToolbarbackground;
-   this.tabbackground = scc.SCTabbackground;"background-color:#CCC;";
+   this.tabbackground = scc.SCTabbackground; // "background-color:#CCC;";
    this.tabselectedCSS = scc.SCTabselectedCSS;
    this.tabplainCSS = scc.SCTabplainCSS;
    this.toolbartext = scc.SCToolbartext;
@@ -216,7 +216,7 @@ SocialCalc.SpreadsheetControl = function() {
       var cr;
       var spreadsheet = SocialCalc.GetSpreadsheetControlObject();
       spreadsheet.context.cursorsuffix = "";
-      if (editor.range2.hasrange) {
+      if (editor.range2.hasrange && !editor.cellhandles.noCursorSuffix) {
          if (editor.ecell.row==editor.range2.top && (editor.ecell.col<editor.range2.left || editor.ecell.col>editor.range2.right+1)) {
             spreadsheet.context.cursorsuffix = "insertleft";
             }
@@ -845,7 +845,7 @@ SocialCalc.SpreadsheetControl.prototype.ExecuteCommand =
 SocialCalc.SpreadsheetControl.prototype.CreateSheetHTML = 
    function() {return SocialCalc.SpreadsheetControlCreateSheetHTML(this);};
 SocialCalc.SpreadsheetControl.prototype.CreateSpreadsheetSave = 
-   function() {return SocialCalc.SpreadsheetControlCreateSpreadsheetSave(this);};
+   function(otherparts) {return SocialCalc.SpreadsheetControlCreateSpreadsheetSave(this, otherparts);};
 SocialCalc.SpreadsheetControl.prototype.DecodeSpreadsheetSave = 
    function(str) {return SocialCalc.SpreadsheetControlDecodeSpreadsheetSave(this, str);};
 SocialCalc.SpreadsheetControl.prototype.CreateCellHTML = 
@@ -1059,7 +1059,10 @@ spreadsheet.Buttons = {
 
    spreadsheet.statuslineDiv = document.createElement("div");
    spreadsheet.statuslineDiv.style.cssText = spreadsheet.statuslineCSS;
-   spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight + "px";
+//   spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight + "px"; // didn't take padding into account!
+   spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight -
+      (spreadsheet.statuslineDiv.style.paddingTop.slice(0,-2)-0) -
+      (spreadsheet.statuslineDiv.style.paddingBottom.slice(0,-2)-0) + "px";
    spreadsheet.statuslineDiv.id = spreadsheet.idPrefix+"statusline";
    spreadsheet.spreadsheetDiv.appendChild(spreadsheet.statuslineDiv);
 
@@ -1138,7 +1141,7 @@ SocialCalc.GetSpreadsheetControlObject = function() {
    var csco = SocialCalc.CurrentSpreadsheetControlObject;
    if (csco) return csco;
 
-   throw ("No current SpreadsheetControl object.");
+//   throw ("No current SpreadsheetControl object.");
 
    }
 
@@ -1877,7 +1880,7 @@ SocialCalc.SpreadsheetControlExecuteCommand = function(obj, combostr, sstr) {
    combostr = combostr.replace(/%W/g, str.W);
    combostr = combostr.replace(/%P/g, str.P);
 
-   eobj.EditorScheduleSheetCommands(combostr);
+   eobj.EditorScheduleSheetCommands(combostr, true, false);
 
    }
 
@@ -2568,7 +2571,7 @@ SocialCalc.SpreadsheetControl.DoSum = function() {
          }
       }
 
-   editor.EditorScheduleSheetCommands(cmd);
+   editor.EditorScheduleSheetCommands(cmd, true, false);
 
    }
 
@@ -2852,14 +2855,14 @@ SocialCalc.SpreadsheetControlClipboardLoad = function() {
       }
    s.editor.EditorScheduleSheetCommands("loadclipboard "+
       SocialCalc.encodeForSave(
-         SocialCalc.ConvertOtherFormatToSave(document.getElementById(s.idPrefix+"clipboardtext").value, savetype)));
+         SocialCalc.ConvertOtherFormatToSave(document.getElementById(s.idPrefix+"clipboardtext").value, savetype)), true, false);
    }
 
 SocialCalc.SpreadsheetControlClipboardClear = function() {
    var s = SocialCalc.GetSpreadsheetControlObject();
    var clipele = document.getElementById(s.idPrefix+"clipboardtext");
    clipele.value = "";
-   s.editor.EditorScheduleSheetCommands("clearclipboard");
+   s.editor.EditorScheduleSheetCommands("clearclipboard", true, false);
    clipele.focus();
    }
 
@@ -2920,7 +2923,7 @@ SocialCalc.SettingsControlSave = function(target) {
    else { // Cancel
       }
    if (cmdstr) {
-      s.editor.EditorScheduleSheetCommands(cmdstr);
+      s.editor.EditorScheduleSheetCommands(cmdstr, true, false);
       }
    }
 
@@ -2931,7 +2934,7 @@ SocialCalc.SettingsControlSave = function(target) {
 ///////////////////////
 
 //
-// result = SocialCalc.SpreadsheetControlCreateSpreadsheetSave(spreadsheet)
+// result = SocialCalc.SpreadsheetControlCreateSpreadsheetSave(spreadsheet, otherparts)
 //
 // Saves the spreadsheet's sheet data, editor settings, and audit trail (redo stack).
 // The serialized data strings are concatenated together in multi-part MIME format.
@@ -2943,22 +2946,46 @@ SocialCalc.SettingsControlSave = function(target) {
 //   part:type2
 //   ...
 //
+// If otherparts is non-null, it is an object with:
+//   partname1: "part contents - should end with \n",
+//   partname2: "part contents - should end with \n"
+//
 
-SocialCalc.SpreadsheetControlCreateSpreadsheetSave = function(spreadsheet) {
+
+SocialCalc.SpreadsheetControlCreateSpreadsheetSave = function(spreadsheet, otherparts) {
 
    var result;
+
+   var otherpartsstr = "";
+   var otherpartsnames = "";
+   var partname, extranl;
+
+   if (otherparts) {
+      for (partname in otherparts) {
+         if (otherparts[partname].charAt(otherparts[partname]-1) != "\n") {
+            extranl = "\n";
+            }
+         else {
+            extranl = "";
+            }
+         otherpartsstr += "--" + spreadsheet.multipartBoundary + "\nContent-type: text/plain; charset=UTF-8\n\n" +
+            otherparts[partname] + extranl;
+         otherpartsnames += "part:"+partname + "\n";
+         }
+      }
 
    result = "socialcalc:version:1.0\n" +
       "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="+
       spreadsheet.multipartBoundary + "\n" +
       "--" + spreadsheet.multipartBoundary + "\nContent-type: text/plain; charset=UTF-8\n\n" +
-      "# SocialCalc Spreadsheet Control Save\nversion:1.0\npart:sheet\npart:edit\npart:audit\n" +
+      "# SocialCalc Spreadsheet Control Save\nversion:1.0\npart:sheet\npart:edit\npart:audit\n" + otherpartsnames +
       "--" + spreadsheet.multipartBoundary + "\nContent-type: text/plain; charset=UTF-8\n\n" +
       spreadsheet.CreateSheetSave() +
       "--" + spreadsheet.multipartBoundary + "\nContent-type: text/plain; charset=UTF-8\n\n" +
       spreadsheet.editor.SaveEditorSettings() +
       "--" + spreadsheet.multipartBoundary + "\nContent-type: text/plain; charset=UTF-8\n\n" +
       spreadsheet.sheet.CreateAuditString() +
+      otherpartsstr +
       "--" + spreadsheet.multipartBoundary + "--\n";
 
    return result;
@@ -3500,5 +3527,59 @@ SocialCalc.SettingControlReset = function() {
    for (ctrlname in sc.Controls) {
       if (sc.Controls[ctrlname].OnReset) sc.Controls[ctrlname].OnReset(ctrlname);
       }
+   }
+
+
+/**********************
+*
+* CtrlSEditor implementation for editing SocialCalc.OtherSaveParts
+*
+*/
+
+SocialCalc.OtherSaveParts = {}; // holds other parts to save - must be set when loaded if you want to keep
+
+SocialCalc.CtrlSEditor = function(whichpart) {
+
+   var strtoedit, partname;
+   if (whichpart.length > 0) {
+      strtoedit = SocialCalc.special_chars(SocialCalc.OtherSaveParts[whichpart] || "");
+      }
+   else {
+      strtoedit = "Listing of Parts\n";
+      for (partname in SocialCalc.OtherSaveParts) {
+         strtoedit += SocialCalc.special_chars("\nPart: "+partname+"\n=====\n"+SocialCalc.OtherSaveParts[partname]+"\n");
+         }
+      }
+   var editbox = document.createElement("div");
+   editbox.style.cssText = "position:absolute;z-index:500;width:300px;height:300px;left:100px;top:200px;border:1px solid black;background-color:#EEE;text-align:center;";
+   editbox.id = "socialcalc-editbox";
+   editbox.innerHTML = whichpart+'<br><br><textarea id="socialcalc-editbox-textarea" style="width:250px;height:200px;">'+
+      strtoedit + '</textarea><br><br><input type=button ' +
+      'onclick="SocialCalc.CtrlSEditorDone (\'socialcalc-editbox\', \''+whichpart+'\');" value="OK">';
+   document.body.appendChild(editbox);
+
+   var ebta = document.getElementById("socialcalc-editbox-textarea");
+   ebta.focus();
+   SocialCalc.CmdGotFocus(ebta);
+
+   }
+
+SocialCalc.CtrlSEditorDone = function(idprefix, whichpart) {
+
+   var edittextarea = document.getElementById(idprefix+"-textarea");
+   var text = edittextarea.value;
+   if (whichpart.length > 0) {
+      if (text.length > 0) {
+         SocialCalc.OtherSaveParts[whichpart] = text;
+         }
+      else {
+         delete SocialCalc.OtherSaveParts[whichpart];
+         }
+      }
+
+   var editbox = document.getElementById(idprefix);
+   SocialCalc.KeyboardFocus();
+   editbox.parentNode.removeChild(editbox);
+
    }
 

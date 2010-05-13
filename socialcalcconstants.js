@@ -3,7 +3,7 @@
 // The module of the SocialCalc package with customizable constants, strings, etc.
 // This is where most of the common localizations are done.
 //
-// (c) Copyright 2008, 2009 Socialtext, Inc.
+// (c) Copyright 2008, 2009, 2010 Socialtext, Inc.
 // All Rights Reserved.
 //
 // The contents of this file are subject to the Artistic License 2.0; you may not
@@ -223,6 +223,20 @@ SocialCalc.Constants = {
 
    ietUnknownFunction: "Unknown function ", // displayed when typing "=unknown("
 
+   //** SocialCalc.CellHandles
+
+   s_CHfillAllTooltip: "Fill Contents and Formats Down/Right", // tooltip for fill all handle
+   s_CHfillContentsTooltip: "Fill Contents Only Down/Right", // tooltip for fill formulas handle
+   s_CHmovePasteAllTooltip: "Move Contents and Formats", // etc.
+   s_CHmovePasteContentsTooltip: "Move Contents Only",
+   s_CHmoveInsertAllTooltip: "Slide Contents and Formats within Row/Col",
+   s_CHmoveInsertContentsTooltip: "Slide Contents within Row/Col",
+   s_CHindicatorOperationLookup: {"Fill": "Fill", "FillC": "Fill Contents",
+                                  "Move": "Move", "MoveI": "Slide", 
+                                  "MoveC": "Move Contents", "MoveIC": "Slide Contents"}, // short form of operation to follow drag
+   s_CHindicatorDirectionLookup: {"Down": " Down", "Right": " Right",
+                                  "Horizontal": " Horizontal", "Vertical": " Vertical"}, // direction that modifies operation during drag
+
    //*** SocialCalc.TableControl
 
    defaultTCSliderThickness: 9, // length of pane slider (numeric in pixels)
@@ -241,12 +255,12 @@ SocialCalc.Constants = {
    s_panesliderTooltipv: "Drag to lock pane horizontally",
    TClessbuttonStyle: "backgroundColor:#AAA;",
    TClessbuttonClass: "",
-   TClessbuttonRepeatWait: 500, // in milliseconds
-   TClessbuttonRepeatInterval: 100, // in milliseconds
+   TClessbuttonRepeatWait: 300, // in milliseconds
+   TClessbuttonRepeatInterval: 20,//100, // in milliseconds
    TCmorebuttonStyle: "backgroundColor:#AAA;",
    TCmorebuttonClass: "",
-   TCmorebuttonRepeatWait: 500, // in milliseconds
-   TCmorebuttonRepeatInterval: 100, // in milliseconds
+   TCmorebuttonRepeatWait: 300, // in milliseconds
+   TCmorebuttonRepeatInterval: 20,//100, // in milliseconds
    TCscrollareaStyle: "backgroundColor:#DDD;",
    TCscrollareaClass: "",
    TCscrollareaRepeatWait: 500, // in milliseconds
@@ -509,6 +523,15 @@ SocialCalc.Constants = {
    s_loc_XnewX: "[New]",
    s_loc_XnoneX: "[None]",
    s_loc_Xselect_rangeX: "[select range]",
+
+//
+// SocialCalc Spreadsheet Viewer module, socialcalcviewer.js:
+//
+
+   //*** SocialCalc.SpreadsheetViewer
+
+   SVStatuslineheight: 20, // in pixels
+   SVStatuslineCSS: "font-size:10px;padding:3px 0px;",
 
 //
 // SocialCalc Format Number module, formatnumber2.js:

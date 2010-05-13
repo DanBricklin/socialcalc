@@ -2,7 +2,7 @@
 // The main SocialCalc code module of the SocialCalc package
 //
 /*
-// (c) Copyright 2008 Socialtext, Inc.
+// (c) Copyright 2010 Socialtext, Inc.
 // All Rights Reserved.
 //
 // The contents of this file are subject to the Artistic License 2.0; you may not
@@ -1588,8 +1588,11 @@ SocialCalc.SheetCommandInfo = { // only one of these
    maxtimeslice: 100, // do another slice after this many milliseconds
    saveundo: false, // arg for ExecuteSheetCommand
 
-   statuscallback: null, // called during execution
-   statuscallbackparams: null
+   CmdExtensionCallbacks: {}, // for startcmdextension, in form: cmdname, {func:function(cmdname, data, sheet, SocialCalc.Parse object, saveundo), data:whatever}
+   cmdextensionbusy: "" // if length>0, command loop waits for SocialCalc.ResumeFromCmdExtension()
+
+//   statuscallback: null, // called during execution - obsolete: use sheet obj's
+//   statuscallbackparams: null
 
    };
 
@@ -1634,6 +1637,13 @@ SocialCalc.SheetCommandsTimerRoutine = function() {
 
       sci.parseobj.NextLine();
 
+      if (sci.cmdextensionbusy.length > 0) { // forced wait
+         if (sci.sheetobj.statuscallback) { // notify others if requested
+            sci.sheetobj.statuscallback(sci, "cmdextension", sci.cmdextensionbusy, sci.sheetobj.statuscallbackparams);
+            }
+         return;
+         }
+
       if (((new Date()) - starttime) >= sci.maxtimeslice) { // if taking too long, give up CPU for a while
          sci.timerobj = window.setTimeout(SocialCalc.SheetCommandsTimerRoutine, sci.timerdelay);
          return;
@@ -1646,6 +1656,15 @@ SocialCalc.SheetCommandsTimerRoutine = function() {
 
    }
 
+SocialCalc.ResumeFromCmdExtension = function() {
+
+   var sci = SocialCalc.SheetCommandInfo;
+
+   sci.cmdextensionbusy = "";
+
+   SocialCalc.SheetCommandsTimerRoutine();
+
+}
 
 //
 // errortext = SocialCalc.ExecuteSheetCommand(sheet, cmd, saveundo)
@@ -1675,12 +1694,15 @@ SocialCalc.SheetCommandsTimerRoutine = function() {
 //    unmerge C3
 //    insertcol/insertrow C5
 //    deletecol/deleterow C5:E7
-//    movepaste/moveinsert A1:B5 A8 (if insert, destination must be in same rows or columns or else paste done)
+//    movepaste/moveinsert A1:B5 A8 all/formulas/format (if insert, destination must be in same rows or columns or else paste done)
+//    sort cr1:cr2 col1 up/down col2 up/down col3 up/down
 //    name define NAME definition
 //    name desc NAME description
 //    name delete NAME
 //    recalc
 //    redisplay
+//    changedrendervalues
+//    startcmdextension extension rest-of-command
 //
 // If saveundo is true, then undo information is saved in sheet.changes.
 //
@@ -1696,6 +1718,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
    var cols, dirs, lastsortcol, i, sortlist, sortcells, sortvalues, sorttypes;
    var sortfunction, slen, valtype, originalrow, sortedcr;
    var name, v1, v2;
+   var cmdextension;
 
    var attribs = sheet.attribs;
    var changes = sheet.changes;
@@ -1975,6 +1998,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
          rest = cmd.RestOfString();
          ParseRange();
 
+         if (saveundo) changes.AddUndo("changedrendervalues"); // to take care of undone pasted spans
          if (cmd1=="cut") { // save copy of whole thing before erasing
             if (saveundo) changes.AddUndo("loadclipboard", SocialCalc.encodeForSave(SocialCalc.Clipboard.clipboard));
             SocialCalc.Clipboard.clipboard = SocialCalc.CreateSheetSave(sheet, what);
@@ -2020,6 +2044,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
       case "filldown":
          sheet.renderneeded = true;
          sheet.changedrendervalues = true;
+         if (saveundo) changes.AddUndo("changedrendervalues"); // to take care of undone pasted spans
          what = cmd.NextToken();
          rest = cmd.RestOfString();
          ParseRange();
@@ -2101,6 +2126,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
       case "paste":
          sheet.renderneeded = true;
          sheet.changedrendervalues = true;
+         if (saveundo) changes.AddUndo("changedrendervalues"); // to take care of undone pasted spans
          what = cmd.NextToken();
          rest = cmd.RestOfString();
          ParseRange();
@@ -2170,6 +2196,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
       case "sort": // sort cr1:cr2 col1 up/down col2 up/down col3 up/down
          sheet.renderneeded = true;
          sheet.changedrendervalues = true;
+         if (saveundo) changes.AddUndo("changedrendervalues"); // to take care of undone pasted spans
          what = cmd.NextToken();
          ParseRange();
          cols = []; // get columns and sort directions (or "")
@@ -2582,16 +2609,19 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
       case "movepaste":
       case "moveinsert":
 
-         var movingcells, destcr, inserthoriz, insertvert, pushamount, movedto;
+         var movingcells, dest, destcr, inserthoriz, insertvert, pushamount, movedto;
 
          sheet.renderneeded = true;
          sheet.changedrendervalues = true;
+         if (saveundo) changes.AddUndo("changedrendervalues"); // to take care of undone pasted spans
          what = cmd.NextToken();
-         rest = cmd.RestOfString();
+         dest = cmd.NextToken();
+         rest = cmd.RestOfString(); // rest is all/formulas/formats
+         if (rest=="") rest = "all";
 
          ParseRange();
 
-         destcr = SocialCalc.coordToCr(rest);
+         destcr = SocialCalc.coordToCr(dest);
 
          coloffset = destcr.col - cr1.col;
          rowoffset = destcr.row - cr1.row;
@@ -2607,9 +2637,41 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                cr = SocialCalc.crToCoord(col, row);
                cell=sheet.GetAssuredCell(cr);
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
-               if (sheet.cells[cr]) { // if had something
-                  movingcells[cr] = sheet.cells[cr]; // save it
-                  delete sheet.cells[cr]; // and delete from sheet
+
+               if (!sheet.cells[cr]) { // if had nothing
+                  continue; // don't save anything
+                  }
+               movingcells[cr] = new SocialCalc.Cell(cr); // create new cell to copy
+
+               for (attrib in cellProperties) { // go through each property
+                  if (typeof cell[attrib] === undefined) { // don't copy undefined things and no need to delete
+                     continue;
+                     }
+                  else {
+                     movingcells[cr][attrib] = cell[attrib]; // copy for potential moving
+                     }
+                  if (rest == "all") {
+                     delete cell[attrib];
+                     }
+                  if (rest == "formulas") {
+                     if (cellProperties[attrib] == 1 || cellProperties[attrib] == 3) {
+                        delete cell[attrib];
+                        }
+                     }
+                  if (rest == "formats") {
+                     if (cellProperties[attrib] == 2) {
+                        delete cell[attrib];
+                        }
+                     }
+                  }
+               if (rest == "formulas") { // leave pristene deleted cell
+                  cell.datavalue = "";
+                  cell.datatype = null;
+                  cell.formula = "";
+                  cell.valuetype = "b";
+                  }
+               if (rest == "all") { // leave nothing for move all
+                  delete sheet.cells[cr];
                   }
                }
             }
@@ -2656,22 +2718,40 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (row = 0; row < pushamount; row++) {
                for (col = cr1.col; col <= cr2.col; col++) {
                   if (insertvert < 0) {
-                     cr = SocialCalc.crToCoord(col, destcr.row+pushamount-row-1);
-                     crbase = SocialCalc.crToCoord(col, cr2.row-row);
+                     crbase = SocialCalc.crToCoord(col, destcr.row+pushamount-row-1); // from cell
+                     cr = SocialCalc.crToCoord(col, cr2.row-row); // to cell
                      }
                   else {
-                     cr = SocialCalc.crToCoord(col, destcr.row-pushamount+row+1);
-                     crbase = SocialCalc.crToCoord(col, cr1.row+row);
+                     crbase = SocialCalc.crToCoord(col, destcr.row-pushamount+row+1); // from cell
+                     cr = SocialCalc.crToCoord(col, cr1.row+row); // to cell
                      }
-                  cell=sheet.GetAssuredCell(cr);
-                  if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
-                  if (sheet.cells[cr]) {
-                     sheet.cells[crbase] = sheet.cells[cr];
+
+                  basecell = sheet.GetAssuredCell(crbase);
+                  if (saveundo) changes.AddUndo("set "+crbase+" all", sheet.CellToString(basecell));
+
+                  cell = sheet.GetAssuredCell(cr);
+                  if (rest == "all" || rest == "formats") {
+                     for (attrib in cellProperties) {
+                        if (cellProperties[attrib] == 1) continue; // copy only format attributes
+                        if (typeof basecell[attrib] === undefined || cellProperties[attrib] == 3) {
+                           delete cell[attrib];
+                           }
+                        else {
+                           cell[attrib] = basecell[attrib];
+                           }
+                        }
                      }
-                  else {
-                     delete sheet.cells[crbase];
+                  if (rest == "all" || rest == "formulas") {
+                     cell.datavalue = basecell.datavalue;
+                     cell.datatype = basecell.datatype;            
+                     cell.valuetype = basecell.valuetype;
+                     cell.formula = basecell.formula;
+                     delete cell.parseinfo;
+                     cell.errors = basecell.errors;
                      }
-                  movedto[cr] = crbase; // old cr is now at crbase
+                  delete cell.displaystring;
+
+                  movedto[crbase] = cr; // old crbase is now at cr
                   }
                }
             }
@@ -2679,22 +2759,40 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = 0; col < pushamount; col++) {
                for (row = cr1.row; row <= cr2.row; row++) {
                   if (inserthoriz < 0) {
-                     cr = SocialCalc.crToCoord(destcr.col+pushamount-col-1, row);
-                     crbase = SocialCalc.crToCoord(cr2.col-col, row);
+                     crbase = SocialCalc.crToCoord(destcr.col+pushamount-col-1, row);
+                     cr = SocialCalc.crToCoord(cr2.col-col, row);
                      }
                   else {
-                     cr = SocialCalc.crToCoord(destcr.col-pushamount+col+1, row);
-                     crbase = SocialCalc.crToCoord(cr1.col+col, row);
+                     crbase = SocialCalc.crToCoord(destcr.col-pushamount+col+1, row);
+                     cr = SocialCalc.crToCoord(cr1.col+col, row);
                      }
-                  cell=sheet.GetAssuredCell(cr);
-                  if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
-                  if (sheet.cells[cr]) {
-                     sheet.cells[crbase] = sheet.cells[cr];
+
+                  basecell = sheet.GetAssuredCell(crbase);
+                  if (saveundo) changes.AddUndo("set "+crbase+" all", sheet.CellToString(basecell));
+
+                  cell = sheet.GetAssuredCell(cr);
+                  if (rest == "all" || rest == "formats") {
+                     for (attrib in cellProperties) {
+                        if (cellProperties[attrib] == 1) continue; // copy only format attributes
+                        if (typeof basecell[attrib] === undefined || cellProperties[attrib] == 3) {
+                           delete cell[attrib];
+                           }
+                        else {
+                           cell[attrib] = basecell[attrib];
+                           }
+                        }
                      }
-                  else {
-                     delete sheet.cells[crbase];
+                  if (rest == "all" || rest == "formulas") {
+                     cell.datavalue = basecell.datavalue;
+                     cell.datatype = basecell.datatype;            
+                     cell.valuetype = basecell.valuetype;
+                     cell.formula = basecell.formula;
+                     delete cell.parseinfo;
+                     cell.errors = basecell.errors;
                      }
-                  movedto[cr] = crbase; // old cr is now at crbase
+                  delete cell.displaystring;
+
+                  movedto[crbase] = cr; // old crbase is now at cr
                   }
                }
             }
@@ -2709,13 +2807,45 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                cr = SocialCalc.crToCoord(col+coloffset, row+rowoffset);
                cell=sheet.GetAssuredCell(cr);
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
-               delete sheet.cells[cr]; // delete what used to be there at destination
 
                crbase = SocialCalc.crToCoord(col, row); // get old cell to move
-               if (movingcells[crbase]) { // if has something
-                  sheet.cells[cr] = movingcells[crbase]; // copy it in
+
+               movedto[crbase] = cr; // old crbase (moved cell) will now be at cr (destination)
+
+               if (rest == "all" && !movingcells[crbase]) { // moving an empty cell
+                  delete sheet.cells[cr]; // make the cell empty
+                  continue;
                   }
-               movedto[crbase] = cr; // old crbase (moved cell) is now at cr (destination)
+
+               basecell = movingcells[crbase];
+               if (!basecell) basecell = sheet.GetAssuredCell(crbase);
+
+               if (rest == "all" || rest == "formats") {
+                  for (attrib in cellProperties) {
+                     if (cellProperties[attrib] == 1) continue; // copy only format attributes
+                     if (typeof basecell[attrib] === undefined || cellProperties[attrib] == 3) {
+                        delete cell[attrib];
+                        }
+                     else {
+                        cell[attrib] = basecell[attrib];
+                        }
+                     }
+                  }
+               if (rest == "all" || rest == "formulas") {
+                  cell.datavalue = basecell.datavalue;
+                  cell.datatype = basecell.datatype;            
+                  cell.valuetype = basecell.valuetype;
+                  cell.formula = basecell.formula;
+                  delete cell.parseinfo;
+                  cell.errors = basecell.errors;
+                  if (basecell.comment) { // comments are pasted as part of content, though not filled, etc.
+                     cell.comment = basecell.comment;
+                     }
+                  else if (cell.comment) {
+                     delete cell.comment;
+                     }
+                  }
+               delete cell.displaystring;
                }
             }
 
@@ -2803,6 +2933,18 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
 
       case "redisplay":
          sheet.renderneeded = true;
+         break;
+
+      case "changedrendervalues": // needed for undo sometimes
+         sheet.changedrendervalues = true;
+         break;
+
+      case "startcmdextension": // startcmdextension extension rest-of-command
+         name = cmd.NextToken();
+         cmdextension = SocialCalc.SheetCommandInfo.CmdExtensionCallbacks[name];
+         if (cmdextension) {
+            cmdextension.func(name, cmdextension.data, sheet, cmd, saveundo);
+            }
          break;
 
       default:

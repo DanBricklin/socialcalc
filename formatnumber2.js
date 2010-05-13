@@ -251,7 +251,7 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
 
       ymd = SocialCalc.FormatNumber.convert_date_julian_to_gregorian(Math.floor(rawvalue+scfn.datevalues.julian_offset));
 
-      minOK; // says "m" can be minutes
+      minOK = 0; // says "m" can be minutes if true
       mspos = sectioninfo.sectionstart; // m scan position in ops
       for ( ; ; mspos++) { // scan for "m" and "mm" to see if any minutes fields, and am/pm
          op = thisformat.operators[mspos];

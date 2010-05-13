@@ -27,6 +27,7 @@
    my $titlestr = "SocialCalc Server $versionstr";
    my $jsdir = "/sgi/scjs/"; # The subdirectory of the server home page (when run thru CGI)
                                  # where the .js files are, and ./images/ subdirectory.
+   my $imagedir = "/images/sc-";
 
 #
 # This whole first section lets this code run either as a CGI script on a server
@@ -36,7 +37,7 @@
 #
 
    if ($ENV{REQUEST_METHOD}) { # being run as a CGI on a server
-      print "Content-type: text/html\n\n";
+     print "Content-type: text/html\n\n";
       my $q = new CGI;
       print process_request($q);
       exit;
@@ -84,9 +85,9 @@
                undef($c);
                exit;
                }
-            if ($uri =~ /\/([a-z\-0-9]+)\.(gif|js|css)$/) { # ok request
+            if ($uri =~ /\/([a-z\-0-9]+)\.(gif|js|css|png)(\?.*)*$/) { # ok request
                $uri = "$1.$2";
-               $uri = "images/$uri" if $2 eq "gif";
+               $uri = "images/$uri" if ($2 eq "gif" || $2 eq "png");
 #               if ($2 eq "js") {
 #                  $res->content_type("text/html; charset=UTF-8");
 #                  }
@@ -229,6 +230,20 @@ EOF
           "Saved updated '$pagename'.<br>";
       }
 
+   if ($q->param('filecontents')) { # return contents of file
+      my $fileurl = $q->param('filecontents');
+
+      open (PAGEFILEIN, "$fileurl");
+      my $filestr;
+      while (my $line = <PAGEFILEIN>) {
+         $filestr .= $line;
+         }
+      close PAGEFILEIN;
+print $filestr;
+      return $filestr;
+
+      }
+
    $response = do_displaypage($q, $pagename, $statusmessage); # Otherwise, display page
 
    return $response;
@@ -327,6 +342,8 @@ sub start_editsheet {
       }
    $sheetstr = special_chars($sheetstr);
 
+   close PAGEFILEIN;
+
    $response = <<"EOF"; # output page with edit JS code
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -369,11 +386,14 @@ function dosave() {
 
 // start everything
 
-   SocialCalc.Constants.defaultImagePrefix = "$jsdir/images/sc-";
-   SocialCalc.Popup.imagePrefix = "$jsdir/images/sc-";
+   SocialCalc.Constants.defaultImagePrefix = "$jsdir$imagedir";
+   SocialCalc.Popup.imagePrefix = "$jsdir$imagedir";
 
    var spreadsheet = new SocialCalc.SpreadsheetControl();
    spreadsheet.InitializeSpreadsheetControl("tableeditor", 0, 0, 0);
+
+   SocialCalc.SheetCommandInfo.CmdExtensionCallbacks.docmd = {func:docmdext, data:spreadsheet};
+   SocialCalc.SheetCommandInfo.CmdExtensionCallbacks.loadclipboard = {func:doloadclipboardext, data:spreadsheet};
 
    var savestr = document.getElementById("sheetdata").value;
    var parts = spreadsheet.DecodeSpreadsheetSave(savestr);
@@ -385,6 +405,9 @@ function dosave() {
       if (parts.edit) {
          spreadsheet.editor.LoadEditorSettings(savestr.substring(parts.edit.start, parts.edit.end));
          }
+      if (parts.startupmacro) {
+         spreadsheet.editor.EditorScheduleSheetCommands(savestr.substring(parts.startupmacro.start, parts.startupmacro.end), false, true);
+         }
       }
    if (spreadsheet.sheet.attribs.recalc=="off") {
       spreadsheet.sheet.attribs.needsrecalc = "yes"; // default turn it on
@@ -393,6 +416,123 @@ function dosave() {
    else {
       spreadsheet.ExecuteCommand('recalc', '');
       }
+
+function docmdext (name, data, sheet, cmd, saveundo) {
+
+   var cmdstr = cmd.RestOfString();
+   data.editor.EditorScheduleSheetCommands(cmdstr, false, false);
+   SocialCalc.SheetCommandInfo.cmdextensionbusy = "Do Cmd Ext "+cmdstr;
+
+   window.setTimeout(function(){SocialCalc.ResumeFromCmdExtension();}, 100);
+
+   }
+
+function doloadclipboardext (name, data, sheet, cmd, saveundo) {
+
+   var cmdstr = cmd.RestOfString();
+   SocialCalc.SheetCommandInfo.cmdextensionbusy = "Load Clipboard Ext "+cmdstr;
+
+   loaddata(cmdstr);
+
+//   window.setTimeout(function(){SocialCalc.ResumeFromCmdExtension();}, 100);
+//   SocialCalc.ResumeFromCmdExtension();
+   }
+
+var loaddatatimerobj;
+
+function loaddata(url) {
+
+   var loadscript = document.createElement("script");
+   loadscript.type = "text/javascript";
+   loadscript.src = url+"?"+((new Date()).getTime()+'0');
+   document.body.appendChild(loadscript);
+
+   loaddatatimerobj = window.setTimeout(loaddatatimeout, 4000);
+
+   }
+
+function doloaddataload(val) {
+
+   if (loaddatatimerobj) {
+      window.clearTimeout(loaddatatimerobj);
+      loaddatatimerobj = null;
+      }
+
+   var sview = SocialCalc.GetSpreadsheetControlObject();
+   parts = sview.DecodeSpreadsheetSave(val);
+   if (parts) {
+      if (parts.sheet) {
+         SocialCalc.Clipboard.clipboard = SocialCalc.decodeFromSave(val.substring(parts.sheet.start, parts.sheet.end));
+         }
+      }
+//   window.setTimeout(function(){SocialCalc.ResumeFromCmdExtension();}, 100);
+   SocialCalc.ResumeFromCmdExtension();
+   }
+
+function loaddatatimeout() {
+
+   if (loaddatatimerobj) {
+      window.clearTimeout(loaddatatimerobj);
+      loaddatatimerobj = null;
+      }
+
+   window.setTimeout(function(){SocialCalc.ResumeFromCmdExtension();}, 10);
+
+   }
+
+// Remote data lookup demo code
+
+var loadtimerobj;
+
+function loadsheet(sheetname) {
+
+   var matches = sheetname.match(/^\\{scdata\\:\\s+(.+?)\\}\$/); // {scdata: URL w/o http://)
+
+   if (!matches) {
+      return false;
+      }
+
+   var loadscript = document.createElement("script");
+   loadscript.type = "text/javascript";
+   loadscript.src = "http://"+matches[1]+"?"+((new Date()).getTime()+'0');
+   document.body.appendChild(loadscript);
+
+   loadtimerobj = window.setTimeout(loadframetimeout, 4000);
+
+   return true;
+   }
+
+SocialCalc.RecalcInfo.LoadSheet = loadsheet;
+
+function doloadframeload(val) {
+
+   if (loadtimerobj) {
+      window.clearTimeout(loadtimerobj);
+      loadtimerobj = null;
+      }
+
+   var sview = SocialCalc.GetSpreadsheetControlObject();
+   parts = sview.DecodeSpreadsheetSave(val);
+   if (parts) {
+      if (parts.sheet) {
+         SocialCalc.RecalcLoadedSheet(null, val.substring(parts.sheet.start, parts.sheet.end), true); // notify recalc loop
+         }
+      }
+   if (val=="") {
+      SocialCalc.RecalcLoadedSheet(null, "", true); // notify recalc loop that it's not available, but that we tried
+      }
+   }
+
+function loadframetimeout() {
+
+   if (loadtimerobj) {
+      window.clearTimeout(loadtimerobj);
+      loadtimerobj = null;
+      }
+
+   SocialCalc.RecalcLoadedSheet(null, "", true); // notify recalc loop that it's not available, but that we tried
+
+   }
 
 </script>
 </body>
@@ -467,8 +607,8 @@ EOF
 
    var spreadsheet = new SocialCalc.SpreadsheetControl();
 
-   SocialCalc.Constants.defaultImagePrefix = "$jsdir/images/sc-";
-   SocialCalc.Popup.imagePrefix = "$jsdir/images/sc-";
+   SocialCalc.Constants.defaultImagePrefix = "$jsdir$imagedir";
+   SocialCalc.Popup.imagePrefix = "$jsdir$imagedir";
 
    var savestr = document.getElementById("sheetdata").value;
    var parts = spreadsheet.DecodeSpreadsheetSave(savestr);
