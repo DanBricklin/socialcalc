@@ -256,6 +256,9 @@ SocialCalc.SpreadsheetControl = function() {
 '<img id="%id.button_delete" src="%img.delete.gif" style="vertical-align:bottom;">'+
 ' <img id="%id.button_pasteformats" src="%img.pasteformats.gif" style="vertical-align:bottom;">'+
 ' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
+' <span id="%id.locktools"><img id="%id.button_lock" src="%img.lock.gif" style="vertical-align:bottom;">'+
+' <img id="%id.button_unlock" src="%img.unlock.gif" style="vertical-align:bottom;">'+
+' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span> '+
 '<img id="%id.button_filldown" src="%img.filldown.gif" style="vertical-align:bottom;">'+
 ' <img id="%id.button_fillright" src="%img.fillright.gif" style="vertical-align:bottom;">'+
 ' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
@@ -953,6 +956,8 @@ spreadsheet.Buttons = {
    button_cut: {tooltip: "Cut", command: "cut"},
    button_paste: {tooltip: "Paste", command: "paste"},
    button_pasteformats: {tooltip: "Paste Formats", command: "pasteformats"},
+   button_lock: {tooltip: "Lock", command: "lock"},
+   button_unlock: {tooltip: "Unlock", command: "unlock"},
    button_delete: {tooltip: "Delete Contents", command: "delete"},
    button_filldown: {tooltip: "Fill Down", command: "filldown"},
    button_fillright: {tooltip: "Fill Right", command: "fillright"},
@@ -1006,7 +1011,8 @@ spreadsheet.Buttons = {
          {normalstyle: "border:1px solid #FFF;backgroundColor:#FFF;",
           hoverstyle: "border:1px solid #CCC;backgroundColor:#FFF;",
           downstyle: "border:1px solid #000;backgroundColor:#FFF;"}, 
-         {MouseDown: spreadsheet.formulabuttons[button].command});
+         {MouseDown: spreadsheet.formulabuttons[button].command, Disabled: function() {return spreadsheet.editor.ECellReadonly();}});
+      
       spreadsheet.formulabarDiv.appendChild(bele);
       }
 
@@ -1042,6 +1048,7 @@ spreadsheet.Buttons = {
       v.style.display = "none";
       v.style.width = spreadsheet.width + "px";
       v.style.height = spreadsheet.viewheight + "px";
+      v.id = spreadsheet.idPrefix + views[vname].name + "view";
 
       html = SCLocSS(html); // localize with %loc!string!, etc.
 
@@ -1653,6 +1660,8 @@ SocialCalc.SpreadsheetCmdLookup = {
  'cut': 'cut %C all',
  'paste': 'paste %C all',
  'pasteformats': 'paste %C formats',
+ 'lock': 'set %C readonly yes',
+ 'unlock': 'set %C readonly no',
  'delete': 'erase %C formulas',
  'filldown': 'filldown %C all',
  'fillright': 'fillright %C all',
@@ -2027,9 +2036,10 @@ SocialCalc.SpreadsheetControl.DoFunctionList = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
+   var editor = spreadsheet.editor;
 
-   main.style.top = (vp.height/3)+"px";
-   main.style.left = (vp.width/3)+"px";
+   main.style.top = vp.verticalScroll-editor.relativeoffset.top+(vp.height/3)+"px";
+   main.style.left = vp.horizontalScroll-editor.relativeoffset.left+(vp.width/3)+"px";
    main.style.zIndex = 100;
    main.style.backgroundColor = "#FFF";
    main.style.border = "1px solid black";
@@ -2211,9 +2221,10 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
+   var editor = spreadsheet.editor;
 
-   main.style.top = (vp.height/3)+"px";
-   main.style.left = (vp.width/3)+"px";
+   main.style.top = vp.verticalScroll-editor.relativeoffset.top+(vp.height/3)+"px";
+   main.style.left = vp.horizontalScroll-editor.relativeoffset.left+(vp.width/3)+"px";
    main.style.zIndex = 100;
    main.style.backgroundColor = "#FFF";
    main.style.border = "1px solid black";
@@ -2395,9 +2406,10 @@ SocialCalc.SpreadsheetControl.DoLink = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
+   var editor = spreadsheet.editor;
 
-   main.style.top = (vp.height/3)+"px";
-   main.style.left = (vp.width/3)+"px";
+   main.style.top = vp.verticalScroll-editor.relativeoffset.top+(vp.height/3)+"px";
+   main.style.left = vp.horizontalScroll-editor.relativeoffset.left+(vp.width/3)+"px";
    main.style.zIndex = 100;
    main.style.backgroundColor = "#FFF";
    main.style.border = "1px solid black";
@@ -2710,7 +2722,10 @@ SocialCalc.SpreadsheetControlCommentSet = function() {
    var s=SocialCalc.GetSpreadsheetControlObject();
    s.ExecuteCommand("set %C comment "+SocialCalc.encodeForSave(document.getElementById(s.idPrefix+"commenttext").value));
    var cell=SocialCalc.GetEditorCellElement(s.editor, s.editor.ecell.row, s.editor.ecell.col);
-   s.editor.UpdateCellCSS(cell, s.editor.ecell.row, s.editor.ecell.col);
+   if (!s.editor.ECellReadonly()) {
+      cell.element.title = document.getElementById(s.idPrefix+"commenttext").value;
+      s.editor.UpdateCellCSS(cell, s.editor.ecell.row, s.editor.ecell.col);
+      }
    SocialCalc.KeyboardFocus();
    }
 

@@ -133,6 +133,12 @@ SocialCalc.Constants = {
    defaultCommentNoGridClass: "", // class added to cells with non-null comments when grid not enabled
    defaultCommentNoGridStyle: "", // style added to cells with non-null comments when grid not enabled
 
+   defaultReadonlyClass: "", // class added to readonly cells when grid enabled
+   defaultReadonlyStyle: "background-repeat:no-repeat;background-position:top right;background-image:url(images/sc-lockbg.gif);", // style added to readonly cells when grid enabled
+   defaultReadonlyNoGridClass: "", // class added to readonly cells when grid not enabled
+   defaultReadonlyNoGridStyle: "", // style added to readonly cells when grid not enabled
+   defaultReadonlyComment: "Locked cell",
+
    defaultColWidth: "80", // text
    defaultMinimumColWidth: 10, // numeric
 

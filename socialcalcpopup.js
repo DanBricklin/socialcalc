@@ -316,8 +316,10 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
 
    pos = SocialCalc.GetElementPositionWithScroll(spcdata.mainele);
 
-   main.style.top = (pos.top+spcdata.mainele.offsetHeight)+"px";
-   main.style.left = (pos.left)+"px";
+   editor = SocialCalc.CurrentSpreadsheetControlObject.editor;
+
+   main.style.top = (pos.top+spcdata.mainele.offsetHeight-editor.relativeoffset.top)+"px";
+   main.style.left = (pos.left-editor.relativeoffset.left)+"px";
    main.style.zIndex = 100;
    main.style.backgroundColor = "#FFF";
    main.style.border = "1px solid black";
@@ -561,7 +563,7 @@ SocialCalc.Popup.Types.List.Create = function(type, id, attribs) {
    var spc = sp.Controls;
 
    var spcid = {type: type, value: "", display: "", data: {}};
-   if (spc[id]) {alert("Already created "+id); return;}
+   //if (spc[id]) {alert("Already created "+id); return;}
    spc[id] = spcid;
    var spcdata = spcid.data;
 
@@ -965,7 +967,7 @@ SocialCalc.Popup.Types.ColorChooser.Create = function(type, id, attribs) {
    var spc = sp.Controls;
 
    var spcid = {type: type, value: "", display: "", data: {}};
-   if (spc[id]) {alert("Already created "+id); return;}
+   //if (spc[id]) {alert("Already created "+id); return;}
    spc[id] = spcid;
    var spcdata = spcid.data;
 

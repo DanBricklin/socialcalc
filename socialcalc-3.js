@@ -155,6 +155,7 @@ SocialCalc.Callbacks = {
 //    valuetype: first char is main type, the following are sub-types.
 //               Main types are b=blank cell, n=numeric, t=text, e=error
 //               Examples of using sub-types would be "nt" for a numeric time value, "n$" for currency, "nl" for logical
+//    readonly: if present, whether the current cell is read-only of writable
 //    displayvalue: if present, rendered version of datavalue with formatting attributes applied
 //    parseinfo: if present, cached parsed version of formula
 //
@@ -182,6 +183,7 @@ SocialCalc.Cell = function(coord) {
    this.datatype = null;
    this.formula = "";
    this.valuetype = "b";
+   this.readonly = false;
 
    }
 
@@ -190,7 +192,7 @@ SocialCalc.Cell = function(coord) {
 // Type 1: Base, Type 2: Attribute, Type 3: Special (e.g., displaystring, parseinfo)
 
 SocialCalc.CellProperties = {
-   coord: 1, datavalue: 1, datatype: 1, formula: 1, valuetype: 1, errors: 1, comment: 1,
+   coord: 1, datavalue: 1, datatype: 1, formula: 1, valuetype: 1, errors: 1, comment: 1, readonly: 1,
    bt: 2, br: 2, bb: 2, bl: 2, layout: 2, font: 2, color: 2, bgcolor: 2,
    cellformat: 2, nontextvalueformat: 2, textvalueformat: 2, colspan: 2, rowspan: 2,
    cssc: 2, csss: 2, mod: 2,
@@ -639,6 +641,10 @@ SocialCalc.CellFromStringParts = function(sheet, cell, parts, j) {
             cell.formula=SocialCalc.decodeFromSave(parts[j++]);
             cell.datatype="c";
             break;
+         case "ro":
+            ro=SocialCalc.decodeFromSave(parts[j++]);
+            cell.readonly=ro.toLowerCase()=="yes";
+            break;
          case "e":
             cell.errors=SocialCalc.decodeFromSave(parts[j++]);
             break;
@@ -849,6 +855,9 @@ SocialCalc.CellToString = function(sheet, cell) {
       else if (cell.datatype=="c") {
          line += ":vtc:"+cell.valuetype+":"+value+":"+formula;
          }
+      }
+   if (cell.readonly) {
+      line += ":ro:yes";
       }
    if (cell.errors) {
       line += ":e:"+SocialCalc.encodeForSave(cell.errors);
@@ -1847,6 +1856,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                for (col=cr1.col; col <= cr2.col; col++) {
                   cr = SocialCalc.crToCoord(col, row);
                   cell=sheet.GetAssuredCell(cr);
+                  if (cell.readonly && attrib!="readonly") continue;
                   if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
                   if (attrib=="value") { // set coord value type numeric-value
                      pos = rest.indexOf(" ");
@@ -1949,6 +1959,9 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                   else if (attrib=="comment") {
                      cell.comment = SocialCalc.decodeFromSave(rest);
                      }
+                  else if (attrib=="readonly") {
+                     cell.readonly = rest.toLowerCase()=="yes";
+                     }
                   else {
                      errortext = scc.s_escUnknownSetCoordCmd+cmdstr;
                      }
@@ -1964,6 +1977,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
          rest = cmd.RestOfString();
          ParseRange();
          cell=sheet.GetAssuredCell(cr1.coord);
+         if (cell.readonly) break;
          if (saveundo) changes.AddUndo("unmerge "+cr1.coord);
 
          if (cr2.col > cr1.col) cell.colspan = cr2.col - cr1.col + 1;
@@ -1981,6 +1995,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
          rest = cmd.RestOfString();
          ParseRange();
          cell=sheet.GetAssuredCell(cr1.coord);
+         if (cell.readonly) break;
          if (saveundo) changes.AddUndo("merge "+cr1.coord+":"+SocialCalc.crToCoord(cr1.col+(cell.colspan||1)-1, cr1.row+(cell.rowspan||1)-1));
 
          delete cell.colspan;
@@ -2008,6 +2023,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = cr1.col; col <= cr2.col; col++) {
                cr = SocialCalc.crToCoord(col, row);
                cell=sheet.GetAssuredCell(cr);
+               if (cell.readonly) continue;
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
                if (rest=="all") {
                   delete sheet.cells[cr];
@@ -2062,6 +2078,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = colstart; col <= cr2.col; col++) {
                cr = SocialCalc.crToCoord(col, row);
                cell=sheet.GetAssuredCell(cr);
+               if (cell.readonly) continue;
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
                if (fillright) {
                   crbase = SocialCalc.crToCoord(cr1.col, row);
@@ -2147,6 +2164,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = cr1.col; col < cr1.col+numcols; col++) {
                cr = SocialCalc.crToCoord(col, row);
                cell=sheet.GetAssuredCell(cr);
+               if (cell.readonly) continue;
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
                crbase = SocialCalc.crToCoord(col-coloffset, row-rowoffset);
                basecell = clipsheet.GetAssuredCell(crbase);
@@ -2477,6 +2495,14 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             rowstart = cr2.row + 1;
             }
 
+         for (row=rowstart; row <= lastrow - rowoffset; row++) { // check for readonly cells
+            for (col=colstart; col <= lastcol - coloffset; col++) {
+               cr = SocialCalc.crToCoord(col+coloffset, row+rowoffset);
+               cell = sheet.cells[cr];
+               if (cell && cell.readonly) return errortext; 
+               }
+            }
+
          for (row=rowstart; row <= lastrow - rowoffset; row++) { // copy the cells backwards - extra so no dup of last set
             for (col=colstart; col <= lastcol - coloffset; col++) {
                cr = SocialCalc.crToCoord(col+coloffset, row+rowoffset);
@@ -2636,6 +2662,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = cr1.col; col <= cr2.col; col++) {
                cr = SocialCalc.crToCoord(col, row);
                cell=sheet.GetAssuredCell(cr);
+               if (cell.readonly) continue;
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
 
                if (!sheet.cells[cr]) { // if had nothing
@@ -2806,6 +2833,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
             for (col = cr1.col; col < cr1.col+numcols; col++) {
                cr = SocialCalc.crToCoord(col+coloffset, row+rowoffset);
                cell=sheet.GetAssuredCell(cr);
+               if (cell.readonly) continue;
                if (saveundo) changes.AddUndo("set "+cr+" all", sheet.CellToString(cell));
 
                crbase = SocialCalc.crToCoord(col, row); // get old cell to move
@@ -4031,6 +4059,12 @@ SocialCalc.RenderContext = function(sheetobj) {
    this.commentNoGridClassName = scc.defaultCommentNoGridClass; // for cells when this.showGrid is false
    this.commentNoGridCSS = scc.defaultCommentNoGridStyle; // any combination of classnames and styles may be used
 
+   this.readonlyClassName = scc.defaultReadonlyClass; // for readonly cells with non-blank comments when this.showGrid is true
+   this.readonlyCSS = scc.defaultReadonlyStyle; // any combination of classnames and styles may be used
+   this.readonlyNoGridClassName = scc.defaultReadonlyNoGridClass; // for readonly cells when this.showGrid is false
+   this.readonlyNoGridCSS = scc.defaultReadonlyNoGridStyle; // any combination of classnames and styles may be used
+   this.readonlyComment = scc.defaultReadonlyComment;
+
    this.classnames = // any combination of classnames and explicitStyles can be used
       {
          colname: scc.defaultColnameClass,
@@ -4635,6 +4669,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
    if (num) stylestr+="border-left:"+sheetobj.borderstyles[num]+";";
 
    if (cell.comment) {
+      result.title = cell.comment;
       if (context.showGrid) {
          if (context.commentClassName) {
             result.className = (result.className ? result.className+" " : "") + context.commentClassName;
@@ -4646,6 +4681,24 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
             result.className = (result.className ? result.className+" " : "") + context.commentNoGridClassName;
             }
          stylestr+=context.commentNoGridCSS;
+         }
+      }
+
+   if (cell.readonly) {
+      if (!cell.comment) {
+         result.title = context.readonlyComment;
+         }
+      if (context.showGrid) {
+         if (context.readonlyClassName) {
+            result.className = (result.className ? result.className+" " : "") + context.readonlyClassName;
+            }
+         stylestr+=context.readonlyCSS;
+         }
+      else {
+         if (context.readonlyNoGridClassName) {
+            result.className = (result.className ? result.className+" " : "") + context.readonlyNoGridClassName;
+            }
+         stylestr+=context.readonlyNoGridCSS;
          }
       }
 
@@ -4929,6 +4982,47 @@ SocialCalc.GetElementPositionWithScroll = function (element) {
          offsetTop-=element.scrollTop;
          }
       element=element.parentNode;
+      }
+   return {left:offsetLeft, top:offsetTop};
+
+   }
+
+//
+// GetComputedStyle(element, style) - returns computed style value
+//
+// http://blog.stchur.com/2006/06/21/css-computed-style/
+//
+
+SocialCalc.GetComputedStyle = function (element, style) {
+
+   var computedStyle;
+   if (typeof element.currentStyle != 'undefined') { // IE
+      computedStyle = element.currentStyle;
+      }
+   else {
+      computedStyle = document.defaultView.getComputedStyle(element, null);
+      }
+   return computedStyle[style];
+
+   }
+
+//
+// GetRelativeOffset(element) - returns relative offset of element
+// The relative offset is the offset of the first relative-positioned ancestor of the element.
+//
+
+SocialCalc.GetRelativeOffset = function (element) {
+
+   var e = element;
+   var offsetLeft = 0, offsetTop = 0;
+   while (e) {
+      if (e.nodeType==1 && SocialCalc.GetComputedStyle(e, 'position')=='relative') {
+         offset = SocialCalc.GetElementPosition(e);
+         offsetLeft += offset.left;
+         offsetTop  += offset.top;
+         break;
+         }
+      e = e.parentNode;
       }
    return {left:offsetLeft, top:offsetTop};
 
