@@ -159,6 +159,13 @@ SocialCalc.SpreadsheetViewer = function() {
    this.statuslineFull = true;
    this.noRecalc = true; // don't do a recalc when loaded, so no need for external sheet routines
 
+   // Repeating macro info
+
+   this.repeatingMacroTimer = null;
+   this.repeatingMacroInterval = 60; // default to 60 seconds
+   this.repeatingMacroCommands = ""; // what to execute
+
+
    SocialCalc.CurrentSpreadsheetViewerObject = this; // remember this for rendezvousing on events
 
    return;
@@ -258,6 +265,8 @@ SocialCalc.InitializeSpreadsheetViewer = function(spreadsheet, node, height, wid
 
 SocialCalc.SpreadsheetViewerLoadSave = function(spreadsheet, savestr) {
 
+   var rmstr, pos, t, t2;
+
    var parts = spreadsheet.DecodeSpreadsheetSave(savestr);
    if (parts) {
       if (parts.sheet) {
@@ -267,8 +276,23 @@ SocialCalc.SpreadsheetViewerLoadSave = function(spreadsheet, savestr) {
       if (parts.edit) {
          spreadsheet.editor.LoadEditorSettings(savestr.substring(parts.edit.start, parts.edit.end));
          }
-      if (parts.startupmacro) {
+      if (parts.startupmacro) { // executed now
          spreadsheet.editor.EditorScheduleSheetCommands(savestr.substring(parts.startupmacro.start, parts.startupmacro.end), false, true);
+         }
+      if (parts.repeatingmacro) { // first line tells how many seconds before first execution. Last cmd must be "cmdextension repeatmacro delay" to continue repeating.
+         rmstr = savestr.substring(parts.repeatingmacro.start, parts.repeatingmacro.end);
+         rmstr = rmstr.replace("\r", ""); // make sure no CR, only LF
+         pos = rmstr.indexOf("\n");
+         if (pos > 0) {
+            t = rmstr.substring(0, pos)-0; // get number
+            t2 = t;
+//            if (!(t > 0)) t = 60; // handles NAN, too
+            spreadsheet.repeatingMacroInterval = t;
+            spreadsheet.repeatingMacroCommands = rmstr.substring(pos+1);
+            if (t2 > 0) { // zero means don't start yet
+               spreadsheet.repeatingMacroTimer = window.setTimeout(SocialCalc.SpreadsheetViewerDoRepeatingMacro, spreadsheet.repeatingMacroInterval * 1000);
+               }	
+            }
          }
       }
    if (spreadsheet.editor.context.sheetobj.attribs.recalc=="off" || spreadsheet.noRecalc) {
@@ -278,6 +302,49 @@ SocialCalc.SpreadsheetViewerLoadSave = function(spreadsheet, savestr) {
       spreadsheet.editor.EditorScheduleSheetCommands("recalc");
       }
    }
+
+//
+// SocialCalc.SpreadsheetViewerDoRepeatingMacro
+//
+// Called by a timer. Executes repeatingMacroCommands once.
+// Use the "startcmdextension repeatmacro delay" command last to schedule this again.
+//
+
+SocialCalc.SpreadsheetViewerDoRepeatingMacro = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetViewerObject();
+   var editor = spreadsheet.editor;
+
+   spreadsheet.repeatingMacroTimer = null;
+
+   SocialCalc.SheetCommandInfo.CmdExtensionCallbacks.repeatmacro = {func:SocialCalc.SpreadsheetViewerRepeatMacroCommand, data:null};
+
+   editor.EditorScheduleSheetCommands(spreadsheet.repeatingMacroCommands);
+
+}
+
+SocialCalc.SpreadsheetViewerRepeatMacroCommand = function(name, data, sheet, cmd, saveundo) {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetViewerObject();
+
+   var rest = cmd.RestOfString();
+   var t = rest-0; // get number
+   if (!(t > 0)) t = spreadsheet.repeatingMacroInterval; // handles NAN, too, using last value
+   spreadsheet.repeatingMacroInterval = t;
+
+   spreadsheet.repeatingMacroTimer = window.setTimeout(SocialCalc.SpreadsheetViewerDoRepeatingMacro, spreadsheet.repeatingMacroInterval * 1000);
+
+}
+
+SocialCalc.SpreadsheetViewerStopRepeatingMacro = function() {
+
+   var spreadsheet = SocialCalc.GetSpreadsheetViewerObject();
+
+   if (spreadsheet.repeatingMacroTimer) {
+      window.clearTimeout(spreadsheet.repeatingMacroTimer);
+      spreadsheet.repeatingMacroTimer = null;
+      }
+}
 
 //
 // SocialCalc.SpreadsheetViewerDoButtonCmd(e, buttoninfo, bobj)
@@ -555,6 +622,10 @@ SocialCalc.SpreadsheetViewerDecodeSpreadsheetSave = function(spreadsheet, str) {
    var parts = {};
    var partlist = [];
 
+var hasreturnonly = /[^\n]\r[^\n]/;
+if (hasreturnonly.test(str)) {
+str = str.replace(/([^\n])\r([^\n])/g, "$1\r\n$2");
+}
    pos1 = str.search(/^MIME-Version:\s1\.0/mi);
    if (pos1 < 0) return parts;
 
