@@ -649,8 +649,15 @@ This all gives us a way to set startup macros, etc.
 2010-05-13:
 Fixed IE6 and IE7+ compatibility issues with drag palette. Uses .gif for IE6, .png otherwise.
 
+2010-07-05:
+Upgraded to Tracy's drag palette images, including making radii setable constants.
+Made click without drag on drag palette not do any commands.
+Put in a fix for Safari 5 problem with copy/paste (involving onbeforepaste default behavior).
+
 
 TO DO:
+
+Check out <= and >= Test Criteria!
 
 Make defaultCommentStyle work with defaultImagePrefix.
 

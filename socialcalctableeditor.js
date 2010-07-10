@@ -533,6 +533,15 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
    editor.pasteTextarea = ta;
    AssignID(editor, editor.pasteTextarea, "pastetextarea");
 
+   if (navigator.userAgent.match(/Safari\//) &&!navigator.userAgent.match(/Chrome\//)) { // special code for Safari 5 change
+      window.removeEventListener('beforepaste', SocialCalc.SafariPasteFunction, false);
+      window.addEventListener('beforepaste', SocialCalc.SafariPasteFunction, false);
+      window.removeEventListener('beforecopy', SocialCalc.SafariPasteFunction, false);
+      window.addEventListener('beforecopy', SocialCalc.SafariPasteFunction, false);
+      window.removeEventListener('beforecut', SocialCalc.SafariPasteFunction, false);
+      window.addEventListener('beforecut', SocialCalc.SafariPasteFunction, false);
+      }
+
    editor.toplevel.appendChild(editor.pasteTextarea);
 
    SocialCalc.MouseWheelRegister(editor.toplevel, {WheelMove: SocialCalc.EditorProcessMouseWheel, editor: editor});
@@ -553,6 +562,12 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
 
    return editor.toplevel;
 
+   }
+
+// Special code needed for change that occurred with Safari 5 that made paste not work for some reason
+
+SocialCalc.SafariPasteFunction = function(e) {
+   e.preventDefault();
    }
 
 //
@@ -3548,6 +3563,8 @@ SocialCalc.CellHandles = function(editor) {
 
    this.noCursorSuffix = false;
 
+   this.movedmouse = false; // used to detect no-op
+
    this.draghandle = document.createElement("div");
    SocialCalc.setStyles(this.draghandle, "display:none;position:absolute;zIndex:8;border:1px solid white;width:4px;height:4px;fontSize:1px;backgroundColor:#0E93D8;cursor:default;");
    this.draghandle.innerHTML = '&nbsp;';
@@ -3687,7 +3704,7 @@ SocialCalc.CellHandlesMouseMoveOnHandle = function(e) {
       editor.cellhandles.ShowCellHandles(true, true); // show move handles, too
 
       if (target == cellhandles.dragpalette) {
-         var whichhandle = SocialCalc.SegmentDivHit([24.0, 36.0], editor.cellhandles.dragpalette, clientX, clientY);
+         var whichhandle = SocialCalc.SegmentDivHit([scc.CH_radius1, scc.CH_radius2], editor.cellhandles.dragpalette, clientX, clientY);
          if (whichhandle==0) { // off of active part of palette
             SocialCalc.CellHandlesHoverTimeout();
             return;
@@ -3721,7 +3738,7 @@ SocialCalc.CellHandlesMouseMoveOnHandle = function(e) {
 //      array = a new segtable for this subquadrant
 //
 // Alternatively, segtable can be:
-//  [diameter 1, diameter 2] and it returns 0 if no hit,
+//  [radius 1, radius 2] and it returns 0 if no hit,
 //  -1, -2, -3, -4 for inner quadrants, and +1...+4 for outer quadrants
 //
 
@@ -3889,7 +3906,10 @@ SocialCalc.CellHandlesMouseDown = function(e) {
    if (!editor) return true; // we're not handling it -- let browser do default
 
    if (editor.busy) return; // don't do anything when busy (is this correct?)
+
    var cellhandles = editor.cellhandles;
+
+   cellhandles.movedmouse = false; // detect no-op
 
    clientX -= editor.relativeoffset.left;
    clientY -= editor.relativeoffset.top;
@@ -3907,7 +3927,7 @@ SocialCalc.CellHandlesMouseDown = function(e) {
 
    range = editor.range;
  
-   var whichhandle = SocialCalc.SegmentDivHit([24.0, 36.0], editor.cellhandles.dragpalette, clientX, clientY);
+   var whichhandle = SocialCalc.SegmentDivHit([scc.CH_radius1, scc.CH_radius2], editor.cellhandles.dragpalette, clientX, clientY);
    if (whichhandle==1 || whichhandle==-1 || whichhandle==0) {
       cellhandles.ShowCellHandles(true, false); // hide move handles
       return;
@@ -3917,32 +3937,32 @@ SocialCalc.CellHandlesMouseDown = function(e) {
 
    if (whichhandle==-3) {
       cellhandles.dragtype = "Fill";
-      mouseinfo.element = editor.cellhandles.fillhandle;
+//      mouseinfo.element = editor.cellhandles.fillhandle;
       cellhandles.noCursorSuffix = false;
       }
    else if (whichhandle==3) {
       cellhandles.dragtype = "FillC";
-      mouseinfo.element = editor.cellhandles.fillhandle;
+//      mouseinfo.element = editor.cellhandles.fillhandle;
       cellhandles.noCursorSuffix = false;
       }
    else if (whichhandle==-2) {
       cellhandles.dragtype = "Move";
-      mouseinfo.element = editor.cellhandles.movehandle1;
+//      mouseinfo.element = editor.cellhandles.movehandle1;
       cellhandles.noCursorSuffix = true;
       }
    else if (whichhandle==-4) {
       cellhandles.dragtype = "MoveI";
-      mouseinfo.element = editor.cellhandles.movehandle2;
+//      mouseinfo.element = editor.cellhandles.movehandle2;
       cellhandles.noCursorSuffix = false;
       }
    else if (whichhandle==2) {
       cellhandles.dragtype = "MoveC";
-      mouseinfo.element = editor.cellhandles.movehandle1;
+//      mouseinfo.element = editor.cellhandles.movehandle1;
       cellhandles.noCursorSuffix = true;
       }
    else if (whichhandle==4) {
       cellhandles.dragtype = "MoveIC";
-      mouseinfo.element = editor.cellhandles.movehandle2;
+//      mouseinfo.element = editor.cellhandles.movehandle2;
       cellhandles.noCursorSuffix = false;
       }
 
@@ -4049,6 +4069,9 @@ SocialCalc.CellHandlesMouseMove = function(e) {
 
    crstart = SocialCalc.coordToCr(editor.cellhandles.startingcoord);
    crend = SocialCalc.coordToCr(result.coord);
+
+
+   cellhandles.movedmouse = true; // did move, so not no-op
 
    switch (cellhandles.dragtype) {
       case "Fill":
@@ -4303,7 +4326,16 @@ SocialCalc.CellHandlesMouseUp = function(e) {
          break;
       }
 
+   if (!cellhandles.movedmouse) { // didn't move: just leave one cell selected
+      cellhandles.dragtype = "Nothing";
+      }
+
    switch (cellhandles.dragtype) {
+      case "Nothing":
+         editor.Range2Remove();
+         editor.RangeRemove();
+         break;
+
       case "Fill":
       case "FillC":
 

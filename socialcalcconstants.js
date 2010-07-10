@@ -231,6 +231,8 @@ SocialCalc.Constants = {
 
    //** SocialCalc.CellHandles
 
+   CH_radius1: 29.0, // extent of inner circle within 90px image
+   CH_radius2: 41.0, // extent of outer circle within 90px image
    s_CHfillAllTooltip: "Fill Contents and Formats Down/Right", // tooltip for fill all handle
    s_CHfillContentsTooltip: "Fill Contents Only Down/Right", // tooltip for fill formulas handle
    s_CHmovePasteAllTooltip: "Move Contents and Formats", // etc.
