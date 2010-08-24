@@ -2251,6 +2251,10 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
          return null;
       }
 
+   // Adjust against usermax col and row.
+   if (editor.context.sheetobj.attribs.usermaxcol) col = Math.min(editor.context.sheetobj.attribs.usermaxcol, col);
+   if (editor.context.sheetobj.attribs.usermaxrow) row = Math.min(editor.context.sheetobj.attribs.usermaxrow, row);
+   
    if (!editor.range.hasrange) {
       if (shifted)
          editor.RangeAnchor();
@@ -2738,7 +2742,7 @@ SocialCalc.FitToEditTable = function(editor) {
       if (totalwidth > editor.tablewidth) break;
       }
 
-   context.colpanes[colpane].last = colnum;
+   context.colpanes[colpane].last = context.sheetobj.attribs.usermaxcol || colnum;
 
    // Calculate row height data
 
@@ -2749,7 +2753,7 @@ SocialCalc.FitToEditTable = function(editor) {
 
    needed = editor.tableheight - totalrows * context.pixelsPerRow; // estimate amount needed
 
-   context.rowpanes[rowpane].last = context.rowpanes[rowpane].first + Math.floor(needed / context.pixelsPerRow) + 1;
+   context.rowpanes[rowpane].last = context.sheetobj.attribs.usermaxrow || context.rowpanes[rowpane].first + Math.floor(needed / context.pixelsPerRow) + 1;
 
    }
 

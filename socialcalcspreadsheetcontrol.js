@@ -373,7 +373,12 @@ SocialCalc.SpreadsheetControl = function() {
             colwidth: {setting: "colwidth", type: "PopupList", id: s.idPrefix+"colwidth",
                initialdata: scc.SCFormatColwidth},
             recalc: {setting: "recalc", type: "PopupList", id: s.idPrefix+"recalc",
-               initialdata: scc.SCFormatRecalc}
+               initialdata: scc.SCFormatRecalc},
+            usermaxcol: {setting: "usermaxcol", type: "PopupList", id: s.idPrefix+"usermaxcol",
+               initialdata: scc.SCFormatUserMaxCol},
+            usermaxrow: {setting: "usermaxrow", type: "PopupList", id: s.idPrefix+"usermaxrow",
+               initialdata: scc.SCFormatUserMaxRow}
+
             };
          viewobj.values.cellspanel = {
             name: "cell",
@@ -526,6 +531,21 @@ SocialCalc.SpreadsheetControl = function() {
 '    <td %bodypart.>'+
 '     <div %parttitle.>&nbsp;</div>'+
 '     <span id="%id.recalc"></span>'+
+'    </td>'+
+'   </tr></table>'+
+' </td>'+
+'</tr>'+
+'<tr>'+
+' <td %itemtitle.><br>%loc!Dimensions!:</td>'+
+' <td %itembody.>'+
+'   <table cellspacing="0" cellpadding="0"><tr>'+
+'    <td %bodypart.>'+
+'     <div %parttitle.>%loc!Columns!</div>'+
+'     <span id="%id.usermaxcol"></span>'+
+'    </td>'+
+'    <td %bodypart.>'+
+'     <div %parttitle.>%loc!Rows!</div>'+
+'     <span id="%id.usermaxrow"></span>'+
 '    </td>'+
 '   </tr></table>'+
 ' </td>'+

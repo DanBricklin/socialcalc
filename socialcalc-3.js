@@ -266,7 +266,10 @@ SocialCalc.ResetSheet = function(sheet, reload) {
       {
          lastcol: 1,
          lastrow: 1,
-         defaultlayout: 0
+         defaultlayout: 0,
+         usermaxcol: 0,
+         usermaxrow: 0
+
       };
    sheet.rowattribs =
       {
@@ -387,6 +390,8 @@ SocialCalc.Sheet.prototype.RecalcSheet = function() {return SocialCalc.RecalcShe
 //       circularreferencecell:coord - cell coord with a circular reference
 //       recalc:value - on/off (on is default). If not "off", appropriate changes to the sheet cause a recalc
 //       needsrecalc:value - yes/no (no is default). If "yes", formula values are not up to date
+//       usermaxcol:value - maximum column to display, 0 for unlimited (default=0)
+//       usermaxrow:value - maximum row to display, 0 for unlimited (default=0)
 //
 //    name:name:description:value - name definition, name in uppercase, with value being "B5", "A1:B7", or "=formula";
 //                                  description and value are encoded.
@@ -511,6 +516,12 @@ SocialCalc.ParseSheetSave = function(savedsheet,sheetobj) {
                      break;
                   case "needsrecalc":
                      attribs.needsrecalc=parts[j++];
+                     break;
+                  case "usermaxcol":
+                     attribs.usermaxcol=parts[j++]-0;
+                     break;
+                  case "usermaxrow":
+                     attribs.usermaxrow=parts[j++]-0;
                      break;
                   default:
                      j+=1;
@@ -702,8 +713,8 @@ SocialCalc.CellFromStringParts = function(sheet, cell, parts, j) {
    }
 
 
-SocialCalc.sheetfields = ["defaultrowheight", "defaultcolwidth", "circularreferencecell", "recalc", "needsrecalc"];
-SocialCalc.sheetfieldsshort = ["h", "w", "circularreferencecell", "recalc", "needsrecalc"];
+SocialCalc.sheetfields = ["defaultrowheight", "defaultcolwidth", "circularreferencecell", "recalc", "needsrecalc", "usermaxcol", "usermaxrow"];
+SocialCalc.sheetfieldsshort = ["h", "w", "circularreferencecell", "recalc", "needsrecalc", "usermaxcol", "usermaxrow"];
 
 SocialCalc.sheetfieldsxlat = ["defaulttextformat", "defaultnontextformat",
                               "defaulttextvalueformat", "defaultnontextvalueformat",
@@ -1317,6 +1328,16 @@ SocialCalc.EncodeSheetAttributes = function(sheet) {
       SetAttrib("recalc", attribs.recalc);
       }
 
+   // usermaxcol, usermaxrow
+   InitAttrib("usermaxcol");
+   if (attribs.usermaxcol) {
+      SetAttrib("usermaxcol", attribs.usermaxcol);
+      }
+   InitAttrib("usermaxrow");
+   if (attribs.usermaxrow) {
+      SetAttrib("usermaxrow", attribs.usermaxrow);
+      }
+
    return result;
 
    }
@@ -1566,6 +1587,11 @@ SocialCalc.DecodeSheetAttributes = function(sheet, newattribs) {
 
    CheckChanges("recalc", sheet.attribs.recalc, "recalc");
 
+   // usermaxcol, usermaxrow
+
+   CheckChanges("usermaxcol", sheet.attribs.usermaxcol, "usermaxcol");
+   CheckChanges("usermaxrow", sheet.attribs.usermaxrow, "usermaxrow");
+
    // if any changes return command(s)
 
    if (changed) {
@@ -1808,6 +1834,12 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                   else { // all values other than "off" mean "on"
                      delete attribs.recalc;
                      }
+                  break;
+               case "usermaxcol":
+               case "usermaxrow":
+                  if (saveundo) changes.AddUndo(undostart, attribs[attrib]-0);
+                  num = rest-0;
+                  if (typeof num == "number") attribs[attrib] = num > 0 ? num : 0;
                   break;
                default:
                   errortext = scc.s_escUnknownSheetCmd+cmdstr;
@@ -4101,9 +4133,11 @@ SocialCalc.RenderContext = function(sheetobj) {
 
    // if have a sheet object, initialize constants and precomputed values
 
-   if (sheetobj) {
+   if (attribs) {
       this.rowpanes[0] = {first: 1, last: attribs.lastrow};
       this.colpanes[0] = {first: 1, last: attribs.lastcol};
+      this.usermaxcol = attribs.usermaxcol;
+      this.usermaxrow = attribs.usermaxrow;
 
       }
    else throw scc.s_rcMissingSheet;
