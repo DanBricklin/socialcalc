@@ -3026,6 +3026,7 @@ SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
       context.rowpanes[vplen-1].last += vamount;
       context.colpanes[hplen-1].first += hamount;
       context.colpanes[hplen-1].last += hamount;
+      editor.LimitLastPanes();
       editor.FitToEditTable();
       editor.ScheduleRender();
       }
@@ -3092,10 +3093,14 @@ SocialCalc.LimitLastPanes = function(editor) {
    plen = context.rowpanes.length;
    if (plen>1 && context.rowpanes[plen-1].first <= context.rowpanes[plen-2].last)
        context.rowpanes[plen-1].first = context.rowpanes[plen-2].last+1;
+   if (context.sheetobj.attribs.usermaxrow && context.rowpanes[plen-1].first > context.sheetobj.attribs.usermaxrow)
+       context.rowpanes[plen-1].first = context.sheetobj.attribs.usermaxrow;
 
    plen = context.colpanes.length;
    if (plen>1 && context.colpanes[plen-1].first <= context.colpanes[plen-2].last)
        context.colpanes[plen-1].first = context.colpanes[plen-2].last+1;
+   if (context.sheetobj.attribs.usermaxcol && context.colpanes[plen-1].first > context.sheetobj.attribs.usermaxcol)
+       context.colpanes[plen-1].first = context.sheetobj.attribs.usermaxcol;
 
    }
 
@@ -3117,6 +3122,11 @@ SocialCalc.ScrollTableUpOneRow = function(editor) {
       toprow += context.rowpanes[rowpane].last - context.rowpanes[rowpane].first + 2; // skip pane and spacing row
       }
 
+   // abort if scrolling beyond user max row
+   if (context.sheetobj.attribs.usermaxrow && (context.sheetobj.attribs.usermaxrow - context.rowpanes[rowpane].first < 1)) {
+      return tableobj;
+      }
+  
    tbodyobj.removeChild(tbodyobj.childNodes[toprow]);
 
    context.rowpanes[rowpane].first++;
@@ -3124,8 +3134,10 @@ SocialCalc.ScrollTableUpOneRow = function(editor) {
    editor.FitToEditTable();
    context.CalculateColWidthData(); // Just in case, since normally done in RenderSheet
 
-   newbottomrow = context.RenderRow(context.rowpanes[rowpane].last, rowpane);
-   tbodyobj.appendChild(newbottomrow);
+   if (context.sheetobj.attribs.usermaxrow && context.rowpanes[rowpane].last != context.sheetobj.attribs.usermaxrow) {
+      newbottomrow = context.RenderRow(context.rowpanes[rowpane].last, rowpane);
+      tbodyobj.appendChild(newbottomrow);
+      }
 
    // if scrolled off a row with starting rowspans, replace rows for the largest rowspan
 
@@ -3193,7 +3205,9 @@ SocialCalc.ScrollTableDownOneRow = function(editor) {
       toprow += context.rowpanes[rowpane].last - context.rowpanes[rowpane].first + 2; // skip pane and spacing row
       }
 
-   tbodyobj.removeChild(tbodyobj.childNodes[toprow+(context.rowpanes[rowpane].last-context.rowpanes[rowpane].first)]);
+   if (!context.sheetobj.attribs.usermaxrow) {
+      tbodyobj.removeChild(tbodyobj.childNodes[toprow+(context.rowpanes[rowpane].last-context.rowpanes[rowpane].first)]);
+      }
 
    context.rowpanes[rowpane].first--;
    context.rowpanes[rowpane].last--;
