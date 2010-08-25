@@ -2285,6 +2285,14 @@ SocialCalc.MoveECell = function(editor, newcell) {
    var cell, f;
 
    var highlights = editor.context.highlights;
+   
+   // adjust against user max col/row
+   var ecell = SocialCalc.coordToCr(newcell);
+   if (editor.context.sheetobj.attribs.usermaxcol && ecell.col > editor.context.sheetobj.attribs.usermaxcol)
+      ecell.col = editor.context.sheetobj.attribs.usermaxcol;
+   if (editor.context.sheetobj.attribs.usermaxrow && ecell.row > editor.context.sheetobj.attribs.usermaxrow)
+      ecell.row = editor.context.sheetobj.attribs.usermaxrow;
+   newcell = SocialCalc.crToCoord(ecell.col, ecell.row);
 
    if (editor.ecell) {
       if (editor.ecell.coord==newcell) return newcell; // already there - don't do anything and don't tell anybody
