@@ -3142,7 +3142,7 @@ SocialCalc.ScrollTableUpOneRow = function(editor) {
    editor.FitToEditTable();
    context.CalculateColWidthData(); // Just in case, since normally done in RenderSheet
 
-   if (context.sheetobj.attribs.usermaxrow && context.rowpanes[rowpane].last != context.sheetobj.attribs.usermaxrow) {
+   if (!context.sheetobj.attribs.usermaxrow || context.rowpanes[rowpane].last != context.sheetobj.attribs.usermaxrow) {
       newbottomrow = context.RenderRow(context.rowpanes[rowpane].last, rowpane);
       tbodyobj.appendChild(newbottomrow);
       }
