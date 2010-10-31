@@ -409,7 +409,7 @@ SocialCalc.Formula.ParseFormulaIntoTokens = function(line) {
             state = parsestate.string;
             }
          else if (cclass == charclass.space) { // store so can reconstruct spacing
-            pushtoken(parseinfo, " ", tokentype.space, 0);
+            //pushtoken(parseinfo, " ", tokentype.space, 0);
             }
          else if (cclass == charclass.eof) { // ignore -- needed to have extra loop to close out other things
             }
