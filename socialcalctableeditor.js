@@ -2115,6 +2115,12 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
          result.colheader = true;
          result.distance = editor.headposition.top - clientY;
          result.coltoresize = col-(editor.colpositions[col]+editor.colwidth[col]/2>clientX?1:0) || 1;
+
+         // Handle hidden column.
+         while (editor.colpositions[result.coltoresize] == 0) {
+            result.coltoresize--;
+            }
+
          for (colpane=0; colpane<editor.context.colpanes.length; colpane++) {
             if (result.coltoresize >= editor.context.colpanes[colpane].first &&
                 result.coltoresize <= editor.context.colpanes[colpane].last) { // visible column
@@ -2238,10 +2244,15 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
          row -= editor.pageUpDnAmount;
          break;
       case "[aright]":
-         col += (cell && cell.colspan) || 1;
+         do {
+            cell = editor.context.sheetobj.cells[SocialCalc.crToCoord(col, row)];
+            col += (cell && cell.colspan) || 1;
+         } while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes");
          break;
       case "[aleft]":
-         col--;
+         do {
+            col--;
+         } while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes");
          break;
       case "[home]":
          row = 1;
@@ -2436,6 +2447,14 @@ SocialCalc.SetECellHeaders = function(editor, selected) {
          if (headercell) {
             if (context.classnames) headercell.className=context.classnames[selected+"colname"];
             if (context.explicitStyles) headercell.style.cssText=context.explicitStyles[selected+"colname"];
+
+            // If neighbour is hidden, show an icon in this column.
+            if (ecell.col > 1 && context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col-1)] == "yes") {
+               headercell.style.cssText += ";font-style:italic";
+               }
+            if (ecell.col < context.colpanes[context.colpanes.length-1].last && context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col+1)] == "yes") {
+               headercell.style.cssText += ";font-style:italic";
+               }
             }
          }
       colindex += last - first + 1 + 1;
@@ -2736,17 +2755,21 @@ SocialCalc.FitToEditTable = function(editor) {
    for (colpane=0; colpane<context.colpanes.length-1; colpane++) { // Get width of all but last pane
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          colname=SocialCalc.rcColname(colnum);
-         colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
-         if (colwidth=="blank" || colwidth=="auto") colwidth="";
-         totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+         if (sheetobj.colattribs.hide[colname] != "yes") {
+            colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
+            if (colwidth=="blank" || colwidth=="auto") colwidth="";
+            totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+            }
          }
       }
 
    for (colnum=context.colpanes[colpane].first; colnum<=10000; colnum++) { //!!! max for safety, but makes that col max!!!
       colname=SocialCalc.rcColname(colnum);
-      colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
-      if (colwidth=="blank" || colwidth=="auto") colwidth="";
-      totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+      if (sheetobj.colattribs.hide[colname] != "yes") {
+         colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
+         if (colwidth=="blank" || colwidth=="auto") colwidth="";
+         totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+         }
       if (totalwidth > editor.tablewidth) break;
       }
 
@@ -3002,6 +3025,7 @@ SocialCalc.ScrollRelative = function(editor, vertical, amount) {
 SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
 
    var context=editor.context;
+   var dv = vamount > 0 ? 1 : -1, dh = hamount > 0 ? 1 : -1;
 
    var vplen=context.rowpanes.length;
    var vlimit = vplen>1 ? context.rowpanes[vplen-2].last+1 : 1; // don't scroll past here
@@ -3013,6 +3037,14 @@ SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
    var hlimit = hplen>1 ? context.colpanes[hplen-2].last+1 : 1; // don't scroll past here
    if (context.colpanes[hplen-1].first+hamount < hlimit) { // limit amount
       hamount = (-context.colpanes[hplen-1].first) + hlimit;
+      }
+
+   // Handle hidden column by finding a next one that's not hidden.
+   while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(context.colpanes[hplen-1].first+hamount)] == "yes") {
+      hamount += dh;
+      if (context.colpanes[hplen-1].first+hamount < hlimit) { // was this the first column?
+        dh = 1; // advance again to find a visible column
+        }
       }
 
    if ((vamount==1 || vamount==-1) && hamount==0) { // special case quick scrolls
@@ -3649,6 +3681,7 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
    var editor = cellhandles.editor;
    var doshow = false;
    var row, col, viewport;
+   var colinc = 1, rowinc = 1;
 
    if (!editor) return;
 
@@ -3665,31 +3698,36 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
       if (row < editor.firstscrollingrow) break;
       if (col < editor.firstscrollingcol) break;
 
-      if (editor.rowpositions[row+1]+20>editor.horizontaltablecontrol.controlborder+editor.relativeoffset.top) {
+      // Go beyond one if hidden.
+      while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col+colinc)] == "yes") {
+         colinc++; 
+         }     
+
+      if (editor.rowpositions[row+rowinc]+20>editor.horizontaltablecontrol.controlborder+editor.relativeoffset.top) {
          break;
          }
-      if (editor.rowpositions[row+1]-10<editor.headposition.top) {
+      if (editor.rowpositions[row+rowinc]-10<editor.headposition.top) {
          break;
          }
-      if (editor.colpositions[col+1]+20>editor.verticaltablecontrol.controlborder+editor.relativeoffset.left) {
+      if (editor.colpositions[col+colinc]+20>editor.verticaltablecontrol.controlborder+editor.relativeoffset.left) {
          break;
          }
-      if (editor.colpositions[col+1]-30<editor.headposition.left) {
+      if (editor.colpositions[col+colinc]-30<editor.headposition.left) {
          break;
          }
 
-      cellhandles.draghandle.style.left = (editor.colpositions[col+1]-editor.relativeoffset.left-1)+"px";
-      cellhandles.draghandle.style.top = (editor.rowpositions[row+1]-editor.relativeoffset.top-1)+"px";
+      cellhandles.draghandle.style.left = (editor.colpositions[col+colinc]-editor.relativeoffset.left-1)+"px";
+      cellhandles.draghandle.style.top = (editor.rowpositions[row+rowinc]-editor.relativeoffset.top-1)+"px";
       cellhandles.draghandle.style.display = "block";
 
       if (moveshow) {
          cellhandles.draghandle.style.display = "none";
-         cellhandles.dragpalette.style.left = (editor.colpositions[col+1]-editor.relativeoffset.left-45)+"px";
-         cellhandles.dragpalette.style.top = (editor.rowpositions[row+1]-editor.relativeoffset.top-45)+"px";
+         cellhandles.dragpalette.style.left = (editor.colpositions[col+colinc]-editor.relativeoffset.left-45)+"px";
+         cellhandles.dragpalette.style.top = (editor.rowpositions[row+rowinc]-editor.relativeoffset.top-45)+"px";
          cellhandles.dragpalette.style.display = "block";
          viewport = SocialCalc.GetViewportInfo();
-         cellhandles.dragtooltip.style.right = (viewport.width-(editor.colpositions[col+1]-editor.relativeoffset.left-1))+"px";
-         cellhandles.dragtooltip.style.bottom = (viewport.height-(editor.rowpositions[row+1]-editor.relativeoffset.top-1))+"px";
+         cellhandles.dragtooltip.style.right = (viewport.width-(editor.colpositions[col+colinc]+editor.relativeoffset.left-1))+"px";
+         cellhandles.dragtooltip.style.bottom = (viewport.height-(editor.rowpositions[row+rowinc]+editor.relativeoffset.top-1))+"px";
          cellhandles.dragtooltip.style.display = "none";
          }
 
@@ -4880,6 +4918,14 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
       if (draginfo.clientX < min) draginfo.clientX = min;
 
       col = SocialCalc.Lookup(draginfo.clientX+sliderthickness, editor.colpositions);
+
+      // Handle hidden column.
+      // TODO: Handle all hidden columns!
+      while (editor.colpositions[col] == 0) {
+         if (col > 1) col--;
+         else if (col < editor.colpositions.length-1) col++;
+         }
+
       draginfo.trackingline.style.left = ((editor.colpositions[col] || editor.headposition.left)-editor.relativeoffset.left)+"px";
       }
 
@@ -4893,7 +4939,7 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
 
 SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
 
-   var row, col, max, min;
+   var row, col, max, min, dc;
    var control = dobj.functionobj.control;
    var sliderthickness = control.sliderthickness;
    var editor = control.editor;
@@ -4928,6 +4974,14 @@ SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
 
       col = SocialCalc.Lookup(draginfo.clientX+sliderthickness, editor.colpositions);
       if (col>editor.context.sheetobj.attribs.lastcol) col=editor.context.sheetobj.attribs.lastcol; // can't extend sheet here
+
+      // Handle hidden column.
+      // TODO: Handle all hidden columns!
+      while (editor.colpositions[col] == 0) {
+         if (col > 1) col--;
+         else if (col < editor.colpositions.length-1) col++;
+         }
+
       if (!col || col<=editor.context.colpanes[0].first) { // set to no panes, leaving first pane settings
          if (editor.context.colpanes.length>1) editor.context.colpanes.length = 1;
          }

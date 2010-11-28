@@ -1,11 +1,14 @@
 This is a fork of Dan Bricklin's SocialCalc (http://github.com/DanBricklin/socialcalc), 
 with the following modifications made for the Drupal Sheetnode module (http://drupal.org/project/sheetnode):
 
+2010-10-30
+* Fix parsing expressions with unary minus.
+
 2010-08-24
 * Support max rows and columns. 
 
 2010-07-10
-* Merge commit 'upstream/master' 
+* Merge commit 'upstream/master'. 
 
 2010-06-19 Initial fork with one year's worth of cumulative patches
 * Relativize absolute-positioned elements (e.g., scrollbars, input echo, cell handles, etc.) to allow hosting the spreadsheet inside arbitrary DIVs.

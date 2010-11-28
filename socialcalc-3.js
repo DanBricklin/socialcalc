@@ -1870,6 +1870,16 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                      delete sheet.colattribs.width[cr];
                      }
                   }
+               else if (attrib=="hide") {
+                  cr = SocialCalc.rcColname(col);
+                  if (saveundo) changes.AddUndo("set "+cr+" hide", sheet.colattribs.hide[cr]);
+                  if (rest.length > 0) {
+                     sheet.colattribs.hide[cr] = rest; 
+                     }
+                  else {
+                     delete sheet.colattribs.hide[cr];
+                     }
+                  }
                }
             }
 
@@ -4105,7 +4115,9 @@ SocialCalc.RenderContext = function(sheetobj) {
          selectedrowname: scc.defaultSelectedRownameClass,
          upperleft: scc.defaultUpperLeftClass,
          skippedcell: scc.defaultSkippedCellClass,
-         panedivider: scc.defaultPaneDividerClass
+         panedivider: scc.defaultPaneDividerClass,
+         unhideleft: scc.defaultUnhideLeftClass,
+         unhideright: scc.defaultUnhideRightClass
       };
 
    this.explicitStyles = // these may be used so you won't need a stylesheet with the classnames
@@ -4116,7 +4128,9 @@ SocialCalc.RenderContext = function(sheetobj) {
          selectedrowname: scc.defaultSelectedRownameStyle,
          upperleft: scc.defaultUpperLeftStyle,
          skippedcell: scc.defaultSkippedCellStyle,
-         panedivider: scc.defaultPaneDividerStyle
+         panedivider: scc.defaultPaneDividerStyle,
+         unhideleft: scc.defaultUnhideLeftStyle,
+         unhideright: scc.defaultUnhideRightStyle
       };
 
    // processed info about cell skipping
@@ -4274,10 +4288,15 @@ SocialCalc.CalculateColWidthData = function(context) {
    for (colpane=0; colpane<context.colpanes.length; colpane++) {
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          colname=SocialCalc.rcColname(colnum);
-         colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
-         if (colwidth=="blank" || colwidth=="auto") colwidth="";
-         context.colwidth[colnum]=colwidth+"";
-         totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+         if (sheetobj.colattribs.hide[colname] == "yes") {
+            context.colwidth[colnum] = 0;
+            }
+         else {
+            colwidth = sheetobj.colattribs.width[colname] || sheetobj.attribs.defaultcolwidth || SocialCalc.Constants.defaultColWidth;
+            if (colwidth=="blank" || colwidth=="auto") colwidth="";
+            context.colwidth[colnum]=colwidth+"";
+            totalwidth+=(colwidth && ((colwidth-0)>0)) ? (colwidth-0) : 10;
+            }
          }
       }
    context.totalwidth = totalwidth;
@@ -4470,6 +4489,7 @@ SocialCalc.RenderColHeaders = function(context) {
 
    var result=document.createElement("tr");
    var colnum, newcol;
+   var unhide;
 
    if (!context.showRCHeaders) return null;
 
@@ -4484,7 +4504,30 @@ SocialCalc.RenderColHeaders = function(context) {
          newcol=document.createElement("td");
          if (context.classnames) newcol.className=context.classnames.colname;
          if (context.explicitStyles) newcol.style.cssText=context.explicitStyles.colname;
+
+         // If hidden column, display: none.
+         if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
+            newcol.style.cssText += ";display:none";
+            }
+
+         // If neighbour is hidden, show an icon in this column.
+         unhide = false;
+         if (colnum > 1 && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum-1)] == "yes") {
+            unhide = document.createElement("div");
+            if (context.classnames) unhide.className=context.classnames.unhideleft;
+            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideleft;
+            }
+         if (colnum < context.colpanes[context.colpanes.length-1].last && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum+1)] == "yes") {
+            unhide = document.createElement("div");
+            if (context.classnames) unhide.className=context.classnames.unhideright;
+            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideright;
+            }
+
          newcol.innerHTML=SocialCalc.rcColname(colnum);
+         if (unhide) {
+            newcol.appendChild(unhide);
+            }
+
          result.appendChild(newcol);
          }
       if (colpane<context.colpanes.length-1) {
@@ -4514,9 +4557,14 @@ SocialCalc.RenderColGroup = function(context) {
    for (colpane=0; colpane<context.colpanes.length; colpane++) {
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          newcol=document.createElement("col");
-         t = context.colwidth[colnum];
-         if (t) newcol.width=t;
-         result.appendChild(newcol);
+         if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
+            newcol.width=0;
+            }
+         else {
+            t = context.colwidth[colnum];
+            if (t) newcol.width=t;
+            result.appendChild(newcol);
+            }
          }
       if (colpane<context.colpanes.length-1) {
          newcol=document.createElement("col");
@@ -4544,8 +4592,13 @@ SocialCalc.RenderSizingRow = function(context) {
    for (colpane=0; colpane<context.colpanes.length; colpane++) {
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          newcell=document.createElement("td");
-         t = context.colwidth[colnum];
-         if (t) newcell.width=t;
+         if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] != "yes") {
+            newcell.width=0;
+            }
+         else {
+            t = context.colwidth[colnum];
+            if (t) newcell.width=t;
+            }
          newcell.height="1";
          result.appendChild(newcell);
          }
@@ -4750,6 +4803,11 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
          result.className = (result.className ? result.className+" " : "") + context.highlightTypes[t].className;
          }
       SocialCalc.setStyles(result, context.highlightTypes[t].style);
+      }
+
+   // If hidden column, display: none.
+   if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
+      result.style.cssText+=";display:none";
       }
 
    return result;

@@ -281,6 +281,8 @@ SocialCalc.SpreadsheetControl = function() {
 ' <img id="%id.button_insertcol" src="%img.insertcol.gif" style="vertical-align:bottom;"> '+
 '&nbsp; <img id="%id.button_deleterow" src="%img.deleterow.gif" style="vertical-align:bottom;"> '+
 ' <img id="%id.button_deletecol" src="%img.deletecol.gif" style="vertical-align:bottom;"> '+
+'&nbsp; <img id="%id.button_hiderow" src="%img.hiderow.gif" style="vertical-align:bottom;"> '+
+' <img id="%id.button_hidecol" src="%img.hidecol.gif" style="vertical-align:bottom;"> '+
 ' &nbsp;<img id="%id.divider_recalc" src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
 '<img id="%id.button_recalc" src="%img.recalc.gif" style="vertical-align:bottom;"> '+
       ' </div>',
@@ -996,6 +998,8 @@ spreadsheet.Buttons = {
    button_insertcol: {tooltip: "Insert Column", command: "insertcol"},
    button_deleterow: {tooltip: "Delete Row", command: "deleterow"},
    button_deletecol: {tooltip: "Delete Column", command: "deletecol"},
+   button_hiderow: {tooltip: "Hide Row", command: "hiderow"},
+   button_hidecol: {tooltip: "Hide Column", command: "hidecol"},
    button_recalc: {tooltip: "Recalc", command: "recalc"}
    }
 
@@ -1698,6 +1702,8 @@ SocialCalc.SpreadsheetCmdLookup = {
  'insertcol': 'insertcol %C',
  'deleterow': 'deleterow %C',
  'deletecol': 'deletecol %C',
+ 'hiderow': 'set %H hide yes',
+ 'hidecol': 'set %W hide yes',
  'undo': 'undo',
  'redo': 'redo',
  'recalc': 'recalc'
@@ -1895,11 +1901,13 @@ SocialCalc.SpreadsheetControlExecuteCommand = function(obj, combostr, sstr) {
              ":"+SocialCalc.crToCoord(eobj.range.right, eobj.range.bottom);
       str.C = str.R;
       str.W = SocialCalc.rcColname(eobj.range.left) + ":" + SocialCalc.rcColname(eobj.range.right);
+      str.H = eobj.range.top + ":" + eobj.range.bottom;
       }
    else {
       str.C = eobj.ecell.coord;
       str.R = eobj.ecell.coord+":"+eobj.ecell.coord;
       str.W = SocialCalc.rcColname(SocialCalc.coordToCr(eobj.ecell.coord).col);
+      str.H = SocialCalc.coordToCr(eobj.ecell.coord).row;
       }
    str.S = sstr;
    combostr = combostr.replace(/%C/g, str.C);
@@ -1907,6 +1915,7 @@ SocialCalc.SpreadsheetControlExecuteCommand = function(obj, combostr, sstr) {
    combostr = combostr.replace(/%N/g, str.N);
    combostr = combostr.replace(/%S/g, str.S);
    combostr = combostr.replace(/%W/g, str.W);
+   combostr = combostr.replace(/%H/g, str.H);
    combostr = combostr.replace(/%P/g, str.P);
 
    eobj.EditorScheduleSheetCommands(combostr, true, false);
