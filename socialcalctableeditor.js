@@ -865,14 +865,15 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
                }
             }
 
-         if (sheetobj.cellrefreshneeded == "col") {
+         if (sheetobj.hiddencolrow == "col") {
             var col = editor.ecell.col;
             while (sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
                col++;
                }
-            }
             var coord = SocialCalc.crToCoord(col, editor.ecell.row);
             editor.MoveECell(coord);
+            sheetobj.hiddencolrow = "";
+            }
          return;
 
       case "calcstart":

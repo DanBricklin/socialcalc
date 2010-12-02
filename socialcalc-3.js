@@ -305,6 +305,8 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.recalcchangedavalue = false; // true if a recalc resulted in a change to a cell's calculated value
 
+   sheet.hiddencolrow = ""; // "col" or "row" if it was hidden
+
    }
 
 // Methods:
@@ -1871,7 +1873,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                      }
                   }
                else if (attrib=="hide") {
-                  sheet.cellrefreshneeded = "col";
+                  sheet.hiddencolrow = "col";
                   cr = SocialCalc.rcColname(col);
                   if (saveundo) changes.AddUndo("set "+cr+" hide", sheet.colattribs.hide[cr]);
                   if (rest.length > 0) {
