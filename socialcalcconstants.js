@@ -164,9 +164,9 @@ SocialCalc.Constants = {
    defaultPaneDividerClass: "", // used if present for the look of the space between panes (at least one of class/style needed)
    defaultPaneDividerStyle: "font-size:small;background-color:#C0C0C0;padding:0px;", // used if present
    defaultUnhideLeftClass: "",
-   defaultUnhideLeftStyle: "float:left;width:9px;height:13px;cursor:col-resize;background-image:url(images/sc-unhideright.gif);padding:0px;", // used if present
+   defaultUnhideLeftStyle: "float:left;width:9px;height:12px;cursor:col-resize;background-image:url(images/sc-unhideright.gif);padding:0px;", // used if present
    defaultUnhideRightClass: "",
-   defaultUnhideRightStyle: "float:right;width:9px;height:13px;cursor:col-resize;background-image:url(images/sc-unhideleft.gif);padding:0px;", // used if present
+   defaultUnhideRightStyle: "float:right;width:9px;height:12px;cursor:col-resize;background-image:url(images/sc-unhideleft.gif);padding:0px;", // used if present
 
    s_rcMissingSheet: "Render Context must have a sheet object", // unlikely thrown error
 

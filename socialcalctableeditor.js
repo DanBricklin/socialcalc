@@ -864,6 +864,15 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
 //               signalstatus("cmdendnorender");
                }
             }
+
+         if (sheetobj.cellrefreshneeded == "col") {
+            var col = editor.ecell.col;
+            while (sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
+               col++;
+               }
+            }
+            var coord = SocialCalc.crToCoord(col, editor.ecell.row);
+            editor.MoveECell(coord);
          return;
 
       case "calcstart":
@@ -1412,22 +1421,25 @@ SocialCalc.ProcessEditorColsizeMouseDown = function(e, ele, result) {
    mouseinfo.mouseresizecolnum = result.coltoresize; // remember col being resized
    mouseinfo.mouseresizecol = SocialCalc.rcColname(result.coltoresize);
    mouseinfo.mousedownclientx = clientX;
+   mouseinfo.mouseunhidecolnum = result.coltounhide;
+   
+   if (!mouseinfo.mouseunhidecolnum) {
+      var sizedisplay = document.createElement("div");
+      mouseinfo.mouseresizedisplay = sizedisplay;
+      sizedisplay.style.width = "auto";
+      sizedisplay.style.position = "absolute";
+      sizedisplay.style.zIndex = 100;
+      sizedisplay.style.top = (editor.headposition.top-editor.relativeoffset.top)+"px";
+      sizedisplay.style.left = (editor.colpositions[result.coltoresize]-editor.relativeoffset.left)+"px";
+      sizedisplay.innerHTML = '<table cellpadding="0" cellspacing="0"><tr><td style="height:100px;'+
+        'border:1px dashed black;background-color:white;width:' +
+        (editor.context.colwidth[mouseinfo.mouseresizecolnum]-2) + 'px;">&nbsp;</td>'+
+        '<td><div style="font-size:small;color:white;background-color:gray;padding:4px;">'+
+        editor.context.colwidth[mouseinfo.mouseresizecolnum] + '</div></td></tr></table>';
+      SocialCalc.setStyles(sizedisplay.firstChild.lastChild.firstChild.childNodes[0], "filter:alpha(opacity=85);opacity:.85;"); // so no warning msg with Firefox about filter
 
-   var sizedisplay = document.createElement("div");
-   mouseinfo.mouseresizedisplay = sizedisplay;
-   sizedisplay.style.width = "auto";
-   sizedisplay.style.position = "absolute";
-   sizedisplay.style.zIndex = 100;
-   sizedisplay.style.top = (editor.headposition.top-editor.relativeoffset.top)+"px";
-   sizedisplay.style.left = (editor.colpositions[result.coltoresize]-editor.relativeoffset.left)+"px";
-   sizedisplay.innerHTML = '<table cellpadding="0" cellspacing="0"><tr><td style="height:100px;'+
-      'border:1px dashed black;background-color:white;width:' +
-      (editor.context.colwidth[mouseinfo.mouseresizecolnum]-2) + 'px;">&nbsp;</td>'+
-      '<td><div style="font-size:small;color:white;background-color:gray;padding:4px;">'+
-      editor.context.colwidth[mouseinfo.mouseresizecolnum] + '</div></td></tr></table>';
-   SocialCalc.setStyles(sizedisplay.firstChild.lastChild.firstChild.childNodes[0], "filter:alpha(opacity=85);opacity:.85;"); // so no warning msg with Firefox about filter
-
-   editor.toplevel.appendChild(sizedisplay);
+      editor.toplevel.appendChild(sizedisplay);
+      }
 
    // Event code from JavaScript, Flanagan, 5th Edition, pg. 422
    if (document.addEventListener) { // DOM Level 2 -- Firefox, et al
@@ -1455,20 +1467,23 @@ SocialCalc.ProcessEditorColsizeMouseMove = function(e) {
    var mouseinfo = SocialCalc.EditorMouseInfo;
    var editor = mouseinfo.editor;
    if (!editor) return; // not us, ignore
-   var viewport = SocialCalc.GetViewportInfo();
-   var clientX = event.clientX + viewport.horizontalScroll;
 
-   var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
-   if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
+   if (!mouseinfo.mouseunhidecolnum) {
+      var viewport = SocialCalc.GetViewportInfo();
+      var clientX = event.clientX + viewport.horizontalScroll;
 
-   var sizedisplay = mouseinfo.mouseresizedisplay;
-//   sizedisplay.firstChild.lastChild.firstChild.childNodes[1].firstChild.innerHTML = newsize+"";
-//   sizedisplay.firstChild.lastChild.firstChild.childNodes[0].firstChild.style.width = (newsize-2)+"px";
-   sizedisplay.innerHTML = '<table cellpadding="0" cellspacing="0"><tr><td style="height:100px;'+
-      'border:1px dashed black;background-color:white;width:' + (newsize-2) + 'px;">&nbsp;</td>'+
-      '<td><div style="font-size:small;color:white;background-color:gray;padding:4px;">'+
-      newsize + '</div></td></tr></table>';
-   SocialCalc.setStyles(sizedisplay.firstChild.lastChild.firstChild.childNodes[0], "filter:alpha(opacity=85);opacity:.85;"); // so no warning msg with Firefox about filter
+      var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
+      if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
+
+      var sizedisplay = mouseinfo.mouseresizedisplay;
+//      sizedisplay.firstChild.lastChild.firstChild.childNodes[1].firstChild.innerHTML = newsize+"";
+//      sizedisplay.firstChild.lastChild.firstChild.childNodes[0].firstChild.style.width = (newsize-2)+"px";
+      sizedisplay.innerHTML = '<table cellpadding="0" cellspacing="0"><tr><td style="height:100px;'+
+          'border:1px dashed black;background-color:white;width:' + (newsize-2) + 'px;">&nbsp;</td>'+
+          '<td><div style="font-size:small;color:white;background-color:gray;padding:4px;">'+
+          newsize + '</div></td></tr></table>';
+      SocialCalc.setStyles(sizedisplay.firstChild.lastChild.firstChild.childNodes[0], "filter:alpha(opacity=85);opacity:.85;"); // so no warning msg with Firefox about filter
+      }
 
    if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
    else event.cancelBubble = true; // IE 5+
@@ -1506,10 +1521,15 @@ SocialCalc.ProcessEditorColsizeMouseUp = function(e) {
       editor.toplevel.releaseCapture();
       }
 
-   var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
-   if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
+   if (mouseinfo.mouseunhidecolnum) {
+      editor.EditorScheduleSheetCommands("set "+SocialCalc.rcColname(mouseinfo.mouseunhidecolnum)+" hide", true, false);
+      }
+   else {
+      var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
+      if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
 
-   editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize, true, false);
+      editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize, true, false);
+      }
 
    if (editor.timeout) window.clearTimeout(editor.timeout);
    editor.timeout = window.setTimeout(SocialCalc.FinishColsize, 1); // wait - Firefox 2 has a bug otherwise with next mousedown
@@ -1525,8 +1545,10 @@ SocialCalc.FinishColsize = function() {
    var editor = mouseinfo.editor;
    if (!editor) return;
 
-   editor.toplevel.removeChild(mouseinfo.mouseresizedisplay);
-   mouseinfo.mouseresizedisplay = null;
+   if (!mouseinfo.mouseunhidecolnum) {
+      editor.toplevel.removeChild(mouseinfo.mouseresizedisplay);
+      mouseinfo.mouseresizedisplay = null;
+      }
 
 //   editor.FitToEditTable();
 //   editor.EditorRenderSheet();
@@ -2121,6 +2143,20 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
             result.coltoresize--;
             }
 
+         // Handle unhide div.
+         if (unhide = editor.context.colunhideleft[result.coltoresize]) {
+            pos = SocialCalc.GetElementPosition(unhide);
+            if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
+               result.coltounhide = result.coltoresize-1;
+               }
+            }
+         if (unhide = editor.context.colunhideright[result.coltoresize]) {
+            pos = SocialCalc.GetElementPosition(unhide);
+            if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
+               result.coltounhide = result.coltoresize+1;
+               }
+            }
+
          for (colpane=0; colpane<editor.context.colpanes.length; colpane++) {
             if (result.coltoresize >= editor.context.colpanes[colpane].first &&
                 result.coltoresize <= editor.context.colpanes[colpane].last) { // visible column
@@ -2216,6 +2252,7 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
 
    var coord, row, col, cell;
    var shifted = false;
+   var delta = 1;
 
    if (!editor.ecell) {
       return null;
@@ -2236,23 +2273,21 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
          break;
       case "[aup]":
          row--;
+         delta = -1;
          break;
       case "[pgdn]":
          row += editor.pageUpDnAmount - 1 + ((cell && cell.rowspan) || 1);
          break;
       case "[pgup]":
          row -= editor.pageUpDnAmount;
+         delta = -1;
          break;
       case "[aright]":
-         do {
-            cell = editor.context.sheetobj.cells[SocialCalc.crToCoord(col, row)];
-            col += (cell && cell.colspan) || 1;
-         } while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes");
+         col += (cell && cell.colspan) || 1;
          break;
       case "[aleft]":
-         do {
-            col--;
-         } while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes");
+         col--;
+         delta = -1;
          break;
       case "[home]":
          row = 1;
@@ -2265,6 +2300,14 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
    // Adjust against usermax col and row.
    if (editor.context.sheetobj.attribs.usermaxcol) col = Math.min(editor.context.sheetobj.attribs.usermaxcol, col);
    if (editor.context.sheetobj.attribs.usermaxrow) row = Math.min(editor.context.sheetobj.attribs.usermaxrow, row);
+
+   // Handle hidden col/row.
+   while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
+      col += delta;
+      if (col < 1) {
+         delta = -delta;
+         }
+      }
    
    if (!editor.range.hasrange) {
       if (shifted)
@@ -2424,6 +2467,12 @@ SocialCalc.SetECellHeaders = function(editor, selected) {
 
    if (!ecell) return;
 
+   // Handle ecell on a hidden column.
+   while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col)] == "yes") {
+      ecell.col++;
+      }
+   ecell.coord = SocialCalc.crToCoord(ecell.col, ecell.row);
+
    for (rowpane=0; rowpane<context.rowpanes.length; rowpane++) {
       first = context.rowpanes[rowpane].first;
       last = context.rowpanes[rowpane].last;
@@ -2447,14 +2496,6 @@ SocialCalc.SetECellHeaders = function(editor, selected) {
          if (headercell) {
             if (context.classnames) headercell.className=context.classnames[selected+"colname"];
             if (context.explicitStyles) headercell.style.cssText=context.explicitStyles[selected+"colname"];
-
-            // If neighbour is hidden, show an icon in this column.
-            if (ecell.col > 1 && context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col-1)] == "yes") {
-               headercell.style.cssText += ";font-style:italic";
-               }
-            if (ecell.col < context.colpanes[context.colpanes.length-1].last && context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col+1)] == "yes") {
-               headercell.style.cssText += ";font-style:italic";
-               }
             }
          }
       colindex += last - first + 1 + 1;
@@ -3042,9 +3083,6 @@ SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
    // Handle hidden column by finding a next one that's not hidden.
    while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(context.colpanes[hplen-1].first+hamount)] == "yes") {
       hamount += dh;
-      if (context.colpanes[hplen-1].first+hamount < hlimit) { // was this the first column?
-        dh = 1; // advance again to find a visible column
-        }
       }
 
    if ((vamount==1 || vamount==-1) && hamount==0) { // special case quick scrolls

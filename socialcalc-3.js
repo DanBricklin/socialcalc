@@ -1871,6 +1871,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                      }
                   }
                else if (attrib=="hide") {
+                  sheet.cellrefreshneeded = "col";
                   cr = SocialCalc.rcColname(col);
                   if (saveundo) changes.AddUndo("set "+cr+" hide", sheet.colattribs.hide[cr]);
                   if (rest.length > 0) {
@@ -4063,6 +4064,7 @@ SocialCalc.RenderContext = function(sheetobj) {
 
    this.rowpanes = []; // for each pane, {first: firstrow, last: lastrow}
    this.colpanes = []; // for each pane, {first: firstrow, last: lastrow}
+   this.colunhideleft = this.colunhideright = [];
    this.maxcol=0; // max col and row to display, adding long spans, etc.
    this.maxrow=0;
 
@@ -4489,7 +4491,7 @@ SocialCalc.RenderColHeaders = function(context) {
 
    var result=document.createElement("tr");
    var colnum, newcol;
-   var unhide;
+   var unhideleft, unhideright;
 
    if (!context.showRCHeaders) return null;
 
@@ -4511,21 +4513,26 @@ SocialCalc.RenderColHeaders = function(context) {
             }
 
          // If neighbour is hidden, show an icon in this column.
-         unhide = false;
+         unhideleft = unhideright = false;
          if (colnum > 1 && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum-1)] == "yes") {
-            unhide = document.createElement("div");
-            if (context.classnames) unhide.className=context.classnames.unhideleft;
-            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideleft;
+            unhideleft = document.createElement("div");
+            if (context.classnames) unhideleft.className=context.classnames.unhideleft;
+            if (context.explicitStyles) unhideleft.style.cssText=context.explicitStyles.unhideleft;
+            context.colunhideleft[colnum] = unhideleft;
             }
          if (colnum < context.colpanes[context.colpanes.length-1].last && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum+1)] == "yes") {
-            unhide = document.createElement("div");
-            if (context.classnames) unhide.className=context.classnames.unhideright;
-            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideright;
+            unhideright = document.createElement("div");
+            if (context.classnames) unhideright.className=context.classnames.unhideright;
+            if (context.explicitStyles) unhideright.style.cssText=context.explicitStyles.unhideright;
+            context.colunhideright[colnum] = unhideright;
             }
 
          newcol.innerHTML=SocialCalc.rcColname(colnum);
-         if (unhide) {
-            newcol.appendChild(unhide);
+         if (unhideleft) {
+            newcol.appendChild(unhideleft);
+            }
+         if (unhideright) {
+            newcol.appendChild(unhideright);
             }
 
          result.appendChild(newcol);
