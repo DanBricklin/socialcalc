@@ -1849,7 +1849,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                }
             }
 
-         else if (/(^[A-Z])([A-Z])?(:[A-Z][A-Z]?){0,1}$/i.test(what)) { // col attributes
+         else if (/^[a-z]{1,2}(:[a-z]{1,2})?$/i.test(what)) { // col attributes
             sheet.renderneeded = true;
             what = what.toUpperCase();
             pos = what.indexOf(":");
@@ -1886,9 +1886,42 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
                }
             }
 
-         // !!!!! need row attribs !!!!
+         else if (/^\d+(:\d+)?$/i.test(what)) { // row attributes
+            sheet.renderneeded = true;
+            what = what.toUpperCase();
+            pos = what.indexOf(":");
+            if (pos>=0) {
+               cr1 = SocialCalc.coordToCr("A"+what.substring(0,pos));
+               cr2 = SocialCalc.coordToCr("A"+what.substring(pos+1));
+               }
+            else {
+               cr1 = SocialCalc.coordToCr("A"+what);
+               cr2 = cr1;
+               }
+            for (row=cr1.row; row <= cr2.row; row++) {
+               if (attrib=="height") {
+                  if (saveundo) changes.AddUndo("set "+row+" height", sheet.rowattribs.height[row]);
+                  if (rest.length > 0 ) {
+                     sheet.rowattribs.height[row] = rest;
+                     }
+                  else {
+                     delete sheet.rowattribs.height[row];
+                     }
+                  }
+               else if (attrib=="hide") {
+                  sheet.hiddencolrow = "row";
+                  if (saveundo) changes.AddUndo("set "+row+" hide", sheet.rowattribs.hide[row]);
+                  if (rest.length > 0) {
+                     sheet.rowattribs.hide[row] = rest; 
+                     }
+                  else {
+                     delete sheet.rowattribs.hide[row];
+                     }
+                  }
+               }
+            }
 
-         else if (/([a-z]){0,1}(\d+)/i.test(what)) { // cell attributes
+         else if (/^[a-z]{1,2}\d+(:[a-z]{1,2}\d+)?$/i.test(what)) { // cell attributes
             ParseRange();
             if (cr1.row!=cr2.row || cr1.col!=cr2.col || sheet.celldisplayneeded || sheet.renderneeded) { // not one cell
                sheet.renderneeded = true;
@@ -4066,7 +4099,10 @@ SocialCalc.RenderContext = function(sheetobj) {
 
    this.rowpanes = []; // for each pane, {first: firstrow, last: lastrow}
    this.colpanes = []; // for each pane, {first: firstrow, last: lastrow}
-   this.colunhideleft = this.colunhideright = [];
+   this.colunhideleft = [];
+   this.colunhideright = [];
+   this.rowunhidetop = [];
+   this.rowunhidebottom = [];
    this.maxcol=0; // max col and row to display, adding long spans, etc.
    this.maxrow=0;
 
@@ -4121,7 +4157,9 @@ SocialCalc.RenderContext = function(sheetobj) {
          skippedcell: scc.defaultSkippedCellClass,
          panedivider: scc.defaultPaneDividerClass,
          unhideleft: scc.defaultUnhideLeftClass,
-         unhideright: scc.defaultUnhideRightClass
+         unhideright: scc.defaultUnhideRightClass,
+         unhidetop: scc.defaultUnhideTopClass,
+         unhidebottom: scc.defaultUnhideBottomClass
       };
 
    this.explicitStyles = // these may be used so you won't need a stylesheet with the classnames
@@ -4134,7 +4172,9 @@ SocialCalc.RenderContext = function(sheetobj) {
          skippedcell: scc.defaultSkippedCellStyle,
          panedivider: scc.defaultPaneDividerStyle,
          unhideleft: scc.defaultUnhideLeftStyle,
-         unhideright: scc.defaultUnhideRightStyle
+         unhideright: scc.defaultUnhideRightStyle,
+         unhidetop: scc.defaultUnhideTopStyle,
+         unhidebottom: scc.defaultUnhideBottomStyle
       };
 
    // processed info about cell skipping
@@ -4425,6 +4465,28 @@ SocialCalc.RenderRow = function(context, rownum, rowpane, linkstyle) {
       newcol.style.verticalAlign="top"; // to get around Safari making top of centered row number be
                                         // considered top of row (and can't get <row> position in Safari)
       newcol.innerHTML=rownum+"";
+
+      // If neighbour is hidden, show an icon in this column.
+      if (rownum < context.rowpanes[context.rowpanes.length-1].last && sheetobj.rowattribs.hide[rownum+1] == "yes") {
+         // HACK: Because we likely want the icon floating at the bottom of the cell, we create an enclosing div 
+         // with position relative and the icon's div will be placed inside it with position: absolute and bottom: 0.
+         var container = document.createElement("div");
+         container.style.position = "relative";
+         var unhide = document.createElement("div");
+         if (context.classnames) unhide.className=context.classnames.unhidetop;
+         if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhidetop;
+         context.rowunhidetop[rownum] = unhide;
+         container.appendChild(unhide);
+         newcol.appendChild(container);
+         }
+      if (rownum > 1 && sheetobj.rowattribs.hide[rownum-1] == "yes") {
+         var unhide = document.createElement("div");
+         if (context.classnames) unhide.className=context.classnames.unhidebottom;
+         if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhidebottom;
+         context.rowunhidebottom[rownum] = unhide;
+         newcol.appendChild(unhide);
+         }
+
       result.appendChild(newcol);
       }
 
@@ -4445,6 +4507,12 @@ SocialCalc.RenderRow = function(context, rownum, rowpane, linkstyle) {
          result.appendChild(newcol);
          }
       }
+
+   // If hidden row, display: none.
+   if (sheetobj.rowattribs.hide[rownum] == "yes") {
+      result.style.cssText += ";display:none";
+      }
+
    return result;
    }
 
@@ -4493,7 +4561,6 @@ SocialCalc.RenderColHeaders = function(context) {
 
    var result=document.createElement("tr");
    var colnum, newcol;
-   var unhideleft, unhideright;
 
    if (!context.showRCHeaders) return null;
 
@@ -4514,27 +4581,22 @@ SocialCalc.RenderColHeaders = function(context) {
             newcol.style.cssText += ";display:none";
             }
 
-         // If neighbour is hidden, show an icon in this column.
-         unhideleft = unhideright = false;
-         if (colnum > 1 && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum-1)] == "yes") {
-            unhideleft = document.createElement("div");
-            if (context.classnames) unhideleft.className=context.classnames.unhideleft;
-            if (context.explicitStyles) unhideleft.style.cssText=context.explicitStyles.unhideleft;
-            context.colunhideleft[colnum] = unhideleft;
-            }
-         if (colnum < context.colpanes[context.colpanes.length-1].last && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum+1)] == "yes") {
-            unhideright = document.createElement("div");
-            if (context.classnames) unhideright.className=context.classnames.unhideright;
-            if (context.explicitStyles) unhideright.style.cssText=context.explicitStyles.unhideright;
-            context.colunhideright[colnum] = unhideright;
-            }
-
          newcol.innerHTML=SocialCalc.rcColname(colnum);
-         if (unhideleft) {
-            newcol.appendChild(unhideleft);
+
+         // If neighbour is hidden, show an icon in this column.
+         if (colnum < context.colpanes[context.colpanes.length-1].last && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum+1)] == "yes") {
+            var unhide = document.createElement("div");
+            if (context.classnames) unhide.className=context.classnames.unhideleft;
+            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideleft;
+            context.colunhideleft[colnum] = unhide;
+            newcol.appendChild(unhide);
             }
-         if (unhideright) {
-            newcol.appendChild(unhideright);
+         if (colnum > 1 && sheetobj.colattribs.hide[SocialCalc.rcColname(colnum-1)] == "yes") {
+            unhide = document.createElement("div");
+            if (context.classnames) unhide.className=context.classnames.unhideright;
+            if (context.explicitStyles) unhide.style.cssText=context.explicitStyles.unhideright;
+            context.colunhideright[colnum] = unhide;
+            newcol.appendChild(unhide);
             }
 
          result.appendChild(newcol);
@@ -4816,6 +4878,11 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
 
    // If hidden column, display: none.
    if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
+      result.style.cssText+=";display:none";
+      }
+
+   // If hidden row, display: none.
+   if (sheetobj.rowattribs.hide[rownum] == "yes") {
       result.style.cssText+=";display:none";
       }
 

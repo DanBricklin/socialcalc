@@ -865,6 +865,7 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
                }
             }
 
+         // Handle hidden column.
          if (sheetobj.hiddencolrow == "col") {
             var col = editor.ecell.col;
             while (sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
@@ -874,6 +875,18 @@ SocialCalc.EditorSheetStatusCallback = function(recalcdata, status, arg, editor)
             editor.MoveECell(coord);
             sheetobj.hiddencolrow = "";
             }
+
+         // Handle hidden row.
+         if (sheetobj.hiddencolrow == "row") {
+            var row = editor.ecell.row;
+            while (sheetobj.rowattribs.hide[row] == "yes") {
+               row++;
+               }
+            var coord = SocialCalc.crToCoord(editor.ecell.col, row);
+            editor.MoveECell(coord);
+            sheetobj.hiddencolrow = "";
+            }
+
          return;
 
       case "calcstart":
@@ -1204,8 +1217,13 @@ SocialCalc.ProcessEditorMouseDown = function(e) {
    range = editor.range;
    result = SocialCalc.GridMousePosition(editor, clientX, clientY);
 
-   if (!result || result.rowheader) return; // not on a cell or col header
+   if (!result) return; // not on a cell or col header
    mouseinfo.editor = editor; // remember for later
+
+   if (result.rowheader && result.rowtounhide) {
+      SocialCalc.ProcessEditorRowsizeMouseDown(e, ele, result); 
+      return;
+      }
 
    if (result.colheader && result.coltoresize) { // col header - do drag resize
       SocialCalc.ProcessEditorColsizeMouseDown(e, ele, result);
@@ -1422,9 +1440,9 @@ SocialCalc.ProcessEditorColsizeMouseDown = function(e, ele, result) {
    mouseinfo.mouseresizecolnum = result.coltoresize; // remember col being resized
    mouseinfo.mouseresizecol = SocialCalc.rcColname(result.coltoresize);
    mouseinfo.mousedownclientx = clientX;
-   mouseinfo.mouseunhidecolnum = result.coltounhide;
+   mouseinfo.mousecoltounhide = result.coltounhide;
    
-   if (!mouseinfo.mouseunhidecolnum) {
+   if (!mouseinfo.mousecoltounhide) {
       var sizedisplay = document.createElement("div");
       mouseinfo.mouseresizedisplay = sizedisplay;
       sizedisplay.style.width = "auto";
@@ -1469,7 +1487,7 @@ SocialCalc.ProcessEditorColsizeMouseMove = function(e) {
    var editor = mouseinfo.editor;
    if (!editor) return; // not us, ignore
 
-   if (!mouseinfo.mouseunhidecolnum) {
+   if (!mouseinfo.mousecoltounhide) {
       var viewport = SocialCalc.GetViewportInfo();
       var clientX = event.clientX + viewport.horizontalScroll;
 
@@ -1522,18 +1540,22 @@ SocialCalc.ProcessEditorColsizeMouseUp = function(e) {
       editor.toplevel.releaseCapture();
       }
 
-   if (mouseinfo.mouseunhidecolnum) {
-      editor.EditorScheduleSheetCommands("set "+SocialCalc.rcColname(mouseinfo.mouseunhidecolnum)+" hide", true, false);
+   if (mouseinfo.mousecoltounhide) {
+      editor.EditorScheduleSheetCommands("set "+SocialCalc.rcColname(mouseinfo.mousecoltounhide)+" hide", true, false);
+      /*
+      if (editor.ecell && editor.ecell.col == mouseinfo.mousecoltounhide+1) {
+         editor.MoveECell(SocialCalc.crToCoord(mouseinfo.mousecoltounhide, editor.ecell.row));
+         }*/
       }
    else {
       var newsize = (editor.context.colwidth[mouseinfo.mouseresizecolnum]-0) + (clientX - mouseinfo.mousedownclientx);
       if (newsize < SocialCalc.Constants.defaultMinimumColWidth) newsize = SocialCalc.Constants.defaultMinimumColWidth;
 
       editor.EditorScheduleSheetCommands("set "+mouseinfo.mouseresizecol+" width "+newsize, true, false);
-      }
 
-   if (editor.timeout) window.clearTimeout(editor.timeout);
-   editor.timeout = window.setTimeout(SocialCalc.FinishColsize, 1); // wait - Firefox 2 has a bug otherwise with next mousedown
+      if (editor.timeout) window.clearTimeout(editor.timeout);
+      editor.timeout = window.setTimeout(SocialCalc.FinishColsize, 1); // wait - Firefox 2 has a bug otherwise with next mousedown
+      }
 
    return false;
 
@@ -1546,10 +1568,8 @@ SocialCalc.FinishColsize = function() {
    var editor = mouseinfo.editor;
    if (!editor) return;
 
-   if (!mouseinfo.mouseunhidecolnum) {
-      editor.toplevel.removeChild(mouseinfo.mouseresizedisplay);
-      mouseinfo.mouseresizedisplay = null;
-      }
+   editor.toplevel.removeChild(mouseinfo.mouseresizedisplay);
+   mouseinfo.mouseresizedisplay = null;
 
 //   editor.FitToEditTable();
 //   editor.EditorRenderSheet();
@@ -1560,6 +1580,89 @@ SocialCalc.FinishColsize = function() {
    return;
 
    }
+
+
+SocialCalc.ProcessEditorRowsizeMouseDown = function(e, ele, result) {
+
+   var event = e || window.event;
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   var editor = mouseinfo.editor;
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+
+   mouseinfo.mouserowtounhide = result.rowtounhide;
+   
+   // Event code from JavaScript, Flanagan, 5th Edition, pg. 422
+   if (document.addEventListener) { // DOM Level 2 -- Firefox, et al
+      document.addEventListener("mousemove", SocialCalc.ProcessEditorRowsizeMouseMove, true); // capture everywhere
+      document.addEventListener("mouseup", SocialCalc.ProcessEditorRowsizeMouseUp, true); // capture everywhere
+      }
+   else if (editor.toplevel.attachEvent) { // IE 5+
+      editor.toplevel.setCapture();
+      editor.toplevel.attachEvent("onmousemove", SocialCalc.ProcessEditorRowsizeMouseMove);
+      editor.toplevel.attachEvent("onmouseup", SocialCalc.ProcessEditorRowsizeMouseUp);
+      editor.toplevel.attachEvent("onlosecapture", SocialCalc.ProcessEditorRowsizeMouseUp);
+      }
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   return;
+   }
+
+
+SocialCalc.ProcessEditorRowsizeMouseMove = function(e) {
+
+   var event = e || window.event;
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   var editor = mouseinfo.editor;
+   if (!editor) return; // not us, ignore
+
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   return;
+
+   }
+
+
+SocialCalc.ProcessEditorRowsizeMouseUp = function(e) {
+
+   var event = e || window.event;
+   var mouseinfo = SocialCalc.EditorMouseInfo;
+   var editor = mouseinfo.editor;
+   if (!editor) return; // not us, ignore
+   element = mouseinfo.element;
+   var viewport = SocialCalc.GetViewportInfo();
+   var clientX = event.clientX + viewport.horizontalScroll;
+
+   if (event.stopPropagation) event.stopPropagation(); // DOM Level 2
+   else event.cancelBubble = true; // IE 5+
+   if (event.preventDefault) event.preventDefault(); // DOM Level 2
+   else event.returnValue = false; // IE 5+
+
+   if (document.removeEventListener) { // DOM Level 2
+      document.removeEventListener("mousemove", SocialCalc.ProcessEditorRowsizeMouseMove, true);
+      document.removeEventListener("mouseup", SocialCalc.ProcessEditorRowsizeMouseUp, true);
+      }
+   else if (editor.toplevel.detachEvent) { // IE
+      editor.toplevel.detachEvent("onlosecapture", SocialCalc.ProcessEditorRowsizeMouseUp);
+      editor.toplevel.detachEvent("onmouseup", SocialCalc.ProcessEditorRowsizeMouseUp);
+      editor.toplevel.detachEvent("onmousemove", SocialCalc.ProcessEditorRowsizeMouseMove);
+      editor.toplevel.releaseCapture();
+      }
+
+   if (mouseinfo.mouserowtounhide) {
+      editor.EditorScheduleSheetCommands("set "+mouseinfo.mouserowtounhide+" hide", true, false);
+      }
+
+   return false;
+
+   }
+
 
 //
 // Handle auto-repeat of dragging the cursor into the borders of the sheet
@@ -2132,6 +2235,22 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
       if (clientX < editor.headposition.left && clientX >= editor.gridposition.left) {
          result.rowheader = true;
          result.distance = editor.headposition.left - clientX;
+         result.rowtounhide = "";
+
+         // Handle unhide row.
+         if (unhide = editor.context.rowunhidetop[row]) {
+            pos = SocialCalc.GetElementPosition(unhide);
+            if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
+               result.rowtounhide = row+1;
+               }
+            }
+         if (unhide = editor.context.rowunhidebottom[row]) {
+            pos = SocialCalc.GetElementPosition(unhide);
+            if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
+               result.rowtounhide = row-1;
+               }
+            }
+
          return result;
          }
       else if (clientY < editor.headposition.top && clientY > editor.gridposition.top) { // > because of sizing row
@@ -2139,22 +2258,17 @@ SocialCalc.GridMousePosition = function(editor, clientX, clientY) {
          result.distance = editor.headposition.top - clientY;
          result.coltoresize = col-(editor.colpositions[col]+editor.colwidth[col]/2>clientX?1:0) || 1;
 
-         // Handle hidden column.
-         while (editor.colpositions[result.coltoresize] == 0) {
-            result.coltoresize--;
-            }
-
-         // Handle unhide div.
-         if (unhide = editor.context.colunhideleft[result.coltoresize]) {
+         // Handle unhide column.
+         if (unhide = editor.context.colunhideleft[col]) {
             pos = SocialCalc.GetElementPosition(unhide);
             if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
-               result.coltounhide = result.coltoresize-1;
+               result.coltounhide = col+1;
                }
             }
-         if (unhide = editor.context.colunhideright[result.coltoresize]) {
+         if (unhide = editor.context.colunhideright[col]) {
             pos = SocialCalc.GetElementPosition(unhide);
             if (clientX >= pos.left && clientX < pos.left+unhide.offsetWidth && clientY >= pos.top  && clientY < pos.top+unhide.offsetHeight) {
-               result.coltounhide = result.coltoresize+1;
+               result.coltounhide = col-1;
                }
             }
 
@@ -2302,10 +2416,18 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
    if (editor.context.sheetobj.attribs.usermaxcol) col = Math.min(editor.context.sheetobj.attribs.usermaxcol, col);
    if (editor.context.sheetobj.attribs.usermaxrow) row = Math.min(editor.context.sheetobj.attribs.usermaxrow, row);
 
-   // Handle hidden col/row.
+   // Handle hidden column.
    while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
       col += delta;
       if (col < 1) {
+         delta = -delta;
+         }
+      }
+   
+   // Handle hidden row.
+   while (editor.context.sheetobj.rowattribs.hide[row] == "yes") {
+      row += delta;
+      if (row < 1) {
          delta = -delta;
          }
       }
@@ -2468,10 +2590,14 @@ SocialCalc.SetECellHeaders = function(editor, selected) {
 
    if (!ecell) return;
 
-   // Handle ecell on a hidden column.
+   // Handle ecell on a hidden column/row.
    while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(ecell.col)] == "yes") {
       ecell.col++;
       }
+   while (context.sheetobj.rowattribs.hide[ecell.row] == "yes") {
+      ecell.row++;
+      }
+
    ecell.coord = SocialCalc.crToCoord(ecell.col, ecell.row);
 
    for (rowpane=0; rowpane<context.rowpanes.length; rowpane++) {
@@ -2785,7 +2911,7 @@ SocialCalc.Range2Remove = function(editor) {
 
 SocialCalc.FitToEditTable = function(editor) {
 
-   var colnum, colname, colwidth, totalwidth, totalrows, rowpane, needed;
+   var colnum, colname, colwidth, totalwidth, totalrows, rownum, rowpane, needed;
 
    var context=editor.context;
    var sheetobj=context.sheetobj;
@@ -2822,6 +2948,11 @@ SocialCalc.FitToEditTable = function(editor) {
    totalrows=context.showRCHeaders ? 1 : 0;
    for (rowpane=0; rowpane<context.rowpanes.length-1; rowpane++) { // count all panes but last one
       totalrows += context.rowpanes[rowpane].last - context.rowpanes[rowpane].first + 1;
+      for (rownum=context.rowpanes[rowpane].first; rownum<=context.rowpanes[rowpane].last; rownum++) {
+         if (sheetobj.rowattribs.hide[rownum] == "yes") {
+            totalrows--;
+            }
+         }
       }
 
    needed = editor.tableheight - totalrows * context.pixelsPerRow; // estimate amount needed
@@ -3084,6 +3215,11 @@ SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
    // Handle hidden column by finding a next one that's not hidden.
    while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(context.colpanes[hplen-1].first+hamount)] == "yes") {
       hamount += dh;
+      }
+
+   // Handle hidden row by finding a next one that's not hidden.
+   while (context.sheetobj.rowattribs.hide[context.rowpanes[vplen-1].first+vamount] == "yes") {
+      vamount += dv;
       }
 
    if ((vamount==1 || vamount==-1) && hamount==0) { // special case quick scrolls
@@ -3737,9 +3873,14 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
       if (row < editor.firstscrollingrow) break;
       if (col < editor.firstscrollingcol) break;
 
-      // Go beyond one if hidden.
+      // Go beyond one column if hidden.
       while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col+colinc)] == "yes") {
          colinc++; 
+         }     
+
+      // Go beyond one row if hidden.
+      while (editor.context.sheetobj.rowattribs.hide[row+rowinc] == "yes") {
+         rowinc++; 
          }     
 
       if (editor.rowpositions[row+rowinc]+20>editor.horizontaltablecontrol.controlborder+editor.relativeoffset.top) {
@@ -4948,6 +5089,12 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
       if (draginfo.clientY < min) draginfo.clientY = min;
 
       row = SocialCalc.Lookup(draginfo.clientY+sliderthickness, editor.rowpositions);
+
+      // Handle hidden row.
+      while (editor.context.sheetobj.rowattribs.hide[row] == "yes") {
+         row--;
+         }
+
       draginfo.trackingline.style.top = ((editor.rowpositions[row] || editor.headposition.top)-editor.relativeoffset.top)+"px";
       }
    else {
@@ -4959,10 +5106,8 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
       col = SocialCalc.Lookup(draginfo.clientX+sliderthickness, editor.colpositions);
 
       // Handle hidden column.
-      // TODO: Handle all hidden columns!
-      while (editor.colpositions[col] == 0) {
-         if (col > 1) col--;
-         else if (col < editor.colpositions.length-1) col++;
+      while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
+         col--;
          }
 
       draginfo.trackingline.style.left = ((editor.colpositions[col] || editor.headposition.left)-editor.relativeoffset.left)+"px";
@@ -4991,6 +5136,12 @@ SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
 
       row = SocialCalc.Lookup(draginfo.clientY+sliderthickness, editor.rowpositions);
       if (row>editor.context.sheetobj.attribs.lastrow) row=editor.context.sheetobj.attribs.lastrow; // can't extend sheet here
+
+      // Handle hidden row.
+      while (editor.context.sheetobj.rowattribs.hide[row] == "yes") {
+         row--;
+         }
+
       if (!row || row<=editor.context.rowpanes[0].first) { // set to no panes, leaving first pane settings
          if (editor.context.rowpanes.length>1) editor.context.rowpanes.length = 1;
          }
@@ -5015,10 +5166,8 @@ SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
       if (col>editor.context.sheetobj.attribs.lastcol) col=editor.context.sheetobj.attribs.lastcol; // can't extend sheet here
 
       // Handle hidden column.
-      // TODO: Handle all hidden columns!
-      while (editor.colpositions[col] == 0) {
-         if (col > 1) col--;
-         else if (col < editor.colpositions.length-1) col++;
+      while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
+         col--;
          }
 
       if (!col || col<=editor.context.colpanes[0].first) { // set to no panes, leaving first pane settings
