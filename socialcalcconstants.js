@@ -164,11 +164,11 @@ SocialCalc.Constants = {
    defaultPaneDividerClass: "", // used if present for the look of the space between panes (at least one of class/style needed)
    defaultPaneDividerStyle: "font-size:small;background-color:#C0C0C0;padding:0px;", // used if present
    defaultUnhideLeftClass: "",
-   defaultUnhideLeftStyle: "float:left;width:9px;height:12px;cursor:pointer;background-image:url(images/sc-unhideleft.gif);padding:0;", // used if present
+   defaultUnhideLeftStyle: "float:right;width:9px;height:12px;cursor:pointer;background-image:url(images/sc-unhideleft.gif);padding:0;", // used if present
    defaultUnhideRightClass: "",
-   defaultUnhideRightStyle: "float:right;width:9px;height:12px;cursor:pointer;background-image:url(images/sc-unhideright.gif);padding:0;", // used if present
+   defaultUnhideRightStyle: "float:left;width:9px;height:12px;cursor:pointer;background-image:url(images/sc-unhideright.gif);padding:0;", // used if present
    defaultUnhideTopClass: "",
-   defaultUnhideTopStyle: "float:left;position:absolute;bottom:0;width:12px;height:9px;cursor:pointer;background-image:url(images/sc-unhidetop.gif);padding:0;",
+   defaultUnhideTopStyle: "float:left;position:absolute;bottom:-4px;width:12px;height:9px;cursor:pointer;background-image:url(images/sc-unhidetop.gif);padding:0;",
    defaultUnhideBottomClass: "",
    defaultUnhideBottomStyle: "float:left;width:12px;height:9px;cursor:pointer;background-image:url(images/sc-unhidebottom.gif);padding:0;",
 
@@ -832,5 +832,20 @@ SocialCalc.ConstantsSetClasses = function(prefix) {
          scc[item+"Style"] = defaults[item].style;
          }
       }
+   }
+
+// Set the image prefix on all images.
+
+SocialCalc.ConstantsSetImagePrefix = function(imagePrefix) {
+
+   var scc = SocialCalc.Constants;
+
+   for (var item in scc) {
+      if (typeof scc[item] == "string") {
+         scc[item] = scc[item].replace(scc.defaultImagePrefix, imagePrefix);
+         }
+      }
+   scc.defaultImagePrefix = imagePrefix;
+
    }
 
