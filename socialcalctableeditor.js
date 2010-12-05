@@ -2421,6 +2421,7 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
       col += delta;
       if (col < 1) {
          delta = -delta;
+         col = 1;
          }
       }
    
@@ -2429,6 +2430,7 @@ SocialCalc.MoveECellWithKey = function(editor, ch) {
       row += delta;
       if (row < 1) {
          delta = -delta;
+         row = 1;
          }
       }
    
@@ -2976,8 +2978,11 @@ SocialCalc.CalculateEditorPositions = function(editor) {
    var rowpane, colpane, i;
 
    editor.gridposition = SocialCalc.GetElementPosition(editor.griddiv);
-   editor.headposition =
-      SocialCalc.GetElementPosition(editor.griddiv.firstChild.lastChild.childNodes[2].childNodes[1]); // 3rd tr 2nd td
+   
+   var element = editor.griddiv.firstChild.lastChild.childNodes[1].childNodes[0]; // 2nd tr 1st td
+   editor.headposition = SocialCalc.GetElementPosition(element);
+   editor.headposition.left += element.offsetWidth;
+   editor.headposition.top += element.offsetHeight;
 
    editor.rowpositions = [];
    for (rowpane=0; rowpane<editor.context.rowpanes.length; rowpane++) {
@@ -2998,10 +3003,16 @@ SocialCalc.CalculateEditorPositions = function(editor) {
    editor.lastvisiblecol = i-1;
 
    editor.firstscrollingrow = editor.context.rowpanes[editor.context.rowpanes.length-1].first;
+   while (editor.context.sheetobj.rowattribs.hide[editor.firstscrollingrow] == "yes") {
+      editor.firstscrollingrow++;
+      }
    editor.firstscrollingrowtop = editor.rowpositions[editor.firstscrollingrow] || editor.headposition.top;
    editor.lastnonscrollingrow = editor.context.rowpanes.length-1 > 0 ?
          editor.context.rowpanes[editor.context.rowpanes.length-2].last : 0;
    editor.firstscrollingcol = editor.context.colpanes[editor.context.colpanes.length-1].first;
+   while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(editor.firstscrollingcol)] == "yes") {
+      editor.firstscrollingcol++;
+      }
    editor.firstscrollingcolleft = editor.colpositions[editor.firstscrollingcol] || editor.headposition.left;
    editor.lastnonscrollingcol = editor.context.colpanes.length-1 > 0 ?
          editor.context.colpanes[editor.context.colpanes.length-2].last : 0;
@@ -3215,11 +3226,19 @@ SocialCalc.ScrollRelativeBoth = function(editor, vamount, hamount) {
    // Handle hidden column by finding a next one that's not hidden.
    while (context.sheetobj.colattribs.hide[SocialCalc.rcColname(context.colpanes[hplen-1].first+hamount)] == "yes") {
       hamount += dh;
+      if (hamount < 1) {
+         hamount = 0;
+         break;
+         }
       }
 
    // Handle hidden row by finding a next one that's not hidden.
    while (context.sheetobj.rowattribs.hide[context.rowpanes[vplen-1].first+vamount] == "yes") {
       vamount += dv;
+      if (vamount < 1) {
+         vamount = 0;
+         break;
+         }
       }
 
    if ((vamount==1 || vamount==-1) && hamount==0) { // special case quick scrolls
@@ -5092,7 +5111,7 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
 
       // Handle hidden row.
       while (editor.context.sheetobj.rowattribs.hide[row] == "yes") {
-         row--;
+         row++;
          }
 
       draginfo.trackingline.style.top = ((editor.rowpositions[row] || editor.headposition.top)-editor.relativeoffset.top)+"px";
@@ -5107,7 +5126,7 @@ SocialCalc.TCPSDragFunctionMove = function(event, draginfo, dobj) {
 
       // Handle hidden column.
       while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
-         col--;
+         col++;
          }
 
       draginfo.trackingline.style.left = ((editor.colpositions[col] || editor.headposition.left)-editor.relativeoffset.left)+"px";
@@ -5139,7 +5158,7 @@ SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
 
       // Handle hidden row.
       while (editor.context.sheetobj.rowattribs.hide[row] == "yes") {
-         row--;
+         row++;
          }
 
       if (!row || row<=editor.context.rowpanes[0].first) { // set to no panes, leaving first pane settings
@@ -5167,7 +5186,7 @@ SocialCalc.TCPSDragFunctionStop = function(event, draginfo, dobj) {
 
       // Handle hidden column.
       while (editor.context.sheetobj.colattribs.hide[SocialCalc.rcColname(col)] == "yes") {
-         col--;
+         col++;
          }
 
       if (!col || col<=editor.context.colpanes[0].first) { // set to no panes, leaving first pane settings
