@@ -1951,6 +1951,58 @@ SocialCalc.Formula.FunctionList["VARP"] = [SocialCalc.Formula.SeriesFunctions, -
 
 /*
 #
+# SUMPRODUCT(range1, range2, ...)
+#
+*/
+
+SocialCalc.Formula.SumProductFunction = function(fname, operand, foperand, sheet) {
+  
+   var range, products = [], sum = 0;
+   var scf = SocialCalc.Formula;
+   var ncols = 0, nrows = 0;
+
+   var PushOperand = function(t, v) {operand.push({type: t, value: v});};
+
+   while (foperand.length > 0) {
+      range = scf.TopOfStackValueAndType(sheet, foperand);
+      if (range.type != "range") {
+         PushOperand("e#VALUE!", 0);
+         return;
+         }
+      rangeinfo = scf.DecodeRangeParts(sheet, range.value);
+      if (!ncols) ncols = rangeinfo.ncols;
+      else if (ncols != rangeinfo.ncols) {
+         PushOperand("e#VALUE!", 0);
+         return;
+         }
+      if (!nrows) nrows = rangeinfo.nrows;
+      else if (nrows != rangeinfo.nrows) {
+         PushOperand("e#VALUE!", 0);
+         return;
+         }
+      for (i=0; i<rangeinfo.ncols; i++) {
+         for (j=0; j<rangeinfo.nrows; j++) {
+            k = i * rangeinfo.nrows + j;
+            cellcr = SocialCalc.crToCoord(rangeinfo.col1num + i, rangeinfo.row1num + j);
+            cell = rangeinfo.sheetdata.GetAssuredCell(cellcr);
+            value = cell.valuetype == "n" ? cell.datavalue : 0;
+            products[k] = (products[k] || 1) * value;
+            }
+         }
+      }
+   for (i=0; i<products.length; i++) {
+      sum += products[i];
+      }
+   PushOperand("n", sum);
+
+   return;
+
+   }
+
+SocialCalc.Formula.FunctionList["SUMPRODUCT"] = [SocialCalc.Formula.SumProductFunction, -1, "rangen", "", "stat"];
+
+/*
+#
 # DAVERAGE(databaserange, fieldname, criteriarange)
 # DCOUNT(databaserange, fieldname, criteriarange)
 # DCOUNTA(databaserange, fieldname, criteriarange)
@@ -2666,16 +2718,26 @@ SocialCalc.Formula.IfFunction = function(fname, operand, foperand, sheet) {
       return;
       }
 
-   if (!cond.value) foperand.pop();
-   operand.push(foperand.pop());
-   if (cond.value) foperand.pop();
+   var op1, op2;
 
-   return null;
+   op1 = foperand.pop();
+   if (foperand.length == 1) {
+      op2 = foperand.pop();
+      }
+   else if (foperand.length == 0) {
+      op2 = {type: "n", value: 0};
+      }
+   else {
+      scf.FunctionArgsError(fname, operand);
+      return;
+   }
+
+   operand.push(cond.value ? op1 : op2);
 
    }
 
 // Add to function list
-SocialCalc.Formula.FunctionList["IF"] = [SocialCalc.Formula.IfFunction, 3, "iffunc", "", "test"];
+SocialCalc.Formula.FunctionList["IF"] = [SocialCalc.Formula.IfFunction, -2, "iffunc", "", "test"];
 
 /*
 #
@@ -3689,6 +3751,71 @@ SocialCalc.Formula.RoundFunction = function(fname, operand, foperand, sheet) {
    }
 
 SocialCalc.Formula.FunctionList["ROUND"] = [SocialCalc.Formula.RoundFunction, -1, "vp", "", "math"];
+
+/*
+#
+# CEILING(value, [significance])
+# FLOOR(value, [significance])
+#
+*/
+
+SocialCalc.Formula.CeilingFloorFunctions = function(fname, operand, foperand, sheet) {
+
+   var scf = SocialCalc.Formula;
+   var val, sig, t;
+
+   var PushOperand = function(t, v) {operand.push({type: t, value: v});};
+
+   val = scf.OperandValueAndType(sheet, foperand);
+   t = val.type.charAt(0);
+   if (t != "n") {
+      PushOperand("e#VALUE!", 0);
+      return;
+      }
+   if (val.value == 0) {
+      PushOperand("n", 0);
+      return;
+      }
+
+   if (foperand.length == 1) {
+      sig = scf.OperandValueAndType(sheet, foperand);
+      t = val.type.charAt(0);
+      if (t != "n") {
+         PushOperand("e#VALUE!", 0);
+         return;
+         }
+      }
+   else if (foperand.length == 0) {
+      sig = {type: "n", value: val.value > 0 ? 1 : -1};
+      }
+   else {
+      PushOperand("e#VALUE!", 0);
+      return;
+      }
+   if (sig.value == 0) {
+      PushOperand("n", 0);
+      return;
+      }
+   if (sig.value * val.value < 0) {
+      PushOperand("e#NUM!", 0);
+      return;
+      }
+
+   switch (fname) {
+      case "CEILING":
+         PushOperand("n", Math.ceil(val.value / sig.value) * sig.value);
+         break;
+      case "FLOOR":
+         PushOperand("n", Math.floor(val.value / sig.value) * sig.value);
+         break;
+      }
+
+   return;
+
+   }
+
+SocialCalc.Formula.FunctionList["CEILING"] = [SocialCalc.Formula.CeilingFloorFunctions, -1, "vsig", "", "math"];
+SocialCalc.Formula.FunctionList["FLOOR"] = [SocialCalc.Formula.CeilingFloorFunctions, -1, "vsig", "", "math"];
 
 /*
 #
