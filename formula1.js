@@ -146,7 +146,7 @@ SocialCalc.Formula = {};
 
 SocialCalc.Formula.ParseFormulaIntoTokens = function(line) {
 
-   var i, ch, chclass, haddecimal, last_token, last_token_type, last_token_text, t;
+   var i, ch, cclass, haddecimal, last_token, last_token_type, last_token_text, t;
 
    var scf = SocialCalc.Formula;
    var scc = SocialCalc.Constants;

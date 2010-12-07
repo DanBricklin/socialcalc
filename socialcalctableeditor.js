@@ -3748,7 +3748,7 @@ SocialCalc.SetInputEchoText = function(inputecho, str) {
       inputecho.text = newstr;
       }
 
-   var parts = str.match(/.*[\+\-\*\/\&\^\<\>\=\,\(]([A-Za-z][A-ZA-z]\w*?)\([^\)]*$/);
+   var parts = str.match(/.*[\+\-\*\/\&\^\<\>\=\,\(]([A-Za-z][A-Za-z][\w\.]*?)\([^\)]*$/);
    if (str.charAt(0)=="=" && parts) {
       fname = parts[1].toUpperCase();
       if (SocialCalc.Formula.FunctionList[fname]) {
