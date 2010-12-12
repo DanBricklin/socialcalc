@@ -5453,10 +5453,10 @@ SocialCalc.format_number_for_display = function(rawvalue, valuetype, valueformat
 
    if (valueformat=="Auto" || valueformat=="") { // cases with default format
       if (valuesubtype=="%") { // will display a % character
-         valueformat = "#,##0.0%";
+         valueformat = scc.defaultFormatp;
          }
       else if (valuesubtype=='$') {
-         valueformat = '[$]#,##0.00';
+         valueformat = scc.defaultFormatc;
          }
       else if (valuesubtype=='dt') {
          valueformat = scc.defaultFormatdt;

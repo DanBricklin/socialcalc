@@ -182,6 +182,8 @@ SocialCalc.Constants = {
 
    //*** SocialCalc.format_number_for_display
 
+   defaultFormatp: '#,##0.0%',
+   defaultFormatc: '[$$]#,##0.00',
    defaultFormatdt: 'd-mmm-yyyy h:mm:ss',
    defaultFormatd: 'd-mmm-yyyy',
    defaultFormatt: '[h]:mm:ss',
