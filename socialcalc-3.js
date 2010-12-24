@@ -4629,7 +4629,7 @@ SocialCalc.RenderColGroup = function(context) {
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          newcol=document.createElement("col");
          if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
-            newcol.width=0;
+            newcol.width="1";
             }
          else {
             t = context.colwidth[colnum];
@@ -4663,8 +4663,8 @@ SocialCalc.RenderSizingRow = function(context) {
    for (colpane=0; colpane<context.colpanes.length; colpane++) {
       for (colnum=context.colpanes[colpane].first; colnum<=context.colpanes[colpane].last; colnum++) {
          newcell=document.createElement("td");
-         if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] != "yes") {
-            newcell.width=0;
+         if (sheetobj.colattribs.hide[SocialCalc.rcColname(colnum)] == "yes") {
+            newcell.width="1";
             }
          else {
             t = context.colwidth[colnum];
