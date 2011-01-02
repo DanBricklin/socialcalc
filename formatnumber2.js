@@ -716,6 +716,7 @@ SocialCalc.FormatNumber.parse_format_string = function(format_defs, format_strin
             }
          else {
             sectioninfo.fractiondigits++;
+            lastwasinteger = 1;
             thisformat.operators.push(scfn.commands.fraction_placeholder);
             thisformat.operands.push(ch);
             }
