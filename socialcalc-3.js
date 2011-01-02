@@ -4749,7 +4749,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
    result.innerHTML = cell.displaystring;
 
    num=cell.layout || sheetattribs.defaultlayout;
-   if (num) {
+   if (num && typeof(context.layouts[num]) !== "undefined") {
       stylestr+=context.layouts[num]; // use precomputed layout with "*"'s filled in
       }
    else {
@@ -4757,7 +4757,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    num=cell.font || sheetattribs.defaultfont;
-   if (num) { // get expanded font strings in context
+   if (num && typeof(context.fonts[num]) !== "undefined") { // get expanded font strings in context
       t = context.fonts[num]; // do each - plain "font:" style sets all sorts of other values, too (Safari font-stretch problem on cssText)
       stylestr+="font-style:"+t.style+";font-weight:"+t.weight+";font-size:"+t.size+";font-family:"+t.family+";";
       }
@@ -4771,24 +4771,24 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    num=cell.color || sheetattribs.defaultcolor;
-   if (num) stylestr+="color:"+sheetobj.colors[num]+";";
+   if (num && typeof(sheetobj.colors[num]) !== "undefined") stylestr+="color:"+sheetobj.colors[num]+";";
 
    num=cell.bgcolor || sheetattribs.defaultbgcolor;
-   if (num) stylestr+="background-color:"+sheetobj.colors[num]+";";
+   if (num && typeof(sheetobj.colors[num]) !== "undefined") stylestr+="background-color:"+sheetobj.colors[num]+";";
 
    num=cell.cellformat;
-   if (num) {
+   if (num && typeof(sheetobj.cellformats[num]) !== "undefined") {
       stylestr+="text-align:"+sheetobj.cellformats[num]+";";
       }
    else {
       t=cell.valuetype.charAt(0);
       if (t=="t") {
          num=sheetattribs.defaulttextformat;
-         if (num) stylestr+="text-align:"+sheetobj.cellformats[num]+";";
+         if (num && typeof(sheetobj.cellformats[num]) !== "undefined") stylestr+="text-align:"+sheetobj.cellformats[num]+";";
          }
       else if (t="n") {
          num=sheetattribs.defaultnontextformat;
-         if (num) {
+         if (num && typeof(sheetobj.cellformats[num]) !== "undefined") {
             stylestr+="text-align:"+sheetobj.cellformats[num]+";";
             }
          else {
@@ -4799,10 +4799,10 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    num=cell.bt;
-   if (num) stylestr+="border-top:"+sheetobj.borderstyles[num]+";";
+   if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-top:"+sheetobj.borderstyles[num]+";";
 
    num=cell.br;
-   if (num) stylestr+="border-right:"+sheetobj.borderstyles[num]+";";
+   if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-right:"+sheetobj.borderstyles[num]+";";
    else if (context.showGrid) {
       if (context.CellInPane(rownum, colnum+(cell.colspan || 1), rowpane, colpane))
          t=SocialCalc.crToCoord(colnum+(cell.colspan || 1), rownum);
@@ -4813,7 +4813,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    num=cell.bb;
-   if (num) stylestr+="border-bottom:"+sheetobj.borderstyles[num]+";";
+   if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-bottom:"+sheetobj.borderstyles[num]+";";
    else if (context.showGrid) {
       if (context.CellInPane(rownum+(cell.rowspan || 1), colnum, rowpane, colpane))
          t=SocialCalc.crToCoord(colnum, rownum+(cell.rowspan || 1));
@@ -4824,7 +4824,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       }
 
    num=cell.bl;
-   if (num) stylestr+="border-left:"+sheetobj.borderstyles[num]+";";
+   if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-left:"+sheetobj.borderstyles[num]+";";
 
    if (cell.comment) {
       result.title = cell.comment;
