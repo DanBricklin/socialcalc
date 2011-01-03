@@ -5313,7 +5313,7 @@ SocialCalc.FormatValueForDisplay = function(sheetobj, value, cr, linkstyle) {
             }
          return displayvalue;
          }
-      displayvalue = SocialCalc.format_text_for_display(displayvalue, cell.valuetype, valueformat, sheetobj, linkstyle);
+      displayvalue = SocialCalc.format_text_for_display(displayvalue, cell.valuetype, valueformat, sheetobj, linkstyle, cell.nontextvalueformat);
       }
 
    else if (valuetype=="n") {
@@ -5363,10 +5363,10 @@ SocialCalc.FormatValueForDisplay = function(sheetobj, value, cr, linkstyle) {
 
 
 //
-// displayvalue = format_text_for_display(rawvalue, valuetype, valueformat, sheetobj, linkstyle)
+// displayvalue = format_text_for_display(rawvalue, valuetype, valueformat, sheetobj, linkstyle, nontextvalueformat)
 //
 
-SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, sheetobj, linkstyle) {
+SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, sheetobj, linkstyle, nontextvalueformat) {
 
    var valueformat, valuesubtype, dvsc, dvue, textval;
    var displayvalue;
@@ -5407,7 +5407,7 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
       displayvalue = '<img src="'+dvue+'">';
       }
    else if (valueformat.substring(0,12)=="text-custom:") { // construct a custom text format: @r = text raw, @s = special chars, @u = url encoded
-       dvsc = SocialCalc.special_chars(displayvalue); // do special chars
+      dvsc = SocialCalc.special_chars(displayvalue); // do special chars
       dvsc = dvsc.replace(/  /g, "&nbsp; "); // keep multiple spaces
       dvsc = dvsc.replace(/\n/g, "<br>");  // keep line breaks
       dvue = encodeURI(displayvalue);
@@ -5426,6 +5426,10 @@ SocialCalc.format_text_for_display = function(rawvalue, valuetype, valueformat, 
       }
    else if (valueformat=="hidden") {
       displayvalue = "&nbsp;";
+      }
+   else if (nontextvalueformat != null && nontextvalueformat != "" && sheetobj.valueformats[nontextvalueformat-0] != "none" && sheetobj.valueformats[nontextvalueformat-0] != "" ) {
+      valueformat = sheetobj.valueformats[nontextvalueformat];
+      displayvalue = SocialCalc.format_number_for_display(rawvalue, valuetype, valueformat);
       }
    else { // plain text
       displayvalue = SocialCalc.special_chars(displayvalue); // do special chars
