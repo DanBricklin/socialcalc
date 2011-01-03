@@ -1,6 +1,12 @@
 This is a fork of Dan Bricklin's SocialCalc (http://github.com/DanBricklin/socialcalc), 
 with the following modifications made for the Drupal Sheetnode module (http://drupal.org/project/sheetnode):
 
+2011-01-02
+* Support test formatting using non-text value formats (like Excel and OOoCalc)
+
+2010-11-30
+* Support hiding rows and columns.
+
 2010-10-30
 * Fix parsing expressions with unary minus.
 
