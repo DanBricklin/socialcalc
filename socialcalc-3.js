@@ -5588,10 +5588,13 @@ SocialCalc.DetermineValueType = function(rawvalue) {
       value = constr.substring(0,num)-0;
       type = constr.substring(num+1);
       }
-
    else if (tvalue.length > 7 && tvalue.substring(0,7).toLowerCase()=="http://") { // URL
       value = tvalue;
       type = "tl";
+      }
+   else if (tvalue.match(/<([A-Z][A-Z0-9]*)\b[^>]*>.*?<\/\1>/i)) { // HTML
+      value = tvalue;
+      type = "th";
       }
 
    return {value: value, type: type};

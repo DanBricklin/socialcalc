@@ -2128,12 +2128,16 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
    else if (fch=="'") {
       type = "text t";
       value = value.substring(1);
+      valueinfo = SocialCalc.DetermineValueType(value); // determine type again
+      if (valueinfo.type.charAt(0)=="t") {
+         type = "text "+valueinfo.type;
+         }
       }
    else if (value.length==0) {
       type = "empty";
       }
    else {
-      valueinfo = SocialCalc.DetermineValueType(value)
+      valueinfo = SocialCalc.DetermineValueType(value);
       if (valueinfo.type=="n" && value==(valueinfo.value+"")) { // see if don't need "constant"
          type = "value n";
          }
