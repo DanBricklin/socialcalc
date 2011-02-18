@@ -1026,7 +1026,7 @@ spreadsheet.Buttons = {
    for (button in spreadsheet.formulabuttons) {
       bele = document.createElement("img");
       bele.id = spreadsheet.idPrefix+button;
-      bele.src = spreadsheet.imagePrefix+spreadsheet.formulabuttons[button].image;
+      bele.src = (spreadsheet.formulabuttons[button].skipImagePrefix ? "" : spreadsheet.imagePrefix)+spreadsheet.formulabuttons[button].image;
       bele.style.verticalAlign = "middle";
       bele.style.border = "1px solid #FFF";
       bele.style.marginLeft = "4px";

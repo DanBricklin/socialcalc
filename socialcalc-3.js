@@ -5592,7 +5592,7 @@ SocialCalc.DetermineValueType = function(rawvalue) {
       value = tvalue;
       type = "tl";
       }
-   else if (tvalue.match(/<([A-Z][A-Z0-9]*)\b[^>]*>.*?<\/\1>/i)) { // HTML
+   else if (tvalue.match(/<([A-Z][A-Z0-9]*)\b[^>]*>[\s\S]*?<\/\1>/i)) { // HTML
       value = tvalue;
       type = "th";
       }
