@@ -3906,6 +3906,13 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
          rowinc++; 
          }     
 
+      // Check colspan and rowspan.
+      cell = editor.context.sheetobj.cells[SocialCalc.crToCoord(col+colinc-1, row+rowinc-1)];
+      if (typeof cell != "undefined") {
+         colinc += (cell.colspan || 1) - 1;
+         rowinc += (cell.rowspan || 1) - 1;
+         }
+
       if (editor.rowpositions[row+rowinc]+20>editor.horizontaltablecontrol.controlborder+editor.relativeoffset.top) {
          break;
          }
