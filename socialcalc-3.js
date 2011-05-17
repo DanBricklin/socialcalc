@@ -4687,7 +4687,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
 
    var sheetobj=context.sheetobj;
 
-   var num, t, result, span, stylename, cell, sheetattribs, scdefaults;
+   var num, t, result, span, stylename, cell, endcell, sheetattribs, scdefaults;
    var stylestr="";
 
    rownum = rownum-0; // make sure a number
@@ -4798,10 +4798,15 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
       else stylestr+="text-align:left;";
       }
 
+   // get the end cell for border styling
+   if (cell.colspan > 1 || cell.rowspan > 1) {
+      endcell = sheetobj.cells[SocialCalc.crToCoord(colnum+(cell.colspan || 1)-1, rownum+(cell.rowspan || 1)-1)];
+      }
+
    num=cell.bt;
    if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-top:"+sheetobj.borderstyles[num]+";";
 
-   num=cell.br;
+   num=typeof(endcell) != "undefined" ? endcell.br : cell.br;
    if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-right:"+sheetobj.borderstyles[num]+";";
    else if (context.showGrid) {
       if (context.CellInPane(rownum, colnum+(cell.colspan || 1), rowpane, colpane))
@@ -4812,7 +4817,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
          stylestr+="border-right:"+context.gridCSS;
       }
 
-   num=cell.bb;
+   num=typeof(endcell) != "undefined" ? endcell.bb : cell.bb;
    if (num && typeof(sheetobj.borderstyles[num]) !== "undefined") stylestr+="border-bottom:"+sheetobj.borderstyles[num]+";";
    else if (context.showGrid) {
       if (context.CellInPane(rownum+(cell.rowspan || 1), colnum, rowpane, colpane))
