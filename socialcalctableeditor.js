@@ -941,34 +941,6 @@ addmsg("Unknown status: "+status);
 
    }
 
-// Timer-driven steps for use with SocialCalc.EditorSheetStatusCallback
-
-SocialCalc.EditorStepInfo = {
-//   status: "", // saved value to pass to callback
-   editor: null // for callback
-//   arg: null, // for callback
-//   timerobj: null
-   };
-
-/*
-SocialCalc.EditorStepSet = function(editor, status, arg) {
-   var esi = SocialCalc.EditorStepInfo;
-addmsg("step: "+status);
-   if (esi.timerobj) {
-alert("Already waiting. Old/new: "+esi.status+"/"+status);
-      }
-   esi.editor = editor;
-   esi.status = status;
-   esi.timerobj = window.setTimeout(SocialCalc.EditorStepDone, 1);
-   }
-
-SocialCalc.EditorStepDone = function() {
-   var esi = SocialCalc.EditorStepInfo;
-   esi.timerobj = null;
-   SocialCalc.EditorSheetStatusCallback(null, esi.status, null, esi.editor);
-   }
-*/
-
 //
 // str = SocialCalc.EditorGetStatuslineString(editor, status, arg, params)
 //
@@ -3042,17 +3014,14 @@ SocialCalc.ScheduleRender = function(editor) {
    if (editor.timeout) window.clearTimeout(editor.timeout); // in case called more than once, just use latest
 
    SocialCalc.EditorSheetStatusCallback(null, "schedrender", null, editor);
-   SocialCalc.EditorStepInfo.editor = editor;
-   editor.timeout = window.setTimeout(SocialCalc.DoRenderStep, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoRenderStep(editor); }, 1);
 
    }
 
-// DoRenderStep()
+// DoRenderStep(editor)
 //
 
-SocialCalc.DoRenderStep = function() {
-
-   var editor = SocialCalc.EditorStepInfo.editor;
+SocialCalc.DoRenderStep = function(editor) {
 
    editor.timeout = null;
 
@@ -3062,7 +3031,7 @@ SocialCalc.DoRenderStep = function() {
 
    SocialCalc.EditorSheetStatusCallback(null, "schedposcalc", null, editor);
 
-   editor.timeout = window.setTimeout(SocialCalc.DoPositionCalculations, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoPositionCalculations(editor); }, 1);
 
    }
 
@@ -3072,11 +3041,9 @@ SocialCalc.DoRenderStep = function() {
 
 SocialCalc.SchedulePositionCalculations = function(editor) {
 
-   SocialCalc.EditorStepInfo.editor = editor;
-
    SocialCalc.EditorSheetStatusCallback(null, "schedposcalc", null, editor);
 
-   editor.timeout = window.setTimeout(SocialCalc.DoPositionCalculations, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoPositionCalculations(editor); }, 1);
 
    }
 
@@ -3087,9 +3054,7 @@ SocialCalc.SchedulePositionCalculations = function(editor) {
 // Note: Only call this after the DOM objects have been modified and rendered!
 //
 
-SocialCalc.DoPositionCalculations = function() {
-
-   var editor = SocialCalc.EditorStepInfo.editor;
+SocialCalc.DoPositionCalculations = function(editor) {
 
    editor.timeout = null;
 
