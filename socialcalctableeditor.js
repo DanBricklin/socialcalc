@@ -221,10 +221,6 @@ SocialCalc.TableEditor = function(context) {
             ta.focus();
             ta.select();
             window.setTimeout(function() {
-               if (!SocialCalc.GetSpreadsheetControlObject) return; // in case not loaded
-               var s = SocialCalc.GetSpreadsheetControlObject();
-               if (!s) return;
-               var editor = s.editor;
                var ta = editor.pasteTextarea;
                ta.blur();
                ta.style.display = "none";
@@ -247,10 +243,6 @@ SocialCalc.TableEditor = function(context) {
             ta.value = "";  // must follow "block" setting for Webkit
             ta.focus();
             window.setTimeout(function() {
-               if (!SocialCalc.GetSpreadsheetControlObject) return;
-               var s = SocialCalc.GetSpreadsheetControlObject();
-               if (!s) return;
-               var editor = s.editor;
                var ta = editor.pasteTextarea;
                var value = ta.value;
                ta.blur();
@@ -285,10 +277,6 @@ SocialCalc.TableEditor = function(context) {
             if (!SocialCalc.Constants.AllowCtrlS) break;
             window.setTimeout(
                function() {
-                  if (!SocialCalc.GetSpreadsheetControlObject) return;
-                  var s = SocialCalc.GetSpreadsheetControlObject();
-                  if (!s) return;
-                  var editor = s.editor;
                   var sheet = editor.context.sheetobj;
                   var cell = sheet.GetAssuredCell(editor.ecell.coord);
                   var ntvf = cell.nontextvalueformat ? sheet.valueformats[cell.nontextvalueformat-0] || "" : "";
