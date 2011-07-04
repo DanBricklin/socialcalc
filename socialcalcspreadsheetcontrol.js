@@ -106,7 +106,7 @@ See the comments in the main SocialCalc code module file of the SocialCalc packa
 
 // Constructor:
 
-SocialCalc.SpreadsheetControl = function() {
+SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    var scc = SocialCalc.Constants;
 
@@ -178,7 +178,7 @@ SocialCalc.SpreadsheetControl = function() {
 
    // Constants:
 
-   this.idPrefix = "SocialCalc-"; // prefix added to element ids used here, should end in "-"
+   this.idPrefix = idPrefix || "SocialCalc-"; // prefix added to element ids used here, should end in "-"
    this.multipartBoundary = "SocialCalcSpreadsheetControlSave"; // boundary used by SpreadsheetControlCreateSpreadsheetSave
    this.imagePrefix = scc.defaultImagePrefix; // prefix added to img src
 
