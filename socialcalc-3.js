@@ -307,6 +307,8 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.hiddencolrow = ""; // "col" or "row" if it was hidden
 
+   sheet.sci = new SocialCalc.SheetCommandInfo(sheet);
+
    }
 
 // Methods:
@@ -1615,18 +1617,18 @@ SocialCalc.DecodeSheetAttributes = function(sheet, newattribs) {
 // SocialCalc.SheetCommandInfo - object with information used during command execution
 //
 
-SocialCalc.SheetCommandInfo = { // only one of these
+SocialCalc.SheetCommandInfo = function(sheetobj) {
 
-   sheetobj: null, // sheet being operated on
-   parseobj: null, // SocialCalc.Parse object with the command string, etc.
-   timerobj: null, // used for timeslicing
-   firsttimerdelay: 50, // wait before starting cmds (for Chrome - to give time to update)
-   timerdelay: 1, // wait between slices
-   maxtimeslice: 100, // do another slice after this many milliseconds
-   saveundo: false, // arg for ExecuteSheetCommand
+   this.sheetobj = sheetobj; // sheet being operated on
+   this.parseobj = null; // SocialCalc.Parse object with the command string, etc.
+   this.timerobj = null; // used for timeslicing
+   this.firsttimerdelay = 50; // wait before starting cmds (for Chrome - to give time to update)
+   this.timerdelay = 1; // wait between slices
+   this.maxtimeslice = 100; // do another slice after this many milliseconds
+   this.saveundo = false; // arg for ExecuteSheetCommand
 
-   CmdExtensionCallbacks: {}, // for startcmdextension, in form: cmdname, {func:function(cmdname, data, sheet, SocialCalc.Parse object, saveundo), data:whatever}
-   cmdextensionbusy: "" // if length>0, command loop waits for SocialCalc.ResumeFromCmdExtension()
+   this.CmdExtensionCallbacks = {}; // for startcmdextension, in form: cmdname, {func:function(cmdname, data, sheet, SocialCalc.Parse object, saveundo), data:whatever}
+   this.cmdextensionbusy = ""; // if length>0, command loop waits for SocialCalc.ResumeFromCmdExtension()
 
 //   statuscallback: null, // called during execution - obsolete: use sheet obj's
 //   statuscallbackparams: null
@@ -1641,9 +1643,8 @@ SocialCalc.SheetCommandInfo = { // only one of these
 
 SocialCalc.ScheduleSheetCommands = function(sheet, cmdstr, saveundo) {
 
-   var sci = SocialCalc.SheetCommandInfo;
+   var sci = sheet.sci;
 
-   sci.sheetobj = sheet;
    sci.parseobj = new SocialCalc.Parse(cmdstr);
    sci.saveundo = saveundo;
 
@@ -1655,14 +1656,13 @@ SocialCalc.ScheduleSheetCommands = function(sheet, cmdstr, saveundo) {
       sci.sheetobj.changes.PushChange(""); // add a step to undo stack
       }
 
-   sci.timerobj = window.setTimeout(SocialCalc.SheetCommandsTimerRoutine, sci.firsttimerdelay);
+   sci.timerobj = window.setTimeout(function() { SocialCalc.SheetCommandsTimerRoutine(sci); }, sci.firsttimerdelay);
 
    }
 
-SocialCalc.SheetCommandsTimerRoutine = function() {
+SocialCalc.SheetCommandsTimerRoutine = function(sci) {
 
    var errortext;
-   var sci = SocialCalc.SheetCommandInfo;
    var starttime = new Date();
 
    sci.timerobj = null;
@@ -1682,7 +1682,7 @@ SocialCalc.SheetCommandsTimerRoutine = function() {
          }
 
       if (((new Date()) - starttime) >= sci.maxtimeslice) { // if taking too long, give up CPU for a while
-         sci.timerobj = window.setTimeout(SocialCalc.SheetCommandsTimerRoutine, sci.timerdelay);
+         sci.timerobj = window.setTimeout(function() { SocialCalc.SheetCommandsTimerRoutine(sci); }, sci.timerdelay);
          return;
          }
       }
@@ -1693,13 +1693,11 @@ SocialCalc.SheetCommandsTimerRoutine = function() {
 
    }
 
-SocialCalc.ResumeFromCmdExtension = function() {
-
-   var sci = SocialCalc.SheetCommandInfo;
+SocialCalc.ResumeFromCmdExtension = function(sci) {
 
    sci.cmdextensionbusy = "";
 
-   SocialCalc.SheetCommandsTimerRoutine();
+   SocialCalc.SheetCommandsTimerRoutine(sci);
 
 }
 
@@ -3047,7 +3045,7 @@ SocialCalc.ExecuteSheetCommand = function(sheet, cmd, saveundo) {
 
       case "startcmdextension": // startcmdextension extension rest-of-command
          name = cmd.NextToken();
-         cmdextension = SocialCalc.SheetCommandInfo.CmdExtensionCallbacks[name];
+         cmdextension = sheet.sci.CmdExtensionCallbacks[name];
          if (cmdextension) {
             cmdextension.func(name, cmdextension.data, sheet, cmd, saveundo);
             }
@@ -3387,12 +3385,14 @@ SocialCalc.RecalcInfo = {
    sheet: null, // which sheet is being recalced
 
    currentState: 0, // current state
-   state: {start_calc: 1, order: 2, calc: 3, start_wait: 4, done_wait: 5}, // allowed state values
+   state: {idle: 0, start_calc: 1, order: 2, calc: 3, start_wait: 4, done_wait: 5}, // allowed state values
 
    recalctimer: null, // value to cancel timer
    maxtimeslice: 100, // maximum milliseconds per slice of recalc time before a wait
    timeslicedelay: 1, // milliseconds to wait between recalc time slices
    starttime: 0, // when recalc started
+
+   queue: [], // queue of sheet waiting to be recalced
 
    // LoadSheet: a function that returns true if started a load or false if not.
    //
@@ -3455,6 +3455,11 @@ SocialCalc.RecalcSheet = function(sheet) {
 
    var coord, err, recalcdata;
    var scri = SocialCalc.RecalcInfo;
+
+   if (scri.currentState != scri.state.idle) {
+      scri.queue.push(sheet);
+      return;
+      }
 
    delete sheet.attribs.circularreferencecell; // reset recalc-wide things
    SocialCalc.Formula.FreshnessInfoReset();
@@ -3673,9 +3678,15 @@ SocialCalc.RecalcTimerRoutine = function() {
       }
 
    scf.FreshnessInfo.recalc_completed = true; // say freshness info is complete
+   scri.currentState = scri.state.idle; // we are idle
 
    do_statuscallback("calcfinished", (new Date()) - scri.starttime);
 
+   // Check queue for more sheets.
+   if (scri.queue.length > 0) {
+      sheet = scri.queue.shift();
+      sheet.RecalcSheet();
+      }
    }
 
 

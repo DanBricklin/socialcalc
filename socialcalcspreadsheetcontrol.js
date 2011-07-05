@@ -106,7 +106,7 @@ See the comments in the main SocialCalc code module file of the SocialCalc packa
 
 // Constructor:
 
-SocialCalc.SpreadsheetControl = function() {
+SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    var scc = SocialCalc.Constants;
 
@@ -178,7 +178,7 @@ SocialCalc.SpreadsheetControl = function() {
 
    // Constants:
 
-   this.idPrefix = "SocialCalc-"; // prefix added to element ids used here, should end in "-"
+   this.idPrefix = idPrefix || "SocialCalc-"; // prefix added to element ids used here, should end in "-"
    this.multipartBoundary = "SocialCalcSpreadsheetControlSave"; // boundary used by SpreadsheetControlCreateSpreadsheetSave
    this.imagePrefix = scc.defaultImagePrefix; // prefix added to img src
 
@@ -1090,12 +1090,25 @@ spreadsheet.Buttons = {
 
    spreadsheet.statuslineDiv = document.createElement("div");
    spreadsheet.statuslineDiv.style.cssText = spreadsheet.statuslineCSS;
-//   spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight + "px"; // didn't take padding into account!
    spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight -
       (spreadsheet.statuslineDiv.style.paddingTop.slice(0,-2)-0) -
       (spreadsheet.statuslineDiv.style.paddingBottom.slice(0,-2)-0) + "px";
    spreadsheet.statuslineDiv.id = spreadsheet.idPrefix+"statusline";
    spreadsheet.spreadsheetDiv.appendChild(spreadsheet.statuslineDiv);
+
+   // set current control object based on mouseover
+
+   if (spreadsheet.spreadsheetDiv.addEventListener) { // DOM Level 2 -- Firefox, et al
+      spreadsheet.spreadsheetDiv.addEventListener("mousedown", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); }, false);
+      spreadsheet.spreadsheetDiv.addEventListener("mouseover", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); }, false);
+      }
+   else if (spreadsheet.spreadsheetDiv.attachEvent) { // IE 5+
+      spreadsheet.spreadsheetDiv.attachEvent("onmousedown", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); });
+      spreadsheet.spreadsheetDiv.attachEvent("onmouseover", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); });
+      }
+   else { // don't handle this
+      throw SocialCalc.Constants.s_BrowserNotSupported;
+      }
 
    // done - refresh screen needed
 
@@ -1173,6 +1186,20 @@ SocialCalc.GetSpreadsheetControlObject = function() {
    if (csco) return csco;
 
 //   throw ("No current SpreadsheetControl object.");
+
+   }
+
+//
+// SetSpreadsheetControlObject(spreadsheet)
+//
+
+SocialCalc.SetSpreadsheetControlObject = function(spreadsheet) {
+
+   SocialCalc.CurrentSpreadsheetControlObject = spreadsheet;
+
+   if (SocialCalc.Keyboard.focusTable && spreadsheet) {
+      SocialCalc.Keyboard.focusTable = spreadsheet.editor;
+      }
 
    }
 

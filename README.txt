@@ -1,6 +1,9 @@
 This is a fork of Dan Bricklin's SocialCalc (http://github.com/DanBricklin/socialcalc), 
 with the following modifications made for the Drupal Sheetnode module (http://drupal.org/project/sheetnode):
 
+2011-07-04
+* Support multiple sheets per page.
+
 2011-02-18
 * Support auto-detecting HTML text in default input mode.
 
