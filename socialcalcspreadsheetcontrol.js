@@ -1090,12 +1090,27 @@ spreadsheet.Buttons = {
 
    spreadsheet.statuslineDiv = document.createElement("div");
    spreadsheet.statuslineDiv.style.cssText = spreadsheet.statuslineCSS;
-//   spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight + "px"; // didn't take padding into account!
    spreadsheet.statuslineDiv.style.height = spreadsheet.statuslineheight -
       (spreadsheet.statuslineDiv.style.paddingTop.slice(0,-2)-0) -
       (spreadsheet.statuslineDiv.style.paddingBottom.slice(0,-2)-0) + "px";
    spreadsheet.statuslineDiv.id = spreadsheet.idPrefix+"statusline";
    spreadsheet.spreadsheetDiv.appendChild(spreadsheet.statuslineDiv);
+
+   // set current control object based on mouseover
+
+   if (spreadsheet.spreadsheetDiv.addEventListener) { // DOM Level 2 -- Firefox, et al
+      spreadsheet.spreadsheetDiv.addEventListener("mousedown", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); }, false);
+      spreadsheet.spreadsheetDiv.addEventListener("mouseover", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); }, false);
+      spreadsheet.spreadsheetDiv.addEventListener("mouseout", function() { SocialCalc.SetSpreadsheetControlObject(null); }, false);
+      }
+   else if (spreadsheet.spreadsheetDiv.attachEvent) { // IE 5+
+      spreadsheet.spreadsheetDiv.attachEvent("onmousedown", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); });
+      spreadsheet.spreadsheetDiv.attachEvent("onmouseover", function() { SocialCalc.SetSpreadsheetControlObject(spreadsheet); });
+      spreadsheet.spreadsheetDiv.attachEvent("onmouseout", function() { SocialCalc.SetSpreadsheetControlObject(null); });
+      }
+   else { // don't handle this
+      throw SocialCalc.Constants.s_BrowserNotSupported;
+      }
 
    // done - refresh screen needed
 
@@ -1173,6 +1188,20 @@ SocialCalc.GetSpreadsheetControlObject = function() {
    if (csco) return csco;
 
 //   throw ("No current SpreadsheetControl object.");
+
+   }
+
+//
+// SetSpreadsheetControlObject(spreadsheet)
+//
+
+SocialCalc.SetSpreadsheetControlObject = function(spreadsheet) {
+
+   SocialCalc.CurrentSpreadsheetControlObject = spreadsheet;
+
+   if (SocialCalc.Keyboard.focusTable && spreadsheet) {
+      SocialCalc.Keyboard.focusTable = spreadsheet.editor;
+      }
 
    }
 
