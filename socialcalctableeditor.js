@@ -3888,9 +3888,8 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
          cellhandles.dragpalette.style.left = (editor.colpositions[col+colinc]-editor.relativeoffset.left-45)+"px";
          cellhandles.dragpalette.style.top = (editor.rowpositions[row+rowinc]-editor.relativeoffset.top-45)+"px";
          cellhandles.dragpalette.style.display = "block";
-         viewport = SocialCalc.GetViewportInfo();
-         cellhandles.dragtooltip.style.right = (viewport.width-(editor.colpositions[col+colinc]+editor.relativeoffset.left-1))+"px";
-         cellhandles.dragtooltip.style.bottom = (viewport.height-(editor.rowpositions[row+rowinc]+editor.relativeoffset.top-1))+"px";
+         cellhandles.dragtooltip.style.left = (editor.colpositions[col+colinc]-editor.relativeoffset.left-45)+"px";
+         cellhandles.dragtooltip.style.top = (editor.rowpositions[row+rowinc]-editor.relativeoffset.top+45)+"px";
          cellhandles.dragtooltip.style.display = "none";
          }
 
