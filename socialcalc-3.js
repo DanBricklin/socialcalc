@@ -5200,7 +5200,7 @@ SocialCalc.GetRelativeOffset = function (element) {
    var e = element;
    var offsetLeft = 0, offsetTop = 0;
    while (e) {
-      if (e.nodeType==1 && SocialCalc.GetComputedStyle(e, 'position')=='relative') {
+      if (e.nodeType==1 && SocialCalc.GetComputedStyle(e, 'position')=='relative' && e.offsetWidth>0 && e.offsetHeight>0) {
          offset = SocialCalc.GetElementPosition(e);
          offsetLeft += offset.left;
          offsetTop  += offset.top;
