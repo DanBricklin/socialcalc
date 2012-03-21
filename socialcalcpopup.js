@@ -314,12 +314,12 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
    var main = document.createElement("div");
    main.style.position = "absolute";
 
-   pos = SocialCalc.GetElementPositionWithScroll(spcdata.mainele);
+   pos = SocialCalc.GetElementPosition(spcdata.mainele);
 
    editor = SocialCalc.CurrentSpreadsheetControlObject.editor;
 
-   main.style.top = (pos.top+spcdata.mainele.offsetHeight-editor.relativeoffset.top)+"px";
-   main.style.left = (pos.left-editor.relativeoffset.left)+"px";
+   main.style.top = (pos.top+spcdata.mainele.offsetHeight)+"px";
+   main.style.left = pos.left+"px";
    main.style.zIndex = 100;
    main.style.backgroundColor = "#FFF";
    main.style.border = "1px solid black";
@@ -337,7 +337,9 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
 
       if (attribs.moveable) {
          spcdata.dragregistered = main.firstChild.firstChild.firstChild.firstChild;
-         SocialCalc.DragRegister(spcdata.dragregistered, true, true, {MouseDown: SocialCalc.DragFunctionStart, MouseMove: SocialCalc.DragFunctionPosition,
+         SocialCalc.DragRegister(editor, spcdata.dragregistered, true, true, 
+                    {MouseDown: SocialCalc.DragFunctionStart, 
+                     MouseMove: SocialCalc.DragFunctionPosition,
                      MouseUp: SocialCalc.DragFunctionPosition,
                      Disabled: null, positionobj: main});
          }
@@ -365,7 +367,7 @@ SocialCalc.Popup.EnsurePosition = function(id, container) {
    var popup = spcdata.popupele;
 
    function GetLayoutValues(ele) {
-      var r = SocialCalc.GetElementPositionWithScroll(ele);
+      var r = SocialCalc.GetElementPosition(ele);
       r.height = ele.offsetHeight;
       r.width = ele.offsetWidth;
       r.bottom = r.top+r.height;

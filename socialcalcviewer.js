@@ -526,6 +526,8 @@ SocialCalc.SizeSSDiv = function(spreadsheet) {
       resized = true;
       }
 
+   spreadsheet.spreadsheetDiv.style.position = "relative";
+
    return resized;
 
    }

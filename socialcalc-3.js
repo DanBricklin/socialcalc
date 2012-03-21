@@ -5133,6 +5133,7 @@ SocialCalc.GetElementPosition = function (element) {
    var offsetLeft = 0;
    var offsetTop = 0;
    while (element) {
+      if (SocialCalc.GetComputedStyle(element,'position')=='relative') break;
       offsetLeft+=element.offsetLeft;
       offsetTop+=element.offsetTop;
       element=element.offsetParent;
@@ -5145,6 +5146,8 @@ SocialCalc.GetElementPosition = function (element) {
 // GetElementPositionWithScroll(element) - returns object with left and top position of the element in the document
 //
 // Takes into account scroll offsets by going through entire tree
+// Stops at fixed positioned parents
+// Skips offsets beyond relative parents
 //
 
 SocialCalc.GetElementPositionWithScroll = function (element) {
@@ -5159,6 +5162,7 @@ SocialCalc.GetElementPositionWithScroll = function (element) {
          offsetTop+=element.offsetTop;
          offsetElement = element.offsetParent;
          }
+      if (SocialCalc.GetComputedStyle(element,'position')=='fixed') break;
       if (element.scrollLeft) {
          offsetLeft-=element.scrollLeft;
          }
@@ -5168,6 +5172,21 @@ SocialCalc.GetElementPositionWithScroll = function (element) {
       element=element.parentNode;
       }
    return {left:offsetLeft, top:offsetTop};
+
+   }
+
+//
+// GetElementFixedParent(element) - checks whether element has a parent with position:fixed
+//
+
+SocialCalc.GetElementFixedParent = function(element) {
+
+   while (element) {
+      if (element.tagName=="HTML") break;
+      if (SocialCalc.GetComputedStyle(element,'position')=='fixed') return element;
+      element=element.parentNode;
+      }
+      return false;
 
    }
 
@@ -5187,28 +5206,6 @@ SocialCalc.GetComputedStyle = function (element, style) {
       computedStyle = document.defaultView.getComputedStyle(element, null);
       }
    return computedStyle[style];
-
-   }
-
-//
-// GetRelativeOffset(element) - returns relative offset of element
-// The relative offset is the offset of the first relative-positioned ancestor of the element.
-//
-
-SocialCalc.GetRelativeOffset = function (element) {
-
-   var e = element;
-   var offsetLeft = 0, offsetTop = 0;
-   while (e) {
-      if (e.nodeType==1 && SocialCalc.GetComputedStyle(e, 'position')=='relative' && e.offsetWidth>0 && e.offsetHeight>0) {
-         offset = SocialCalc.GetElementPosition(e);
-         offsetLeft += offset.left;
-         offsetTop  += offset.top;
-         break;
-         }
-      e = e.parentNode;
-      }
-   return {left:offsetLeft, top:offsetTop};
 
    }
 
