@@ -5607,8 +5607,7 @@ SocialCalc.TooltipInfo = {
    clientX: 0, // modifyable version to restrict movement
    clientY: 0,
    offsetX: SocialCalc.Constants.TooltipOffsetX, // modifyable version to allow positioning
-   offsetY: SocialCalc.Constants.TooltipOffsetY,
-   viewport: null
+   offsetY: SocialCalc.Constants.TooltipOffsetY
 
    }
 
@@ -5651,7 +5650,6 @@ SocialCalc.TooltipMouseMove = function(event) {
 
    var tooltipinfo = SocialCalc.TooltipInfo;
 
-   tooltipinfo.viewport = SocialCalc.GetViewportInfo();
    tooltipinfo.clientX = e.clientX;
    tooltipinfo.clientY = e.clientY;
 
@@ -5724,9 +5722,16 @@ SocialCalc.TooltipDisplay = function(tobj) {
 
    var tooltipinfo = SocialCalc.TooltipInfo;
    var scc = SocialCalc.Constants;
-   var offsetX = (tobj.functionobj && ((typeof tobj.functionobj.offsetx) == "number")) ? tobj.functionobj.offsetx : tooltipinfo.offsetX;
-   var offsetY = (tobj.functionobj && ((typeof tobj.functionobj.offsety) == "number")) ? tobj.functionobj.offsety : tooltipinfo.offsetY;
-   var pos = SocialCalc.GetElementPositionWithScroll(tobj.parent);
+   var offsetX = (tobj.functionobj && ((typeof tobj.functionobj.offsetx) == "number")) ? 
+      tobj.functionobj.offsetx : tooltipinfo.offsetX;
+   var offsetY = (tobj.functionobj && ((typeof tobj.functionobj.offsety) == "number")) ? 
+      tobj.functionobj.offsety : tooltipinfo.offsetY;
+   var viewport = SocialCalc.GetViewportInfo();
+   var p = {
+      pos: SocialCalc.GetElementPositionWithScroll(tobj.parent),
+      width: SocialCalc.GetComputedStyle(tobj.parent, "width"),
+      height: SocialCalc.GetComputedStyle(tobj.parent, "height")
+      }
 
    tooltipinfo.popupElement = document.createElement("div");
    if (scc.TDpopupElementClass) tooltipinfo.popupElement.className = scc.TDpopupElementClass;
@@ -5734,17 +5739,17 @@ SocialCalc.TooltipDisplay = function(tobj) {
 
    tooltipinfo.popupElement.innerHTML = tobj.tiptext;
 
-   if (tooltipinfo.clientX > tooltipinfo.viewport.width/2) { // on right side of screen
-      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY + pos.top)+"px";
-      tooltipinfo.popupElement.style.right = (parseInt(tobj.parent.style.width) - tooltipinfo.clientX + offsetX + pos.left)+"px";
+   if (tooltipinfo.clientX > viewport.width/2) { // on right side of screen
+      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.right = (parseInt(p.width) - tooltipinfo.clientX + offsetX + p.pos.left)+"px";
       }
    else { // on left side of screen
-      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY + pos.top)+"px";
-      tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - pos.left)+"px";
+      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - p.pos.left)+"px";
       }
 
    if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
-      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY - 50 + pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY - 50 + p.pos.top)+"px";
       }
 
    tobj.parent.appendChild(tooltipinfo.popupElement);
