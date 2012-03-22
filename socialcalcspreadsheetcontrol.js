@@ -2094,7 +2094,6 @@ SocialCalc.SpreadsheetControl.DoFunctionList = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
-   var editor = spreadsheet.editor;
    var pos = SocialCalc.GetElementPositionWithScroll(spreadsheet.spreadsheetDiv);
 
    main.style.top = ((vp.height/3)-pos.top)+"px";
@@ -2114,11 +2113,12 @@ SocialCalc.SpreadsheetControl.DoFunctionList = function() {
 
    main.innerHTML = str;
 
-   SocialCalc.DragRegister(editor, main.firstChild.firstChild.firstChild.firstChild, true, true,
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true,
                  {MouseDown: SocialCalc.DragFunctionStart, 
                   MouseMove: SocialCalc.DragFunctionPosition,
                   MouseUp: SocialCalc.DragFunctionPosition,
-                  Disabled: null, positionobj: main});
+                  Disabled: null, positionobj: main},
+                  spreadsheet.spreadsheetDiv);
 
    spreadsheet.spreadsheetDiv.appendChild(main);
 
@@ -2282,7 +2282,6 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
-   var editor = spreadsheet.editor;
    var pos = SocialCalc.GetElementPositionWithScroll(spreadsheet.spreadsheetDiv);
 
    main.style.top = ((vp.height/3)-pos.top)+"px";
@@ -2299,11 +2298,12 @@ SocialCalc.SpreadsheetControl.DoMultiline = function() {
       '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideMultiline();">&nbsp;X&nbsp;</td></tr></table>'+
       '<div style="background-color:#DDD;">'+str+'</div>';
 
-   SocialCalc.DragRegister(editor, main.firstChild.firstChild.firstChild.firstChild, true, true, 
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, 
                  {MouseDown: SocialCalc.DragFunctionStart, 
                   MouseMove: SocialCalc.DragFunctionPosition,
                   MouseUp: SocialCalc.DragFunctionPosition,
-                  Disabled: null, positionobj: main});
+                  Disabled: null, positionobj: main},
+                  spreadsheet.spreadsheetDiv);
 
    spreadsheet.spreadsheetDiv.appendChild(main);
 
@@ -2470,7 +2470,6 @@ SocialCalc.SpreadsheetControl.DoLink = function() {
    main.style.position = "absolute";
 
    var vp = SocialCalc.GetViewportInfo();
-   var editor = spreadsheet.editor;
    var pos = SocialCalc.GetElementPositionWithScroll(spreadsheet.spreadsheetDiv);
 
    main.style.top = ((vp.height/3)-pos.top)+"px";
@@ -2486,11 +2485,12 @@ SocialCalc.SpreadsheetControl.DoLink = function() {
       '<td style="font-size:10px;cursor:default;color:#666;" onclick="SocialCalc.SpreadsheetControl.HideLink();">&nbsp;X&nbsp;</td></tr></table>'+
       '<div style="background-color:#DDD;">'+str+'</div>';
 
-   SocialCalc.DragRegister(editor, main.firstChild.firstChild.firstChild.firstChild, true, true, 
+   SocialCalc.DragRegister(main.firstChild.firstChild.firstChild.firstChild, true, true, 
                  {MouseDown: SocialCalc.DragFunctionStart, 
                   MouseMove: SocialCalc.DragFunctionPosition,
                   MouseUp: SocialCalc.DragFunctionPosition,
-                  Disabled: null, positionobj: main});
+                  Disabled: null, positionobj: main},
+                  spreadsheet.spreadsheetDiv);
 
    spreadsheet.spreadsheetDiv.appendChild(main);
 

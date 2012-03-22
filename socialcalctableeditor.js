@@ -3645,11 +3645,12 @@ SocialCalc.InputEcho = function(editor) {
 
    this.container.appendChild(this.prompt);
 
-   SocialCalc.DragRegister(this.editor, this.main, true, true, 
+   SocialCalc.DragRegister(this.main, true, true, 
                  {MouseDown: SocialCalc.DragFunctionStart, 
                   MouseMove: SocialCalc.DragFunctionPosition,
                   MouseUp: SocialCalc.DragFunctionPosition,
-                  Disabled: null, positionobj: this.container});
+                  Disabled: null, positionobj: this.container},
+                  this.editor.toplevel);
 
    editor.toplevel.appendChild(this.container);
 
@@ -4777,7 +4778,7 @@ SocialCalc.CreateTableControl = function(control) {
 
    functions.control = control; // make sure this is there
 
-   SocialCalc.DragRegister(control.editor, control.paneslider, control.vertical, !control.vertical, functions);
+   SocialCalc.DragRegister(control.paneslider, control.vertical, !control.vertical, functions, control.editor.toplevel);
 
    control.main.appendChild(control.paneslider);
 
@@ -4867,7 +4868,7 @@ SocialCalc.CreateTableControl = function(control) {
                 MouseUp: SocialCalc.TCTDragFunctionStop,
                 Disabled: function() {return control.editor.busy;}};
    functions.control = control; // make sure this is there
-   SocialCalc.DragRegister(control.editor, control.thumb, control.vertical, !control.vertical, functions);
+   SocialCalc.DragRegister(control.thumb, control.vertical, !control.vertical, functions, control.editor.toplevel);
 
    params = {normalstyle: "backgroundImage:url("+imageprefix+"thumb-"+vh+"n.gif)", name:"Thumb",
              downstyle:  "backgroundImage:url("+imageprefix+"thumb-"+vh+"d.gif)",
@@ -5353,7 +5354,7 @@ SocialCalc.DragInfo = {
    // The registeredElements array is used to decide which item to drag.
  
    // One item for each draggable thing, each an object with:
-   //    .element, .vertical, .horizontal, .functionobj, .editor
+   //    .element, .vertical, .horizontal, .functionobj, .parent
 
    registeredElements: [],
 
@@ -5367,17 +5368,17 @@ SocialCalc.DragInfo = {
    clientY: 0,
    offsetX: 0,
    offsetY: 0,
-   relativeOffset: null // retrieved at drag start
+   relativeOffset: {left:0,top:0} // retrieved at drag start
 
    }
 
 //
-// DragRegister(editor, element, vertical, horizontal, functionobj) - make element draggable
+// DragRegister(element, vertical, horizontal, functionobj, parent) - make element draggable
 //
 // The functionobj defaults to moving the element contrained only by vertical and horizontal settings.
 //
 
-SocialCalc.DragRegister = function(editor, element, vertical, horizontal, functionobj) {
+SocialCalc.DragRegister = function(element, vertical, horizontal, functionobj, parent) {
 
    var draginfo = SocialCalc.DragInfo;
 
@@ -5388,7 +5389,7 @@ SocialCalc.DragRegister = function(editor, element, vertical, horizontal, functi
       }
 
    draginfo.registeredElements.push(
-      {element: element, vertical: vertical, horizontal: horizontal, functionobj: functionobj, editor: editor}
+      {element: element, vertical: vertical, horizontal: horizontal, functionobj: functionobj, parent: parent}
       );
 
    if (element.addEventListener) { // DOM Level 2 -- Firefox, et al
@@ -5452,7 +5453,9 @@ SocialCalc.DragMouseDown = function(event) {
       }
 
    draginfo.draggingElement = dobj;
-   draginfo.relativeOffset = SocialCalc.GetElementPositionWithScroll(dobj.editor.toplevel);
+   if (dobj.parent) {
+      draginfo.relativeOffset = SocialCalc.GetElementPositionWithScroll(dobj.parent);
+      }
    draginfo.clientX = e.clientX - draginfo.relativeOffset.left;
    draginfo.clientY = e.clientY - draginfo.relativeOffset.top;
    draginfo.startX = draginfo.clientX;
@@ -5555,13 +5558,10 @@ SocialCalc.DragMouseUp = function(event) {
 
 SocialCalc.DragFunctionStart = function(event, draginfo, dobj) {
 
-   var val;
    var element = dobj.functionobj.positionobj || dobj.element;
 
-   val = element.style.top.match(/\d*/);
-   draginfo.offsetY = (val ? val[0]-0 : 0) - draginfo.clientY;
-   val = element.style.left.match(/\d*/);
-   draginfo.offsetX = (val ? val[0]-0 : 0) - draginfo.clientX;
+   draginfo.offsetY = parseInt(element.style.top) - draginfo.clientY;
+   draginfo.offsetX = parseInt(element.style.left) - draginfo.clientX;
 
    }
 
@@ -5735,16 +5735,16 @@ SocialCalc.TooltipDisplay = function(tobj) {
    tooltipinfo.popupElement.innerHTML = tobj.tiptext;
 
    if (tooltipinfo.clientX > tooltipinfo.viewport.width/2) { // on right side of screen
-      tooltipinfo.popupElement.style.bottom = (tooltipinfo.viewport.height - tooltipinfo.clientY + offsetY + pos.top)+"px";
-      tooltipinfo.popupElement.style.right = (tooltipinfo.viewport.width - tooltipinfo.clientX + offsetX + pos.left)+"px";
+      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY + pos.top)+"px";
+      tooltipinfo.popupElement.style.right = (parseInt(tobj.parent.style.width) - tooltipinfo.clientX + offsetX + pos.left)+"px";
       }
    else { // on left side of screen
-      tooltipinfo.popupElement.style.bottom = (tooltipinfo.viewport.height - tooltipinfo.clientY + offsetY + pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY + pos.top)+"px";
       tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - pos.left)+"px";
       }
 
    if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
-      tooltipinfo.popupElement.style.bottom = (tooltipinfo.viewport.height - tooltipinfo.clientY + offsetY - 50 + pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = (parseInt(tobj.parent.style.height) - tooltipinfo.clientY + offsetY - 50 + pos.top)+"px";
       }
 
    tobj.parent.appendChild(tooltipinfo.popupElement);
