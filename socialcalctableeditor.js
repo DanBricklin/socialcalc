@@ -5749,7 +5749,8 @@ SocialCalc.TooltipDisplay = function(tobj) {
       }
 
    if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
-      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY - 50 + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.top = (tooltipinfo.clientY + offsetY - p.pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = "auto";
       }
 
    tobj.parent.appendChild(tooltipinfo.popupElement);
