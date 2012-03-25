@@ -5729,8 +5729,8 @@ SocialCalc.TooltipDisplay = function(tobj) {
    var viewport = SocialCalc.GetViewportInfo();
    var p = {
       pos: SocialCalc.GetElementPositionWithScroll(tobj.parent),
-      width: SocialCalc.GetComputedStyle(tobj.parent, "width"),
-      height: SocialCalc.GetComputedStyle(tobj.parent, "height")
+      width: parseInt(SocialCalc.GetComputedStyle(tobj.parent, "width")),
+      height: parseInt(SocialCalc.GetComputedStyle(tobj.parent, "height"))
       }
 
    tooltipinfo.popupElement = document.createElement("div");
@@ -5740,16 +5740,16 @@ SocialCalc.TooltipDisplay = function(tobj) {
    tooltipinfo.popupElement.innerHTML = tobj.tiptext;
 
    if (tooltipinfo.clientX > viewport.width/2) { // on right side of screen
-      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
-      tooltipinfo.popupElement.style.right = (parseInt(p.width) - tooltipinfo.clientX + offsetX + p.pos.left)+"px";
+      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.right = (p.width - tooltipinfo.clientX + offsetX + p.pos.left)+"px";
       }
    else { // on left side of screen
-      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
       tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - p.pos.left)+"px";
       }
 
    if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
-      tooltipinfo.popupElement.style.bottom = (parseInt(p.height) - tooltipinfo.clientY + offsetY - 50 + p.pos.top)+"px";
+      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY - 50 + p.pos.top)+"px";
       }
 
    tobj.parent.appendChild(tooltipinfo.popupElement);

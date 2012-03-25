@@ -5155,6 +5155,7 @@ SocialCalc.GetElementPositionWithScroll = function (element) {
    var offsetLeft = 0;
    var offsetTop = 0;
    var offsetElement = element;
+   var viewport;
    while (element) {
       if (element.tagName=="HTML") break;
       if (element == offsetElement) {
@@ -5169,8 +5170,14 @@ SocialCalc.GetElementPositionWithScroll = function (element) {
       if (element.scrollTop) {
          offsetTop-=element.scrollTop;
          }
+      if (element.tagName=="BODY" && !element.scrollLeft && !element.scrollTop) {
+         viewport = SocialCalc.GetViewportInfo();
+         offsetLeft-=viewport.horizontalScroll;
+         offsetTop-=viewport.verticalScroll;
+         }
       element=element.parentNode;
       }
+
    return {left:offsetLeft, top:offsetTop};
 
    }
