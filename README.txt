@@ -1,6 +1,10 @@
 This is a fork of Dan Bricklin's SocialCalc (http://github.com/DanBricklin/socialcalc), 
 with the following modifications made for the Drupal Sheetnode module (http://drupal.org/project/sheetnode):
 
+2012-03-25
+* Change positioning strategy to use position:relative parents
+* Use DOM element.getBoundingClientRect() to calculate element offset
+
 2011-07-04
 * Support multiple sheets per page.
 
