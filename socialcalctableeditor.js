@@ -5727,11 +5727,7 @@ SocialCalc.TooltipDisplay = function(tobj) {
    var offsetY = (tobj.functionobj && ((typeof tobj.functionobj.offsety) == "number")) ? 
       tobj.functionobj.offsety : tooltipinfo.offsetY;
    var viewport = SocialCalc.GetViewportInfo();
-   var p = {
-      pos: SocialCalc.GetElementPositionWithScroll(tobj.parent),
-      width: parseInt(SocialCalc.GetComputedStyle(tobj.parent, "width")),
-      height: parseInt(SocialCalc.GetComputedStyle(tobj.parent, "height"))
-      }
+   var pos = SocialCalc.GetElementPositionWithScroll(tobj.parent);
 
    tooltipinfo.popupElement = document.createElement("div");
    if (scc.TDpopupElementClass) tooltipinfo.popupElement.className = scc.TDpopupElementClass;
@@ -5740,17 +5736,16 @@ SocialCalc.TooltipDisplay = function(tobj) {
    tooltipinfo.popupElement.innerHTML = tobj.tiptext;
 
    if (tooltipinfo.clientX > viewport.width/2) { // on right side of screen
-      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
-      tooltipinfo.popupElement.style.right = (p.width - tooltipinfo.clientX + offsetX + p.pos.left)+"px";
+      tooltipinfo.popupElement.style.bottom = (pos.height - tooltipinfo.clientY + offsetY + pos.top)+"px";
+      tooltipinfo.popupElement.style.right = (pos.width - tooltipinfo.clientX + offsetX + pos.left)+"px";
       }
    else { // on left side of screen
-      tooltipinfo.popupElement.style.bottom = (p.height - tooltipinfo.clientY + offsetY + p.pos.top)+"px";
-      tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - p.pos.left)+"px";
+      tooltipinfo.popupElement.style.bottom = (pos.height - tooltipinfo.clientY + offsetY + pos.top)+"px";
+      tooltipinfo.popupElement.style.left = (tooltipinfo.clientX + offsetX - pos.left)+"px";
       }
 
    if (tooltipinfo.clientY < 50) { // make sure fits on screen if nothing above grid
-      tooltipinfo.popupElement.style.top = (tooltipinfo.clientY + offsetY - p.pos.top)+"px";
-      tooltipinfo.popupElement.style.bottom = "auto";
+      tooltipinfo.popupElement.style.bottom = (pos.height - tooltipinfo.clientY + offsetY - 50 + pos.top)+"px";
       }
 
    tobj.parent.appendChild(tooltipinfo.popupElement);

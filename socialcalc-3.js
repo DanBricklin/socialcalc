@@ -5145,15 +5145,18 @@ SocialCalc.GetElementPosition = function (element) {
 //
 // GetElementPositionWithScroll(element) - returns object with left and top position of the element in the document
 //
-// Takes into account scroll offsets by going through entire tree
-// Stops at fixed positioned parents
-// Skips offsets beyond relative parents
-//
 
 SocialCalc.GetElementPositionWithScroll = function (element) {
   
    var rect = element.getBoundingClientRect();
-   return {left:rect.left, top:rect.top};
+   return {
+      left:rect.left,
+      right:rect.right,
+      top:rect.top,
+      bottom:rect.bottom,
+      width:rect.width?rect.width:rect.right-rect.left,
+      height:rect.height?rect.height:rect.bottom-rect.top
+      };
 
    }
 
