@@ -91,6 +91,8 @@ SocialCalc.FormatNumber.formatNumberWithFormat = function(rawvalue, format_strin
    var integerdigits2, integerpos, fractionpos, textcolor, textstyle, separatorchar, decimalchar;
    var value; // working copy to change sign, etc.
 
+   if (typeof(rawvalue) == "string" && !rawvalue.length) return "";
+
    value = rawvalue-0; // make sure a number
    if (!isFinite(value)) {
       if (typeof(rawvalue) == "string") { // if original was a string, try to format it
