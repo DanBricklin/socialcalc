@@ -62,11 +62,6 @@
 
    SocialCalc.Popup.Current = {};
 
-   // Other values used by the Popup system
-   //
-
-   SocialCalc.Popup.imagePrefix = "images/sc-"; // image prefix
-
    // Override this for localization
 
    SocialCalc.Popup.LocalizeString = function(str) {return str;};
@@ -90,6 +85,8 @@ SocialCalc.Popup.Create = function(type, id, attribs) {
    if (pt && pt.Create) {
       pt.Create(type, id, attribs);
       }
+
+   SocialCalc.Popup.imagePrefix = SocialCalc.Constants.defaultImagePrefix; // image prefix
 
    }
 
@@ -316,8 +313,6 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
 
    pos = SocialCalc.GetElementPosition(spcdata.mainele);
 
-   editor = SocialCalc.CurrentSpreadsheetControlObject.editor;
-
    main.style.top = (pos.top+spcdata.mainele.offsetHeight)+"px";
    main.style.left = pos.left+"px";
    main.style.zIndex = 100;
@@ -337,11 +332,12 @@ SocialCalc.Popup.CreatePopupDiv = function(id, attribs) {
 
       if (attribs.moveable) {
          spcdata.dragregistered = main.firstChild.firstChild.firstChild.firstChild;
-         SocialCalc.DragRegister(editor, spcdata.dragregistered, true, true, 
+         SocialCalc.DragRegister(spcdata.dragregistered, true, true, 
                     {MouseDown: SocialCalc.DragFunctionStart, 
                      MouseMove: SocialCalc.DragFunctionPosition,
                      MouseUp: SocialCalc.DragFunctionPosition,
-                     Disabled: null, positionobj: main});
+                     Disabled: null, positionobj: main},
+                     spcdata.mainele);
          }
       }
 
@@ -1452,10 +1448,12 @@ SocialCalc.Popup.Types.ColorChooser.GridMouseDown = function(e) {
          break;
       }
 
-   var viewport = SocialCalc.GetViewportInfo();
-   var clientX = event.clientX + viewport.horizontalScroll;
-   var clientY = event.clientY + viewport.verticalScroll;
-   var gpos = SocialCalc.GetElementPosition(grid.table);
+   var pos = SocialCalc.GetElementPositionWithScroll(spcdata.mainele);
+   var clientX = event.clientX - pos.left;
+   var clientY = event.clientY - pos.top;
+   var gpos = SocialCalc.GetElementPositionWithScroll(grid.table);
+   gpos.left -= pos.left;
+   gpos.top -= pos.top
    var row = Math.floor((clientY-gpos.top-2)/10); // -2 is to split the diff btw IE & FF
    row = row < 0 ? 0 : row;
    var col = Math.floor((clientX-gpos.left)/20);
