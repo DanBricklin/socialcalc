@@ -4797,7 +4797,7 @@ SocialCalc.RenderCell = function(context, rownum, colnum, rowpane, colpane, noEl
          num=sheetattribs.defaulttextformat;
          if (num && typeof(sheetobj.cellformats[num]) !== "undefined") stylestr+="text-align:"+sheetobj.cellformats[num]+";";
          }
-      else if (t="n") {
+      else if (t=="n") {
          num=sheetattribs.defaultnontextformat;
          if (num && typeof(sheetobj.cellformats[num]) !== "undefined") {
             stylestr+="text-align:"+sheetobj.cellformats[num]+";";
