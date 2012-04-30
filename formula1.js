@@ -4605,13 +4605,13 @@ alert("Using SocialCalc.Formula.SheetCache.loadsheet - deprecated");
    }
 
 //
-// newsheet = SocialCalc.Formula.AddSheetToCache(sheetname, str)
+// newsheet = SocialCalc.Formula.AddSheetToCache(sheetname, str, live)
 //
 // Adds a new sheet to the sheet cache.
 // Returns the sheet object filled out with the str (a saved sheet).
 //
 
-SocialCalc.Formula.AddSheetToCache = function(sheetname, str) {
+SocialCalc.Formula.AddSheetToCache = function(sheetname, str, live) {
 
    var newsheet = null;
    var sfsc = SocialCalc.Formula.SheetCache;
@@ -4625,7 +4625,7 @@ SocialCalc.Formula.AddSheetToCache = function(sheetname, str) {
 
    sfsc.sheets[newsheetname] = {sheet: newsheet, recalcstate: sfscc.asloaded, name: newsheetname};
 
-   SocialCalc.Formula.FreshnessInfo.sheets[newsheetname] = true;
+   SocialCalc.Formula.FreshnessInfo.sheets[newsheetname] = (typeof(live) == "undefined" || live === false);
 
    return newsheet;
 
@@ -4671,7 +4671,8 @@ SocialCalc.Formula.RemoteFunctionInfo = {
 
 SocialCalc.Formula.FreshnessInfo = {
 
-   // For each external sheet referenced successfully an attribute of that name with value true.
+   // For each external sheet referenced successfully an attribute of that name with value true to keep the sheet cached.
+   // Value false means the sheet is reloaded at each recalc.
 
    sheets: {},
 
@@ -4688,6 +4689,17 @@ SocialCalc.Formula.FreshnessInfo = {
 SocialCalc.Formula.FreshnessInfoReset = function() {
 
    var scffi = SocialCalc.Formula.FreshnessInfo;
+   var scfsc = SocialCalc.Formula.SheetCache;
+
+   // Loop through sheets freshness, deleting cached sheets that should be reloaded.
+
+   for (var sheet in scffi.sheets) {
+      if (scffi.sheets[sheet] === false) {
+         delete scfsc.sheets[sheet];
+         }
+      }
+   
+   // Reset freshness info.
 
    scffi.sheets = {};
    scffi.volatile = {};

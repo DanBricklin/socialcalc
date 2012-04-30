@@ -3510,20 +3510,20 @@ SocialCalc.RecalcClearTimeout = function() {
 
 
 //
-// SocialCalc.RecalcLoadedSheet(sheetname, str, recalcneeded)
+// SocialCalc.RecalcLoadedSheet(sheetname, str, recalcneeded, live)
 //
 // Called when a sheet finishes loading with name, string, and t/f whether it should be recalced.
 // If loaded sheet has sheet.attribs.recalc=="off", then no recalc done.
 // If sheetname is null, then the sheetname waiting for will be used.
 //
 
-SocialCalc.RecalcLoadedSheet = function(sheetname, str, recalcneeded) {
+SocialCalc.RecalcLoadedSheet = function(sheetname, str, recalcneeded, live) {
 
    var sheet;
    var scri = SocialCalc.RecalcInfo;
    var scf = SocialCalc.Formula;
 
-   sheet = SocialCalc.Formula.AddSheetToCache(sheetname || scf.SheetCache.waitingForLoading, str);
+   sheet = SocialCalc.Formula.AddSheetToCache(sheetname || scf.SheetCache.waitingForLoading, str, live);
 
    if (recalcneeded && sheet && sheet.attribs.recalc!="off") { // if recalcneeded, and not manual sheet, chain in this new sheet to recalc loop
       sheet.previousrecalcsheet = scri.sheet;
