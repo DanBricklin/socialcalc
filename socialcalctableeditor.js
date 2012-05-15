@@ -533,12 +533,6 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
 
    SocialCalc.MouseWheelRegister(editor.toplevel, {WheelMove: SocialCalc.EditorProcessMouseWheel, editor: editor});
 
-   if (editor.inputBox) { // this seems to fix an obscure bug with Firefox 2 Mac where Ctrl-V doesn't get fired right
-      if (editor.inputBox.element) {
-         editor.inputBox.element.focus();
-         editor.inputBox.element.blur();
-         }
-      }
    SocialCalc.KeyboardSetFocus(editor);
 
    // do status reporting things
