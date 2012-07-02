@@ -448,8 +448,8 @@ SocialCalc.CreateTableEditor = function(editor, width, height) {
    editor.height = height;
 
    editor.griddiv = document.createElement("div");
-   editor.tablewidth = width - scc.defaultTableControlThickness;
-   editor.tableheight = height - scc.defaultTableControlThickness;
+   editor.tablewidth = Math.max(0, width - scc.defaultTableControlThickness);
+   editor.tableheight = Math.max(0, height - scc.defaultTableControlThickness);
    editor.griddiv.style.width = editor.tablewidth+"px";
    editor.griddiv.style.height = editor.tableheight+"px";
    editor.griddiv.style.overflow = "hidden";
@@ -567,8 +567,8 @@ SocialCalc.ResizeTableEditor = function(editor, width, height) {
    editor.toplevel.style.width = width+"px";
    editor.toplevel.style.height = height+"px";
 
-   editor.tablewidth = width - scc.defaultTableControlThickness;
-   editor.tableheight = height - scc.defaultTableControlThickness;
+   editor.tablewidth = Math.max(0, width - scc.defaultTableControlThickness);
+   editor.tableheight = Math.max(0, height - scc.defaultTableControlThickness);
    editor.griddiv.style.width=editor.tablewidth+"px";
    editor.griddiv.style.height=editor.tableheight+"px";
 
@@ -3505,10 +3505,24 @@ SocialCalc.InputBox.prototype.Select = function(t) {
    if (!this.element) return;
    switch (t) {
       case "end":
-         if (this.element.selectionStart!=undefined) {
+         if (document.selection && document.selection.createRange) {
+            /* IE 4+ - Safer than setting .selectionEnd as it also works for Textareas. */
+            try {
+               var range = document.selection.createRange().duplicate();
+               range.moveToElementText(this.element);
+               range.collapse(false);
+               range.select();
+            }
+            catch (e) {
+               if (this.element.selectionStart!=undefined) {
+                  this.element.selectionStart=this.element.value.length;
+                  this.element.selectionEnd=this.element.value.length;
+               }
+            }
+         } else if (this.element.selectionStart!=undefined) {
             this.element.selectionStart=this.element.value.length;
             this.element.selectionEnd=this.element.value.length;
-            }
+         }
          break;
       }
    };
