@@ -347,7 +347,7 @@ SocialCalc.Formula.ParseFormulaIntoTokens = function(line) {
                last_token_type = last_token.type;
                last_token_text = last_token.text;
                if (last_token_type == charclass.op) {
-                  if (last_token_text == '<' || last_token_text == ">") {
+                  if ((last_token_text == '<' || last_token_text == ">") && str == "=") {
                      str = last_token_text + str;
                      parseinfo.pop();
                      if (parseinfo.length>0) {
