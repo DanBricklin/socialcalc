@@ -5955,13 +5955,20 @@ SocialCalc.KeyboardSetFocus = function(editor) {
          }
       SocialCalc.Keyboard.passThru = null;
       }
-   window.focus();
+
+      switch (typeof window.focus) {
+         case 'function': { window.focus(); break; }
+         case 'boolean': { window.focus = true; break; }
+         }
    }
 
 SocialCalc.KeyboardFocus = function() {
 
    SocialCalc.Keyboard.passThru = null;
-   window.focus();
+      switch (typeof window.focus) {
+         case 'function': { window.focus(); break; }
+         case 'boolean': { window.focus = true; break; }
+         }
 
    }
 
