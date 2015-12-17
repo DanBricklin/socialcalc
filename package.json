@@ -13,16 +13,17 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "gulp"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/willhallonline/socialcalc.git"
+    "url": "git+https://github.com/infojunkie/socialcalc.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/willhallonline/socialcalc/issues"
+    "url": "https://github.com/infojunkie/socialcalc/issues"
   },
-  "homepage": "https://github.com/willhallonline/socialcalc#readme"
+  "homepage": "https://github.com/infojunkie/socialcalc#readme"
 }
