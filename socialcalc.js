@@ -15060,7 +15060,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.edit = this.tabs.length;
    this.tabs.push({name: "edit", text: "Edit", html:
-' <div id="%id.edittools" style="padding:10px 0px 0px 0px;">'+
+' <div id="%id.edittools">'+
 '&nbsp;<span id="%id.undoredo"><img id="%id.button_undo" src="%img.undo.gif" style="vertical-align:bottom;">'+
 ' <img id="%id.button_redo" src="%img.redo.gif" style="vertical-align:bottom;">'+
 ' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
@@ -15750,7 +15750,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    // create the tabbed UI at the top
 
-   html = '<div><div style="'+spreadsheet.toolbarbackground+'padding:12px 10px 10px 4px;height:40px;">';
+   html = '<div><div style="'+spreadsheet.toolbarbackground+'padding:10px">';
 
    for (i=0; i<tabs.length; i++) {
       html += tabs[i].html;
