@@ -56,3 +56,6 @@ gulp.task('styles', function() {
     .pipe(minifyCss())
     .pipe(gulp.dest(''))
 });
+
+// The default task (called when you run `gulp` from cli)
+gulp.task('default', ['scripts', 'styles']);
