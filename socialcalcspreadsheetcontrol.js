@@ -246,45 +246,45 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
    this.tabnums.edit = this.tabs.length;
    this.tabs.push({name: "edit", text: "Edit", html:
 ' <div id="%id.edittools">'+
-'&nbsp;<span id="%id.undoredo"><img id="%id.button_undo" src="%img.undo.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_redo" src="%img.redo.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.copypaste"><img id="%id.button_copy" src="%img.copy.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_cut" src="%img.cut.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_paste" src="%img.paste.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.formats"><img id="%id.button_delete" src="%img.delete.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_pasteformats" src="%img.pasteformats.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.locktools"><img id="%id.button_lock" src="%img.lock.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_unlock" src="%img.unlock.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.fill"><img id="%id.button_filldown" src="%img.filldown.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_fillright" src="%img.fillright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.move"><img id="%id.button_movefrom" src="%img.movefromoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_movepaste" src="%img.movepasteoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_moveinsert" src="%img.moveinsertoff.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.align"><img id="%id.button_alignleft" src="%img.alignleft.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_aligncenter" src="%img.aligncenter.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_alignright" src="%img.alignright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.grid"><img id="%id.button_borderon" src="%img.borderson.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_borderoff" src="%img.bordersoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_swapcolors" src="%img.swapcolors.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.merge"><img id="%id.button_merge" src="%img.merge.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_unmerge" src="%img.unmerge.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;</span>'+
-' <span id="%id.insert"><img id="%id.button_insertrow" src="%img.insertrow.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_insertcol" src="%img.insertcol.gif" style="vertical-align:bottom;">'+
-' &nbsp;</span><span id="%id.delete"><img id="%id.button_deleterow" src="%img.deleterow.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_deletecol" src="%img.deletecol.gif" style="vertical-align:bottom;">'+
-' &nbsp;</span><span id="%id.hide"><img id="%id.button_hiderow" src="%img.hiderow.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_hidecol" src="%img.hidecol.gif" style="vertical-align:bottom;">'+
-' &nbsp;</span><span id="%id.recalctools"><img id="%id.divider_recalc" src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp;'+
-' <img id="%id.button_recalc" src="%img.recalc.gif" style="vertical-align:bottom;"></span>'+
+' &nbsp;<span id="%id.undoredo"><img id="%id.button_undo" class="edit-button" src="%img.undo.gif">'+
+' <img id="%id.button_redo" class="edit-button" src="%img.redo.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.copypaste"><img id="%id.button_copy" src="%img.copy.gif" class="edit-button">'+
+' <img id="%id.button_cut" src="%img.cut.gif" class="edit-button">'+
+' <img id="%id.button_paste" src="%img.paste.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.formats"><img id="%id.button_delete" src="%img.delete.gif" class="edit-button">'+
+' <img id="%id.button_pasteformats" src="%img.pasteformats.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.locktools"><img id="%id.button_lock" src="%img.lock.gif" class="edit-button">'+
+' <img id="%id.button_unlock" src="%img.unlock.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.fill"><img id="%id.button_filldown" src="%img.filldown.gif" class="edit-button">'+
+' <img id="%id.button_fillright" src="%img.fillright.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.move"><img id="%id.button_movefrom" src="%img.movefromoff.gif" class="edit-button">'+
+' <img id="%id.button_movepaste" src="%img.movepasteoff.gif" class="edit-button">'+
+' <img id="%id.button_moveinsert" src="%img.moveinsertoff.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.align"><img id="%id.button_alignleft" src="%img.alignleft.gif" class="edit-button">'+
+' <img id="%id.button_aligncenter" src="%img.aligncenter.gif" class="edit-button">'+
+' <img id="%id.button_alignright" src="%img.alignright.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.grid"><img id="%id.button_borderon" src="%img.borderson.gif" class="edit-button">'+
+' <img id="%id.button_borderoff" src="%img.bordersoff.gif" class="edit-button">'+
+' <img id="%id.button_swapcolors" src="%img.swapcolors.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.merge"><img id="%id.button_merge" src="%img.merge.gif" class="edit-button">'+
+' <img id="%id.button_unmerge" src="%img.unmerge.gif" class="edit-button">'+
+' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
+' <span id="%id.insert"><img id="%id.button_insertrow" src="%img.insertrow.gif" class="edit-button"> '+
+' <img id="%id.button_insertcol" src="%img.insertcol.gif" class="edit-button">'+
+' &nbsp;</span><span id="%id.delete"><img id="%id.button_deleterow" src="%img.deleterow.gif" class="edit-button">'+
+' <img id="%id.button_deletecol" src="%img.deletecol.gif" class="edit-button">'+
+' &nbsp;</span><span id="%id.hide"><img id="%id.button_hiderow" src="%img.hiderow.gif" class="edit-button">'+
+' <img id="%id.button_hidecol" src="%img.hidecol.gif" class="edit-button">'+
+' &nbsp;</span><span id="%id.recalctools"><img id="%id.divider_recalc" src="%img.divider1.gif" class="edit-button">&nbsp;'+
+' <img id="%id.button_recalc" src="%img.recalc.gif" class="edit-button"></span>'+
       ' </div>',
       oncreate: null, //function(spreadsheet, viewobject) {SocialCalc.DoCmd(null, "fill-rowcolstuff");},
       onclick: null});
@@ -293,8 +293,8 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.settings = this.tabs.length;
    this.tabs.push({name: "settings", text: "Format", html:
-      '<div id="%id.settingstools" style="display:none;">'+
-      ' <div id="%id.sheetsettingstoolbar" style="display:none;">'+
+      '<div id="%id.settingstools" class="default-hidden">'+
+      ' <div id="%id.sheetsettingstoolbar" class="default-hidden">'+
       '  <table cellspacing="0" cellpadding="0"><tr><td>'+
       '   <div style="%tbt.">%loc!SHEET SETTINGS!:</div>'+
       '   </td></tr><tr><td>'+
@@ -303,7 +303,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
       '   <input type="button" value="%loc!Show Cell Settings!" onclick="SocialCalc.SpreadsheetControlSettingsSwitch(\'cell\');return false;">'+
       '   </td></tr></table>'+
       ' </div>'+
-      ' <div id="%id.cellsettingstoolbar" style="display:none;">'+
+      ' <div id="%id.cellsettingstoolbar" class="default-hidden">'+
       '  <table cellspacing="0" cellpadding="0"><tr><td>'+
       '   <div style="%tbt.">%loc!CELL SETTINGS!: <span id="%id.settingsecell">&nbsp;</span></div>'+
       '   </td></tr><tr><td>'+
@@ -429,8 +429,8 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
       html:
  '<div id="%id.scolorchooser" style="display:none;position:absolute;z-index:20;"></div>'+
 '<table cellspacing="0" cellpadding="0">'+
-' <tr><td style="vertical-align:top;">'+
-'<table id="%id.sheetsettingstable" style="display:none;" cellspacing="0" cellpadding="0">'+
+' <tr><td class="v-top">'+
+'<table id="%id.sheetsettingstable" class="default-hidden" cellspacing="0" cellpadding="0">'+
 '<tr>'+
 ' <td %itemtitle.><br>%loc!Default Format!:</td>'+
 ' <td %itembody.>'+
@@ -689,25 +689,25 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.sort = this.tabs.length;
    this.tabs.push({name: "sort", text: "Sort", html:
-      ' <div id="%id.sorttools" style="display:none;">'+
+      ' <div id="%id.sorttools" class="default-hidden">'+
       '  <table cellspacing="0" cellpadding="0"><tr>'+
-      '   <td style="vertical-align:top;padding-right:4px;width:160px;">'+
+      '   <td class="sort-range">'+
       '    <div style="%tbt.">%loc!Set Cells To Sort!</div>'+
       '    <select id="%id.sortlist" size="1" onfocus="%s.CmdGotFocus(this);"><option selected>[select range]</option></select>'+
       '    <input type="button" value="%loc!OK!" onclick="%s.DoCmd(this, \'ok-setsort\');" style="font-size:x-small;">'+
       '   </td>'+
-      '   <td style="vertical-align:middle;padding-right:16px;width:100px;text-align:right;">'+
+      '   <td class="sort-setsort">'+
       '    <div style="%tbt.">&nbsp;</div>'+
       '    <input type="button" id="%id.sortbutton" value="%loc!Sort Cells! A1:A1" onclick="%s.DoCmd(this, \'dosort\');" style="visibility:hidden;">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:16px;">'+
+      '   <td class="sort-sorttype">'+
       '    <table cellspacing="0" cellpadding="0"><tr>'+
-      '     <td style="vertical-align:top;">'+
+      '     <td class="v-top">'+
       '      <div style="%tbt.">%loc!Major Sort!</div>'+
       '      <select id="%id.majorsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="majorsort" id="%id.majorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
-      '      <input type="radio" name="majorsort" id="%id.majorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
+      '      <input type="radio" name="majorsort" id="%id.majorsortup" value="up" checked><span class="xsmall-white">%loc!Up!</span><br>'+
+      '      <input type="radio" name="majorsort" id="%id.majorsortdown" value="down"><span class="xsmall-white">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
@@ -717,8 +717,8 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
       '      <div style="%tbt.">%loc!Minor Sort!</div>'+
       '      <select id="%id.minorsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="minorsort" id="%id.minorsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
-      '      <input type="radio" name="minorsort" id="%id.minorsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
+      '      <input type="radio" name="minorsort" id="%id.minorsortup" value="up" checked><span class="xsmall-white">%loc!Up!</span><br>'+
+      '      <input type="radio" name="minorsort" id="%id.minorsortdown" value="down"><span class="xsmall-white">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
@@ -728,8 +728,8 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
       '      <div style="%tbt.">%loc!Last Sort!</div>'+
       '      <select id="%id.lastsort" size="1" onfocus="%s.CmdGotFocus(this);"></select>'+
       '     </td><td>'+
-      '      <input type="radio" name="lastsort" id="%id.lastsortup" value="up" checked><span style="font-size:x-small;color:#FFF;">%loc!Up!</span><br>'+
-      '      <input type="radio" name="lastsort" id="%id.lastsortdown" value="down"><span style="font-size:x-small;color:#FFF;">%loc!Down!</span>'+
+      '      <input type="radio" name="lastsort" id="%id.lastsortup" value="up" checked><span class="xsmall-white">%loc!Up!</span><br>'+
+      '      <input type="radio" name="lastsort" id="%id.lastsortdown" value="down"><span class="xsmall-white">%loc!Down!</span>'+
       '     </td>'+
       '    </tr></table>'+
       '   </td>'+
@@ -775,9 +775,9 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
    this.tabnums.comment = this.tabs.length;
    this.tabs.push({name: "comment", text: "Comment", html:
       '<div id="%id.commenttools" style="display:none;">'+
-      '<table cellspacing="0" cellpadding="0"><tr><td>'+
-      '<textarea id="%id.commenttext" style="font-size:small;height:32px;width:600px;overflow:auto;" onfocus="%s.CmdGotFocus(this);"></textarea>'+
-      '</td><td style="vertical-align:top;">'+
+      '<table cellspacing="0" cellpadding="0"><tr><td class="v-top">'+
+      '<textarea id="%id.commenttext" id="comment-textarea" onfocus="%s.CmdGotFocus(this);"></textarea>'+
+      '</td><td class="v-top">'+
       '&nbsp;<input type="button" value="%loc!Save!" onclick="%s.SpreadsheetControlCommentSet();" style="font-size:x-small;">'+
       '</td></tr></table>'+
       '</div>',
@@ -790,29 +790,29 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.names = this.tabs.length;
    this.tabs.push({name: "names", text: "Names", html:
-      '<div id="%id.namestools" style="display:none;">'+
+      '<div id="%id.namestools" class="default-hidden">'+
       '  <table cellspacing="0" cellpadding="0"><tr>'+
-      '   <td style="vertical-align:top;padding-right:24px;">'+
+      '   <td id="names-existing">'+
       '    <div style="%tbt.">%loc!Existing Names!</div>'+
       '    <select id="%id.nameslist" size="1" onchange="%s.SpreadsheetControlNamesChangedName();" onfocus="%s.CmdGotFocus(this);"><option selected>[New]</option></select>'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:6px;">'+
+      '   <td id="names-name">'+
       '    <div style="%tbt.">%loc!Name!</div>'+
       '    <input type="text" id="%id.namesname" style="font-size:x-small;width:75px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:6px;">'+
+      '   <td id="names-description">'+
       '    <div style="%tbt.">%loc!Description!</div>'+
       '    <input type="text" id="%id.namesdesc" style="font-size:x-small;width:150px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:6px;">'+
+      '   <td id="names-value">'+
       '    <div style="%tbt.">%loc!Value!</div>'+
       '    <input type="text" id="%id.namesvalue" width="16" style="font-size:x-small;width:100px;" onfocus="%s.CmdGotFocus(this);">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:12px;width:100px;">'+
+      '   <td id="names-set">'+
       '    <div style="%tbt.">%loc!Set Value To!</div>'+
       '    <input type="button" id="%id.namesrangeproposal" value="A1" onclick="%s.SpreadsheetControlNamesSetValue();" style="font-size:x-small;">'+
       '   </td>'+
-      '   <td style="vertical-align:top;padding-right:6px;">'+
+      '   <td id="names-save">'+
       '    <div style="%tbt.">&nbsp;</div>'+
       '    <input type="button" value="%loc!Save!" onclick="%s.SpreadsheetControlNamesSave();" style="font-size:x-small;">'+
       '    <input type="button" value="%loc!Delete!" onclick="%s.SpreadsheetControlNamesDelete()" style="font-size:x-small;">'+
@@ -935,7 +935,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    // create the tabbed UI at the top
 
-   html = '<div><div style="'+spreadsheet.toolbarbackground+'padding:10px">';
+   html = '<div id="tabbed-top"><div style="'+spreadsheet.toolbarbackground+'padding:10px">';
 
    for (i=0; i<tabs.length; i++) {
       html += tabs[i].html;
@@ -943,7 +943,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    html += '</div>'+
       '<div style="'+spreadsheet.tabbackground+'padding-bottom:4px;margin:0px 0px 8px 0px;">'+
-      '<table cellpadding="0" cellspacing="0"><tr>';
+      '<table class="default-table"><tr>';
 
    for (i=0; i<tabs.length; i++) {
       html += '  <td id="%id.' + tabs[i].name + 'tab" style="' +
@@ -1018,6 +1018,7 @@ spreadsheet.Buttons = {
    // create formula bar
 
    spreadsheet.formulabarDiv = document.createElement("div");
+   spreadsheet.formulabarDiv.id = "formula-bar";
    spreadsheet.formulabarDiv.style.height = spreadsheet.formulabarheight + "px";
    spreadsheet.formulabarDiv.innerHTML = '<input type="text" size="60" value="">&nbsp;'; //'<textarea rows="4" cols="60" style="z-index:5;background-color:white;position:relative;"></textarea>&nbsp;';
    spreadsheet.spreadsheetDiv.appendChild(spreadsheet.formulabarDiv);
@@ -1027,16 +1028,12 @@ spreadsheet.Buttons = {
       bele = document.createElement("img");
       bele.id = spreadsheet.idPrefix+button;
       bele.src = (spreadsheet.formulabuttons[button].skipImagePrefix ? "" : spreadsheet.imagePrefix)+spreadsheet.formulabuttons[button].image;
-      bele.style.verticalAlign = "middle";
-      bele.style.border = "1px solid #FFF";
-      bele.style.marginLeft = "4px";
+      bele.className = "formula-buttons";
       SocialCalc.TooltipRegister(bele, SCLoc(spreadsheet.formulabuttons[button].tooltip), {}, spreadsheet.spreadsheetDiv);
       SocialCalc.ButtonRegister(spreadsheet.editor, bele,
-         {normalstyle: "border:1px solid #FFF;backgroundColor:#FFF;",
-          hoverstyle: "border:1px solid #CCC;backgroundColor:#FFF;",
-          downstyle: "border:1px solid #000;backgroundColor:#FFF;"}, 
+         {},
          {MouseDown: spreadsheet.formulabuttons[button].command, Disabled: function() {return spreadsheet.editor.ECellReadonly();}});
-      
+
       spreadsheet.formulabarDiv.appendChild(bele);
       }
 
