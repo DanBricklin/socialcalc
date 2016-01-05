@@ -158,8 +158,20 @@
 
 }
 
-#tabbed-top {
+#menu {
 
+}
+
+#settings-bar {
+    padding: 10px;
+    background-color: #404040;
+}
+
+#menu-tabs {
+    background: #efefef;
+    margin: 0px;
+    line-height: 2.2em;
+    padding-bottom: 5px;
 }
 
 ul.tabs {
@@ -172,7 +184,20 @@ ul.tabs {
 ul.tabs li {
     display: inline;
     margin: 0px;
-    line-height: 4em;
+    background-color: #efefef;
+    border: 1px solid #ffffff;
+    padding: 5px;
+    color: #404040;
+}
+
+ul.tabs li:hover {
+    border: 1px solid #fff;
+}
+
+ul.tabs li.active {
+    background-color: #404040;
+    border: 1px solid #404040;
+    color: #ffffff;
 }
 
 .edit-button {
@@ -281,8 +306,14 @@ ul.tabs li {
 // Formula bar styling
  */
 
+#formula-bar {
+    background-color: #efefef;
+}
+
 #formula-bar input {
     width: 60%;
+    padding: 3px;
+    margin: 0px 5px;
 }
 
 .formula-buttons {

@@ -935,20 +935,20 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    // create the tabbed UI at the top
 
-   html = '<div id="tabbed-top"><div style="'+spreadsheet.toolbarbackground+'">';
+   html = '<div id="menu"><div id="settings-bar">';
 
    for (i=0; i<tabs.length; i++) {
       html += tabs[i].html;
       }
 
    html += '</div>'+
-      '<div style="'+spreadsheet.tabbackground+'padding-bottom:4px;margin:0px 0px 8px 0px;">'+
+      '<div id="menu-tabs">'+
       '<ul class="tabs">';
 
    for (i=0; i<tabs.length; i++) {
-      html += '  <li id="%id.' + tabs[i].name + 'tab" style="' +
-         (i==0 ? spreadsheet.tabselectedCSS : spreadsheet.tabplainCSS) +
-         '" onclick="%s.SetTab(this);">' + SCLoc(tabs[i].text) + '</li>';
+      html += '  <li id="%id.' + tabs[i].name + 'tab" ' +
+      //style="' + (i==0 ? spreadsheet.tabselectedCSS : spreadsheet.tabplainCSS) +'"
+      'onclick="%s.SetTab(this);">' + SCLoc(tabs[i].text) + '</li>';
       }
 
    html += ' </ul></div></div>';
@@ -1064,7 +1064,7 @@ spreadsheet.Buttons = {
       v = document.createElement("div");
       SocialCalc.setStyles(v, views[vname].divStyle);
       v.style.display = "none";
-      v.style.width = spreadsheet.width + "px";
+      //v.style.width = spreadsheet.width + "px";
       v.style.height = spreadsheet.viewheight + "px";
       v.id = spreadsheet.idPrefix + views[vname].name + "view";
 
@@ -1214,7 +1214,7 @@ SocialCalc.DoOnResize = function(spreadsheet) {
 
    for (vname in views) {
       v = views[vname].element;
-      v.style.width = spreadsheet.width + "px";
+      //v.style.width = spreadsheet.width + "px";
       v.style.height = (spreadsheet.height-spreadsheet.nonviewheight) + "px";
       }
 
@@ -1271,7 +1271,7 @@ SocialCalc.SizeSSDiv = function(spreadsheet) {
             sizes.width - (pos.left + pos.right + fudgefactorX) || 700;
    if (spreadsheet.width != newval) {
       spreadsheet.width = newval;
-      spreadsheet.spreadsheetDiv.style.width = newval + "px";
+      //spreadsheet.spreadsheetDiv.style.width = newval + "px";
       resized = true;
       }
 
@@ -1324,11 +1324,11 @@ SocialCalc.SetTab = function(obj) {
       if (tname==newtab) {
          newtabnum = i;
          tools[tname].style.display = "block";
-         menutabs[tname].style.cssText = spreadsheet.tabselectedCSS;
+         menutabs[tname].className = "active";
          }
       else {
          tools[tname].style.display = "none";
-         menutabs[tname].style.cssText = spreadsheet.tabplainCSS;
+         menutabs[tname].className = "inactive";
          }
       }
 
