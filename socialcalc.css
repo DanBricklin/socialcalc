@@ -159,11 +159,42 @@
 }
 
 #tabbed-top {
-    
+
+}
+
+ul.tabs {
+    display: inline;
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+ul.tabs li {
+    display: inline;
+    margin: 0px;
+    line-height: 4em;
 }
 
 .edit-button {
     vertical-align: bottom;
+    border:1px solid #404040;
+    background-color: #404040;
+}
+
+.edit-button:hover {
+    vertical-align: bottom;
+    border:1px solid #999;
+    background-color: #404040;
+}
+
+.edit-button:active {
+    vertical-align: bottom;
+    border:1px solid #FFF;
+    background-color: #888;
+}
+
+.default-display {
+    display: block;
 }
 
 .default-hidden {

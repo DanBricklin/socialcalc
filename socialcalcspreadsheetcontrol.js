@@ -245,7 +245,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.edit = this.tabs.length;
    this.tabs.push({name: "edit", text: "Edit", html:
-' <div id="%id.edittools">'+
+' <div id="%id.edittools" class="default-display">'+
 ' &nbsp;<span id="%id.undoredo"><img id="%id.button_undo" class="edit-button" src="%img.undo.gif">'+
 ' <img id="%id.button_redo" class="edit-button" src="%img.redo.gif" >'+
 ' &nbsp;<img src="%img.divider1.gif" class="edit-button">&nbsp;</span>'+
@@ -742,7 +742,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.audit = this.tabs.length;
    this.tabs.push({name: "audit", text: "Audit", html:
-      '<div id="%id.audittools" style="display:none;">'+
+      '<div id="%id.audittools" class="default-hidden">'+
       ' <div style="%tbt.">&nbsp;</div>'+
       '</div>',
       view: "audit",
@@ -774,7 +774,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.comment = this.tabs.length;
    this.tabs.push({name: "comment", text: "Comment", html:
-      '<div id="%id.commenttools" style="display:none;">'+
+      '<div id="%id.commenttools" class="default-hidden">'+
       '<table cellspacing="0" cellpadding="0"><tr><td class="v-top">'+
       '<textarea id="%id.commenttext" id="comment-textarea" onfocus="%s.CmdGotFocus(this);"></textarea>'+
       '</td><td class="v-top">'+
@@ -828,7 +828,7 @@ SocialCalc.SpreadsheetControl = function(idPrefix) {
 
    this.tabnums.clipboard = this.tabs.length;
    this.tabs.push({name: "clipboard", text: "Clipboard", html:
-      '<div id="%id.clipboardtools" style="display:none;">'+
+      '<div id="%id.clipboardtools" class="default-hidden">'+
       '  <table cellspacing="0" cellpadding="0"><tr>'+
       '   <td style="vertical-align:top;padding-right:24px;">'+
       '    <div style="%tbt.">'+
@@ -935,7 +935,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    // create the tabbed UI at the top
 
-   html = '<div id="tabbed-top"><div style="'+spreadsheet.toolbarbackground+'padding:10px">';
+   html = '<div id="tabbed-top"><div style="'+spreadsheet.toolbarbackground+'">';
 
    for (i=0; i<tabs.length; i++) {
       html += tabs[i].html;
@@ -943,15 +943,15 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    html += '</div>'+
       '<div style="'+spreadsheet.tabbackground+'padding-bottom:4px;margin:0px 0px 8px 0px;">'+
-      '<table class="default-table"><tr>';
+      '<ul class="tabs">';
 
    for (i=0; i<tabs.length; i++) {
-      html += '  <td id="%id.' + tabs[i].name + 'tab" style="' +
+      html += '  <li id="%id.' + tabs[i].name + 'tab" style="' +
          (i==0 ? spreadsheet.tabselectedCSS : spreadsheet.tabplainCSS) +
-         '" onclick="%s.SetTab(this);">' + SCLoc(tabs[i].text) + '</td>';
+         '" onclick="%s.SetTab(this);">' + SCLoc(tabs[i].text) + '</li>';
       }
 
-   html += ' </tr></table></div></div>';
+   html += ' </ul></div></div>';
 
    spreadsheet.currentTab = 0; // this is where we started
 
@@ -1009,9 +1009,7 @@ spreadsheet.Buttons = {
       bele.style.border = "1px solid "+scc.ISCButtonBorderNormal;
       SocialCalc.TooltipRegister(bele, SCLoc(spreadsheet.Buttons[button].tooltip), {}, spreadsheet.spreadsheetDiv);
       SocialCalc.ButtonRegister(spreadsheet.editor, bele,
-         {normalstyle: "border:1px solid "+scc.ISCButtonBorderNormal+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
-          hoverstyle: "border:1px solid "+scc.ISCButtonBorderHover+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
-          downstyle: "border:1px solid "+scc.ISCButtonBorderDown+";backgroundColor:"+scc.ISCButtonDownBackground+";"}, 
+         {}, 
          {MouseDown: SocialCalc.DoButtonCmd, command: spreadsheet.Buttons[button].command});
       }
 
