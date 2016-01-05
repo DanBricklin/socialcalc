@@ -281,6 +281,10 @@ ul.tabs li {
 // Formula bar styling
  */
 
+#formula-bar input {
+    width: 60%;
+}
+
 .formula-buttons {
     vertical-align: middle;
     border: 1px solid #ffffff;
