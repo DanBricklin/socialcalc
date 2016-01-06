@@ -167,21 +167,21 @@
     background-color: #404040;
 }
 
-#menu-tabs {
+#menu-bar {
     background: #efefef;
     margin: 0px;
     line-height: 2.2em;
     padding-bottom: 5px;
 }
 
-ul.tabs {
+ul.menubar-tabs {
     display: inline;
     list-style: none;
     margin: 0px;
     padding: 0px;
 }
 
-ul.tabs li {
+ul.menubar-tabs li {
     display: inline;
     margin: 0px;
     background-color: #efefef;
@@ -190,11 +190,11 @@ ul.tabs li {
     color: #404040;
 }
 
-ul.tabs li:hover {
+ul.menubar-tabs li:hover {
     border: 1px solid #fff;
 }
 
-ul.tabs li.active {
+ul.menubar-tabs li.active {
     background-color: #404040;
     border: 1px solid #404040;
     color: #ffffff;

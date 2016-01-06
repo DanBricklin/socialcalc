@@ -942,8 +942,8 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
       }
 
    html += '</div>'+
-      '<div id="menu-tabs">'+
-      '<ul class="tabs">';
+      '<div id="menu-bar">'+
+      '<ul class="menubar-tabs">';
 
    for (i=0; i<tabs.length; i++) {
       html += '  <li id="%id.' + tabs[i].name + 'tab" ' +
