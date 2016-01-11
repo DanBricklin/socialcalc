@@ -236,18 +236,36 @@ ul.menubar-tabs li.active {
 }
 
 /*
+// Format tool styles
+ */
+#sample-text-box {
+    margin: 10px;
+    width:102px;
+    height:102px;
+    overflow:hidden;
+    border:1px solid black;
+    background-color:#EEE;
+}
+
+#sample-text {
+    height:100px;
+    width:100px;
+}
+
+/*
 // Sort tool styles
  */
+#SocialCalc-sorttools td{
+}
+
 #sort-range {
     vertical-align: top;
     padding-right: 4px;
-    width: 160px;
 }
 
 #sort-setsort {
     vertical-align:middle;
     padding-right:16px;
-    width:100px;
     text-align:right;"
 }
 
@@ -271,6 +289,14 @@ ul.menubar-tabs li.active {
 /*
 // Names tool styles
  */
+#SocialCalc-namestools td {
+}
+
+#SocialCalc-namestools input {
+    font-size: x-small;
+    width: 95%;
+}
+
 #names-existing {
     vertical-align: top;
     padding-right: 24px;
@@ -300,6 +326,20 @@ ul.menubar-tabs li.active {
 #names-save {
     vertical-align: top;
     padding-right: 6px;
+}
+
+/*
+  Clipboard
+ */
+#clipboard {
+
+}
+
+#SocialCalc-clipboardtext {
+    font-size:small;
+    height:250px;
+    width:95%;
+    overflow:auto;
 }
 
 /*
