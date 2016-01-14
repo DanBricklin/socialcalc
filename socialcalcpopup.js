@@ -572,7 +572,7 @@ SocialCalc.Popup.Types.List.Create = function(type, id, attribs) {
 
    spcdata.mainele = ele;
 
-   ele.innerHTML = '<input style="cursor:pointer;width:100px;font-size:smaller;" onfocus="this.blur();" onclick="SocialCalc.Popup.CClick(\''+id+'\');" value="">';
+   ele.innerHTML = '<input style="cursor:pointer;width:50px;font-size:smaller;" onfocus="this.blur();" onclick="SocialCalc.Popup.CClick(\''+id+'\');" value="">';
 
    spcdata.options = []; // set to nothing - use Initialize to fill
 
