@@ -31,10 +31,11 @@ var concat = require('gulp-concat');
 gulp.task('scripts', function() {
   return gulp.src([
     /* Add your JS files here, they will be combined in this order */
-    'socialcalcconstants.js',
-    'socialcalctableeditor.js',
     'formatnumber2.js',
     'formula1.js',
+    'socialcalc-3.js',
+    'socialcalcconstants.js',
+    'socialcalctableeditor.js',
     'socialcalcpopup.js',
     'socialcalcspreadsheetcontrol.js',
     'socialcalcviewer.js'
