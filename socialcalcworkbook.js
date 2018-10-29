@@ -12,12 +12,15 @@ SocialCalc.Workbook = function() {
     this.currentSheetName = null;
     this.editor = null;
 
-    this.addNewSheet = function (name) {
+    this.addNewSheet = function (name, str) {
         var sheet = new SocialCalc.Sheet();
         SocialCalc.Formula.SheetCache.sheets[name] = {
             sheet: sheet,
             name: name
         };
+        if (str) {
+            sheet.ParseSheetSave(str);
+        }
         var context = new SocialCalc.RenderContext(sheet);
         context.showGrid = true;
         context.showRCHeaders = true;
@@ -27,7 +30,6 @@ SocialCalc.Workbook = function() {
             context: context,
         };
         this.sheetInfoMap[name] = sheetInfo;
-        SocialCalc.Formula.Cache
     }
 
     this.selectSheet = function (name, parentId, formulaId) {
@@ -49,5 +51,20 @@ SocialCalc.Workbook = function() {
         }
         this.editor = editor;
         editor.EditorScheduleSheetCommands("redisplay", true, false);
+    }
+
+    this.refresh = function () {
+        this.editor.EditorScheduleSheetCommands("redisplay", true, false);
+    }
+
+    this.generateFile = function() {
+        var json = {};
+        for (var name in this.sheetInfoMap) {
+            var sheetInfo = this.sheetInfoMap[name];
+            var sheet = sheetInfo.sheet;
+            var str = sheet.CreateSheetSave();
+            json[name] = str;
+        }
+        return JSON.stringify(json);
     }
 }

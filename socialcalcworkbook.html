@@ -39,6 +39,10 @@
     </div>
     <hr/>
     <div class="btn-group btn-group-sm">
+        <input type="file" name="inputFile" id="inputFile" value="" multiple="multiple"/>
+        <a href="" download="a.txt" id="aSave">download</a>
+        <button type="button" class="btn btn-info" id="buttonOpen">Open</button>
+        <button type="button" class="btn btn-info" id="buttonSave">Save</button>
         <button type="button" class="btn btn-info">Copy</button>
         <button type="button" class="btn btn-info">Cut</button>
         <button type="button" class="btn btn-info">Paste</button>
@@ -85,6 +89,34 @@
     });
     $("#tabsheet3").click(function(e) {
         workbook.selectSheet("sheet3", "sheet", "formula");
+    });
+    $("#aSave").click(function (e) {
+        var str = workbook.generateFile();
+        alert(str);
+        var fileStr = "data:text/plain;charset=utf-8," + str;
+        $('#aSave').attr('href',fileStr);
+    });
+    $("#inputFile").change(function (e) {
+        for (var i = 0;i < this.files.length;i++) {
+            var file = this.files[i];
+            console.log(file);
+            var fr = new FileReader();
+            fr.readAsText(file);
+            fr.onload = function () {
+                console.log(this.result);
+                var json = JSON.parse(this.result);
+                for (var name in json) {
+                    var sheetInfo = workbook.sheetInfoMap[name];
+                    if (sheetInfo) {
+                        sheetInfo.sheet.ParseSheetSave(json[name]);
+                    } else {
+                        workbook.addNewSheet(name, json[name]);
+                    }
+                }
+                workbook.refresh();
+
+            }
+        }
     });
 </script>
 </body>
