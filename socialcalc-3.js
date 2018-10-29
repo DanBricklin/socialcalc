@@ -300,6 +300,8 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.recalcchangedavalue = false; // true if a recalc resulted in a change to a cell's calculated value
 
+   sheet.remote = {}; // {name:"", range:"A1:B1", "url":"http://a.txt/?adfad"}
+
    }
 
 // Methods:
@@ -566,6 +568,34 @@ SocialCalc.ParseSheetSave = function(savedsheet,sheetobj) {
          case "clipboardrange": // in save versions up to 1.3. Ignored.
          case "clipboard":
             break;
+
+         case "remote": // data from server remote:range:name:url
+              // TODO
+             var from = SocialCalc.coordToCr(parts[1]);
+             var to = SocialCalc.coordToCr(parts[2]);
+             for (var c = from.col; c <= to.col; ++c) {
+                for (var r = from.row; r <= to.row; ++r) {
+                   var coord = SocialCalc.crToCoord(c, r);
+                   var cell = sheetobj.cells[coord];
+                   if (cell) {
+                      cell.datavalue= "TODO"; //
+                   } else {
+                      sheetobj.cells[coord] = { // TODO
+                         datavalue: ""
+                      }
+                   }
+                }
+             }
+             var name = parts[3];
+             var url = parts[4];
+             sheetobj.remote[name] = {
+                name: name,
+                from: parts[1],
+                to: parts[2],
+                url: url
+             }
+             var crFrom = SocialCalc.coordToCr(from);
+             break;
 
          case "":
             break;
