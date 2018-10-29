@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap 实例</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="socialcalcconstants.js"></script>
+    <script type="text/javascript" src="socialcalc-3.js"></script>
+    <script type="text/javascript" src="socialcalctableeditor.js"></script>
+    <script type="text/javascript" src="formatnumber2.js"></script>
+    <script type="text/javascript" src="formula1.js"></script>
+    <script type="text/javascript" src="socialcalcpopup.js"></script>
+    <script type="text/javascript" src="socialcalcspreadsheetcontrol.js"></script>
+    <script type="text/javascript" src="socialcalcworkbook.js"></script>
+    <link rel="stylesheet" type="text/css" href="socialcalc.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div>
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="#">File</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Edit</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">View</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">Help</a>
+            </li>
+        </ul>
+    </div>
+    <hr/>
+    <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-info">Copy</button>
+        <button type="button" class="btn btn-info">Cut</button>
+        <button type="button" class="btn btn-info">Paste</button>
+    </div>
+    <hr/>
+    <div>
+        <form class="form-inline">
+            <label for="formula">Formula:</label>
+            <input type="email" class="form-control" id="formula" placeholder="=A1+A2">
+        </form>
+    </div>
+    <hr/>
+    <div>
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#sheet1" id="tabsheet1">sheet1</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#sheet2" id="tabsheet2">sheet2</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#sheet3" id="tabsheet3">sheet3</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="sheet">
+        </div>
+    </div>
+    <div class="alert alert-success">
+        指定操作成功提示信息。
+    </div>
+</div>
+<script>
+    var workbook = new SocialCalc.Workbook();
+    workbook.addNewSheet("sheet1");
+    workbook.addNewSheet("sheet2");
+    workbook.addNewSheet("sheet3");
+    workbook.selectSheet("sheet1", "sheet", "formula");
+
+    $("#tabsheet1").click(function(e) {
+        workbook.selectSheet("sheet1", "sheet", "formula");
+    });
+    $("#tabsheet2").click(function(e) {
+        workbook.selectSheet("sheet2", "sheet", "formula");
+    });
+    $("#tabsheet3").click(function(e) {
+        workbook.selectSheet("sheet3", "sheet", "formula");
+    });
+</script>
+</body>
+</html>
