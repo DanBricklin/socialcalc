@@ -44,5 +44,16 @@
 .TDpopupElement {border:1px solid black;padding:1px 2px 2px 2px;text-align:center;background-color:#FFF;
  font-size:7pt;font-family:Verdana,Arial,Helvetica,sans-serif;
  position:absolute;width:auto;z-index:110;}
+ #SocialCalc-edittools img {
+   padding: 3px;
+ }
+ #SocialCalc-edittools .img-icon {
+  width: 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+ }
+ #SocialCalc-edittools .img-icon:hover {
+   border: 1px solid #999;
+ }
 
 

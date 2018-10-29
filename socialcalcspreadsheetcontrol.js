@@ -246,40 +246,40 @@ SocialCalc.SpreadsheetControl = function() {
    this.tabnums.edit = this.tabs.length;
    this.tabs.push({name: "edit", text: "Edit", html:
       ' <div id="%id.edittools" style="padding:10px 0px 0px 0px;">'+
-'&nbsp;<img id="%id.button_undo" src="%img.undo.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_redo" src="%img.redo.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_copy" src="%img.copy.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_cut" src="%img.cut.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_paste" src="%img.paste.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_delete" src="%img.delete.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_pasteformats" src="%img.pasteformats.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_filldown" src="%img.filldown.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_fillright" src="%img.fillright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_movefrom" src="%img.movefromoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_movepaste" src="%img.movepasteoff.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_moveinsert" src="%img.moveinsertoff.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_alignleft" src="%img.alignleft.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_aligncenter" src="%img.aligncenter.gif" style="vertical-align:bottom;">'+
-' <img id="%id.button_alignright" src="%img.alignright.gif" style="vertical-align:bottom;">'+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_borderon" src="%img.borderson.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_borderoff" src="%img.bordersoff.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_swapcolors" src="%img.swapcolors.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_merge" src="%img.merge.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_unmerge" src="%img.unmerge.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_insertrow" src="%img.insertrow.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_insertcol" src="%img.insertcol.gif" style="vertical-align:bottom;"> '+
-'&nbsp; <img id="%id.button_deleterow" src="%img.deleterow.gif" style="vertical-align:bottom;"> '+
-' <img id="%id.button_deletecol" src="%img.deletecol.gif" style="vertical-align:bottom;"> '+
-' &nbsp;<img id="%id.divider_recalc" src="%img.divider1.gif" style="vertical-align:bottom;">&nbsp; '+
-'<img id="%id.button_recalc" src="%img.recalc.gif" style="vertical-align:bottom;"> '+
+'&nbsp;<img id="%id.button_undo" class="img-icon" src="%img.undo.gif"  >'+
+' <img id="%id.button_redo" class="img-icon" src="%img.redo.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_copy" class="img-icon" src="%img.copy.gif"  >'+
+' <img id="%id.button_cut" class="img-icon" src="%img.cut.gif" >'+
+' <img id="%id.button_paste" class="img-icon" src="%img.paste.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_delete" class="img-icon" src="%img.delete.gif" >'+
+' <img id="%id.button_pasteformats" class="img-icon" src="%img.pasteformats.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_filldown" class="img-icon" src="%img.filldown.png" >'+
+' <img id="%id.button_fillright" class="img-icon" src="%img.fillright.png" >'+
+// ' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+// '<img id="%id.button_movefrom" src="%img.movefromoff.gif" >'+
+// ' <img id="%id.button_movepaste" src="%img.movepasteoff.gif" >'+
+// ' <img id="%id.button_moveinsert" src="%img.moveinsertoff.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_alignleft" class="img-icon" src="%img.alignleft.gif" >'+
+' <img id="%id.button_aligncenter" class="img-icon" src="%img.aligncenter.gif" >'+
+' <img id="%id.button_alignright" class="img-icon" src="%img.alignright.gif" >'+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_borderon" class="img-icon" src="%img.borderson.gif" > '+
+' <img id="%id.button_borderoff" class="img-icon" src="%img.bordersoff.gif" > '+
+// ' <img id="%id.button_swapcolors" src="%img.swapcolors.gif" > '+
+' &nbsp;<img src="%img.divider1.gif">&nbsp; '+
+'<img id="%id.button_merge" class="img-icon" src="%img.merge.gif" > '+
+' <img id="%id.button_unmerge" class="img-icon" src="%img.unmerge.gif" > '+
+' &nbsp;<img src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_insertrow" class="img-icon" src="%img.insertrow.gif" > '+
+' <img id="%id.button_insertcol" class="img-icon" src="%img.insertcol.gif" > '+
+'&nbsp; <img id="%id.button_deleterow" class="img-icon" src="%img.deleterow.png" > '+
+' <img id="%id.button_deletecol" class="img-icon" src="%img.deletecol.png" > '+
+' &nbsp;<img id="%id.divider_recalc" class="img-icon" src="%img.divider1.gif" >&nbsp; '+
+'<img id="%id.button_recalc" class="img-icon" src="%img.recalc.gif" > '+
       ' </div>',
       oncreate: null, //function(spreadsheet, viewobject) {SocialCalc.DoCmd(null, "fill-rowcolstuff");},
       onclick: null});
@@ -910,7 +910,7 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
 
    // create the tabbed UI at the top
 
-   html = '<div><div style="'+spreadsheet.toolbarbackground+'padding:12px 10px 10px 4px;height:40px;">';
+   html = '<div><div style="background-color:#f7f7f7;height:40px;">';
 
    for (i=0; i<tabs.length; i++) {
       html += tabs[i].html;
@@ -947,43 +947,46 @@ SocialCalc.InitializeSpreadsheetControl = function(spreadsheet, node, height, wi
    // Initialize SocialCalc buttons
 
 spreadsheet.Buttons = {
-   button_undo: {tooltip: "Undo", command: "undo"},
-   button_redo: {tooltip: "Redo", command: "redo"},
-   button_copy: {tooltip: "Copy", command: "copy"},
-   button_cut: {tooltip: "Cut", command: "cut"},
-   button_paste: {tooltip: "Paste", command: "paste"},
-   button_pasteformats: {tooltip: "Paste Formats", command: "pasteformats"},
-   button_delete: {tooltip: "Delete Contents", command: "delete"},
-   button_filldown: {tooltip: "Fill Down", command: "filldown"},
-   button_fillright: {tooltip: "Fill Right", command: "fillright"},
-   button_movefrom: {tooltip: "Set/Clear Move From", command: "movefrom"},
-   button_movepaste: {tooltip: "Move Paste", command: "movepaste"},
-   button_moveinsert: {tooltip: "Move Insert", command: "moveinsert"},
-   button_alignleft: {tooltip: "Align Left", command: "align-left"},
-   button_aligncenter: {tooltip: "Align Center", command: "align-center"},
-   button_alignright: {tooltip: "Align Right", command: "align-right"},
-   button_borderon: {tooltip: "Borders On", command: "borderon"},
-   button_borderoff: {tooltip: "Borders Off", command: "borderoff"},
-   button_swapcolors: {tooltip: "Swap Colors", command: "swapcolors"},
-   button_merge: {tooltip: "Merge Cells", command: "merge"},
-   button_unmerge: {tooltip: "Unmerge Cells", command: "unmerge"},
-   button_insertrow: {tooltip: "Insert Row", command: "insertrow"},
-   button_insertcol: {tooltip: "Insert Column", command: "insertcol"},
-   button_deleterow: {tooltip: "Delete Row", command: "deleterow"},
-   button_deletecol: {tooltip: "Delete Column", command: "deletecol"},
-   button_recalc: {tooltip: "Recalc", command: "recalc"}
+   button_undo: {tooltip: "上一步", command: "undo"},
+   button_redo: {tooltip: "下一步", command: "redo"},
+   button_copy: {tooltip: "复制", command: "copy"},
+   button_cut: {tooltip: "剪切", command: "cut"},
+   button_paste: {tooltip: "粘贴", command: "paste"},
+   button_delete: {tooltip: "清空内容", command: "delete"},
+   button_pasteformats: {tooltip: "格式化粘贴", command: "pasteformats"},
+   button_filldown: {tooltip: "向下填充", command: "filldown"},
+   button_fillright: {tooltip: "向右填充", command: "fillright"},
+//    button_movefrom: {tooltip: "Set/Clear Move From", command: "movefrom"},
+//    button_movepaste: {tooltip: "Move Paste", command: "movepaste"},
+//    button_moveinsert: {tooltip: "Move Insert", command: "moveinsert"},
+   button_alignleft: {tooltip: "左对齐", command: "align-left"},
+   button_aligncenter: {tooltip: "居中", command: "align-center"},
+   button_alignright: {tooltip: "右对齐", command: "align-right"},
+   button_borderon: {tooltip: "边框", command: "borderon"},
+   button_borderoff: {tooltip: "取消边框", command: "borderoff"},
+//    button_swapcolors: {tooltip: "Swap Colors", command: "swapcolors"},
+   button_merge: {tooltip: "合并单元格", command: "merge"},
+   button_unmerge: {tooltip: "取消合并单元格", command: "unmerge"},
+   button_insertrow: {tooltip: "上方插入一行", command: "insertrow"},
+   button_insertcol: {tooltip: "左侧插入一列", command: "insertcol"},
+   button_deleterow: {tooltip: "删除行", command: "deleterow"},
+   button_deletecol: {tooltip: "删除列", command: "deletecol"},
+//    button_recalc: {tooltip: "Recalc", command: "recalc"}
    }
 
    for (button in spreadsheet.Buttons) {
       bele = document.getElementById(spreadsheet.idPrefix+button);
       if (!bele) {alert("Button "+(spreadsheet.idPrefix+button)+" missing"); continue;}
-      bele.style.border = "1px solid "+scc.ISCButtonBorderNormal;
+      // bele.style.border = "1px solid "+scc.ISCButtonBorderNormal;
       SocialCalc.TooltipRegister(bele, SCLoc(spreadsheet.Buttons[button].tooltip), {});
       SocialCalc.ButtonRegister(bele,
-         {normalstyle: "border:1px solid "+scc.ISCButtonBorderNormal+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
-          hoverstyle: "border:1px solid "+scc.ISCButtonBorderHover+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
-          downstyle: "border:1px solid "+scc.ISCButtonBorderDown+";backgroundColor:"+scc.ISCButtonDownBackground+";"}, 
-         {MouseDown: SocialCalc.DoButtonCmd, command: spreadsheet.Buttons[button].command});
+         {
+            // normalstyle: "border:1px solid "+scc.ISCButtonBorderNormal+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
+            // hoverstyle: "border:1px solid "+scc.ISCButtonBorderHover+";backgroundColor:"+scc.ISCButtonBorderNormal+";",
+            // downstyle: "border:1px solid "+scc.ISCButtonBorderDown+";backgroundColor:"+scc.ISCButtonDownBackground+";"
+         }, 
+         {MouseDown: SocialCalc.DoButtonCmd, command: spreadsheet.Buttons[button].command}
+      );
       }
 
    // create formula bar
