@@ -67,4 +67,41 @@ SocialCalc.Workbook = function() {
         }
         return JSON.stringify(json);
     }
+
+    this.addRemote = function (coord1, coord2, url, data) {
+        var sheetInfo = this.sheetInfoMap[this.currentSheetName];
+        var sheet = sheetInfo.sheet;
+        var info = {
+            coord1: coord1,
+            coord2: coord2,
+            url: url,
+        }
+        sheet.remote.push(info);
+        var cr1 = SocialCalc.coordToCr(coord1);
+        var cr2 = SocialCalc.coordToCr(coord2);
+        var rcount = cr2.row - cr1.row + 1;
+        if (rcount > data.length) {
+            rcount = data.length;
+        }
+        var ccount = cr2.col - cr1.col + 1;
+        for (var r = 0; r < rcount; ++r) {
+            var row = data[r];
+            for (var c = 0; c < row.length && c < ccount; ++c) {
+                var coord = SocialCalc.crToCoord(c + cr1.col, r + cr1.row);
+                var cell = sheet.GetAssuredCell(coord);
+                cell.datavalue = row[c];
+                if (!cell.datatype) {
+                    if (r == 0) {
+                        cell.datatype = "t";
+                        cell.valuetype = "t";
+                    } else {
+                        cell.datatype = "v";
+                        cell.valuetype = "n";
+                    }
+                }
+                // disable displayvalue? TODO
+            }
+        }
+        this.refresh();
+    }
 }

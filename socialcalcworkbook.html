@@ -50,7 +50,19 @@
             <img src="./images/download.png" title="下载excel文档">
         </a>
     </div>
-
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text">RANGE</span>
+        </div>
+        <input type="text" class="form-control" placeholder="A1:B2" id="inputRange">
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text">Url</span>
+        </div>
+        <input type="text" class="form-control" placeholder="http://" id="inputUrl">
+    </div>
+    <button type="button" class="btn btn-primary" id="buttonLoad">load</button>
     <div>
         <form class="form-inline">
             <label for="formula"><img src="./images/fx.png"></label>
@@ -127,6 +139,28 @@
 
             }
         }
+    });
+    $("#buttonLoad").click(function() {
+        var url = $("#inputUrl").text();
+        // var range = $("#inputRange").text().split(':');
+        var range = "B5:G30".split(':');
+        var list = [
+            ["date", "dau", "mau", "userCount"],
+            ["20181030", "1", "2", "3"],
+            ["20181030", "1", "2", "3"],
+            ["20181030", "1", "2", "3"],
+            ["20181030", "1", "2", "3"],
+            ["20181030", "1", "2", "3"],
+        ];
+
+        workbook.addRemote(range[0], range[1], url, list);
+        /*$.get(url, function (data, status) {
+            if (data.code != 0) {
+                alert("failed to load " + url);
+                return;
+            }
+            workbook.addRemote(range[0], range[1], url, data.list);
+        });*/
     });
 </script>
 </body>

@@ -300,7 +300,7 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.recalcchangedavalue = false; // true if a recalc resulted in a change to a cell's calculated value
 
-   sheet.remote = {}; // {name:"", range:"A1:B1", "url":"http://a.txt/?adfad"}
+   sheet.remote = []; // {coord1:"A1", coord2:"B2", "url":"http://a.txt/?adfad"}
 
    }
 
@@ -404,6 +404,8 @@ SocialCalc.Sheet.prototype.RecalcSheet = function() {return SocialCalc.RecalcShe
 // If this is clipboard contents, then there is also information to facilitate pasting:
 //
 //    copiedfrom:upperleftcoord:bottomrightcoord - range from which this was copied
+//
+//    remote:coord1:coord2:url - data from remote server by url
 //
 
 // Functions:
@@ -569,32 +571,15 @@ SocialCalc.ParseSheetSave = function(savedsheet,sheetobj) {
          case "clipboard":
             break;
 
-         case "remote": // data from server remote:range:name:url
-              // TODO
-             var from = SocialCalc.coordToCr(parts[1]);
-             var to = SocialCalc.coordToCr(parts[2]);
-             for (var c = from.col; c <= to.col; ++c) {
-                for (var r = from.row; r <= to.row; ++r) {
-                   var coord = SocialCalc.crToCoord(c, r);
-                   var cell = sheetobj.cells[coord];
-                   if (cell) {
-                      cell.datavalue= "TODO"; //
-                   } else {
-                      sheetobj.cells[coord] = { // TODO
-                         datavalue: ""
-                      }
-                   }
-                }
+         case "remote": // data from server remote:coord1:coord2:url
+             if (parts.length >= 4) {
+                 var info = {
+                     coord1: parts[1],
+                     coord2: parts[2],
+                     url: parts[3],
+                 }
+                 sheetobj.remote.push(info);
              }
-             var name = parts[3];
-             var url = parts[4];
-             sheetobj.remote[name] = {
-                name: name,
-                from: parts[1],
-                to: parts[2],
-                url: url
-             }
-             var crFrom = SocialCalc.coordToCr(from);
              break;
 
          case "":
@@ -841,6 +826,13 @@ SocialCalc.CreateSheetSave = function(sheetobj, range, canonicalize) {
       result.push("copiedfrom:"+SocialCalc.crToCoord(cr1.col, cr1.row)+":"+
                   SocialCalc.crToCoord(cr2.col, cr2.row));
       }
+
+   if (sheetobj.remote && sheetobj.remote.length > 0) {
+       for (i=0; i<sheetobj.remote.length; ++i) {
+           var info = sheetobj.remote[i];
+           result.push("remote:"+info.coord1+":"+info.coord2+":"+info.url);
+          }
+       }
 
    result.push(""); // one extra to get extra \n
 
