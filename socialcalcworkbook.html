@@ -16,6 +16,7 @@
     <script type="text/javascript" src="socialcalcpopup.js"></script>
     <script type="text/javascript" src="socialcalcspreadsheetcontrol.js"></script>
     <script type="text/javascript" src="socialcalcworkbook.js"></script>
+    <script type="text/javascript" src="socialcalcactionbtns.js"></script>
     <link rel="stylesheet" type="text/css" href="socialcalc.css">
     <link rel="stylesheet" type="text/css" href="index.css">
 </head>
@@ -38,20 +39,21 @@
             </li>
         </ul>
     </div>
-    <hr/>
+
     <div class="btn-group btn-group-sm">
-        <input type="file" name="inputFile" id="inputFile" value="" multiple="multiple"/>
-        <a href="" download="a.txt" id="aSave">download</a>
-        <button type="button" class="btn btn-info" id="buttonOpen">Open</button>
-        <button type="button" class="btn btn-info" id="buttonSave">Save</button>
-        <button type="button" class="btn btn-info">Copy</button>
-        <button type="button" class="btn btn-info">Cut</button>
-        <button type="button" class="btn btn-info">Paste</button>
+        <label class="input-file">
+            <input type="file" name="inputFile" id="inputFile" value="" multiple="multiple"/>
+            <img src="./images/input_file.png" title="选择文件" >
+        </label>
+        <div class="action-btns"></div>
+        <a href="" download="a.txt" id="aSave">
+            <img src="./images/download.png" title="下载excel文档">
+        </a>
     </div>
-    <hr/>
+
     <div>
         <form class="form-inline">
-            <label for="formula">Formula:</label>
+            <label for="formula"><img src="./images/fx.png"></label>
             <input type="email" class="form-control" id="formula" placeholder="=A1+A2">
         </form>
     </div>

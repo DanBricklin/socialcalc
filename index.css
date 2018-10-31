@@ -1,3 +1,59 @@
+.container-fluid {
+    padding: 0;
+    margin: 0;
+}
+
+.btn-group {
+    width: 100%;
+    background: #f7f7f7;
+    padding: 10px;
+    margin: 10px 0;
+    
+    box-shadow: 3px 3px 3px #eee;
+}
+
+.btn-group label {
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+.btn-group .input-file input {
+    display: none;
+}
+
+.form-inline label {
+    width: 5%;
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+.form-inline input {
+    padding: 3px;
+    border-radius: 0;
+    border-left: none;
+    width: 95% !important;
+    outline: none;
+}
+
+.form-inline input:focus {
+    border-color: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.action-btns .icon-btn {
+    width: 24px;
+    padding: 3px;
+    margin: 0 2px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.action-btns .icon-btn:hover {
+    border: 1px solid #999;
+}
+
 .nav-tabs {
     margin: 2px 0 10px;
     border-top: 1px solid #939698;
