@@ -46,9 +46,7 @@ SocialCalc.Workbook = function() {
             parentNode.removeChild(child);
         }
         parentNode.appendChild(node);
-        if (!this.currentSheetName) {
-            this.currentSheetName = name;
-        }
+        this.currentSheetName = name;
         this.editor = editor;
         editor.EditorScheduleSheetCommands("redisplay", true, false);
     }
