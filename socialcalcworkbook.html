@@ -144,18 +144,20 @@
             ["20181030", "1", "2", "3"],
             ["20181030", "1", "2", "3"],
         ];
-        if (!workbook.editor.range.hasrange) {
-            alert("please select a range");
-            return;
-        }
-        workbook.addRemote(url, list);
-        /*$.get(url, function (data, status) {
+        var url =  "http://10.38.161.194:9137/api/stat?biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031";
+        $.get(url, function (data, status) {
+            console.log(data);
             if (data.code != 0) {
                 alert("failed to load " + url);
                 return;
             }
-            workbook.addRemote(range[0], range[1], url, data.list);
-        });*/
+            if (!workbook.editor.range.hasrange) {
+                alert("please select a range");
+                return;
+            }
+            workbook.addRemote(url, data.list);
+            // workbook.addRemote(range[0], range[1], url, data.list);
+        });
     });
 </script>
 </body>
