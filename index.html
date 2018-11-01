@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bootstrap 实例</title>
+    <title>训练计划数据报表</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
@@ -48,18 +48,20 @@
         <a href="" download="a.txt" id="aSave">
             <img src="./images/download.png" title="下载excel文档">
         </a>
+        <button type="button" class="btn btn-primary" id="buttonSave">SaveToServer</button>
+        <button type="button" class="btn btn-primary" id="buttonVisitLink">VisitLink</button>
     </div>
-    <div class="input-group mb-3">
+    <div class="btn-group btn-group-sm">
         <div class="input-group-prepend">
             <span class="input-group-text">Url</span>
         </div>
-        <input type="text" class="form-control" placeholder="http://" id="inputUrl">
+        <input type="text" class="form-control" id="inputRef" value="biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031">
+        <button type="button" class="btn btn-primary" id="buttonLoad">load</button>
     </div>
-    <button type="button" class="btn btn-primary" id="buttonLoad">load</button>
     <div>
         <form class="form-inline">
             <label for="formula"><img src="./images/fx.png"></label>
-            <input type="email" class="form-control" id="formula" placeholder="=A1+A2">
+            <input type="text" class="form-control" id="formula" placeholder="=A1+A2">
         </form>
     </div>
     <hr/>
@@ -112,50 +114,93 @@
         $('#aSave').attr('href',fileStr);
     });
     $("#inputFile").change(function (e) {
-        for (var i = 0;i < this.files.length;i++) {
+        for (var i = 0; i < this.files.length; i++) {
             var file = this.files[i];
             console.log(file);
             var fr = new FileReader();
             fr.readAsText(file);
             fr.onload = function () {
                 console.log(this.result);
-                var json = JSON.parse(this.result);
-                for (var name in json) {
-                    var sheetInfo = workbook.sheetInfoMap[name];
-                    if (sheetInfo) {
-                        sheetInfo.sheet.ParseSheetSave(json[name]);
-                    } else {
-                        workbook.addNewSheet(name, json[name]);
-                    }
-                }
-                workbook.refresh();
-
+                loadFileData(this.result);
             }
         }
     });
+    function loadRemoteData (sheet, info) {
+        if (sheet.remote && sheet.remote.length > 0) {
+            // var ref = "biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031";
+            var url = "/api/stat?" + info.ref;
+            $.get(url, function (jsonstr, status) {
+                console.log(jsonstr);
+                var data = JSON.parse(jsonstr);
+                if (data.code != 0) {
+                    alert("failed to load " + url);
+                    return;
+                }
+                workbook.updateRemoteData(sheet, info, data.result);
+            });
+        }
+    }
     $("#buttonLoad").click(function() {
-        var url = $("#inputUrl").text();
-        var list = [
-            ["date", "dau", "mau", "userCount"],
-            ["20181030", "1", "2", "3"],
-            ["20181030", "1", "2", "3"],
-            ["20181030", "1", "2", "3"],
-            ["20181030", "1", "2", "3"],
-            ["20181030", "1", "2", "3"],
-        ];
-        var url =  "http://10.38.161.194:9137/api/stat?biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031";
-        $.get(url, function (data, status) {
-            console.log(data);
+        var ref = $("#inputRef").val();
+        if (!workbook.editor.range.hasrange) {
+            alert("please select a range");
+            return;
+        }
+        var sheet = workbook.getCurrentSheet();
+        var info = workbook.addRemoteInfo(sheet, ref);
+        loadRemoteData(sheet, info);
+        workbook.refresh();
+    });
+    function getValueFromQuery (name) {
+        var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if(r!=null)return  unescape(r[2]); return null;
+    }
+    function loadFileData (fileData) {
+        var json = JSON.parse(fileData);
+        for (var name in json) {
+            var sheet = workbook.addNewSheet(name, json[name]);
+            for (var j = 0; j < sheet.remote.length; ++j) {
+                loadRemoteData(sheet, sheet.remote[j]);
+            }
+        }
+        workbook.refresh();
+    }
+    $("#buttonVisitLink").click(function () {
+        var link = window.location.origin + window.location.pathname + "?fileName=first.ss&owner=mabaiming";
+        alert(link);
+    });
+    $("#buttonSave").click(function () {
+        var content = workbook.generateFile();
+        $.post("/api/file", {
+                fileName:"first.ss",
+                owner:"mabaiming",
+                content: content
+            }, function(jsonstr) {
+            console.log(jsonstr);
+            var data = JSON.parse(jsonstr);
             if (data.code != 0) {
                 alert("failed to load " + url);
                 return;
             }
-            if (!workbook.editor.range.hasrange) {
-                alert("please select a range");
+            alert("OK");
+        });
+    });
+    $(document).ready(function() {
+        var fileName = getValueFromQuery("fileName");
+        var owner = getValueFromQuery("owner");
+        if (!fileName || !owner) {
+            return;
+        }
+        $.get("/api/file?fileName=" + fileName + "&owner=" + owner, function (jsonstr, status) {
+            console.log(jsonstr);
+            var data = JSON.parse(jsonstr);
+            if (data.code != 0) {
+                alert("failed to load " + url);
                 return;
             }
-            workbook.addRemote(url, data.list);
-            // workbook.addRemote(range[0], range[1], url, data.list);
+            var content = data.result.content;
+            loadFileData(content);
         });
     });
 </script>

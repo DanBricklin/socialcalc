@@ -300,7 +300,7 @@ SocialCalc.ResetSheet = function(sheet, reload) {
 
    sheet.recalcchangedavalue = false; // true if a recalc resulted in a change to a cell's calculated value
 
-   sheet.remote = []; // {coord1:"A1", coord2:"B2", "url":"http://a.txt/?adfad"}
+   sheet.remote = []; // {coord1:"A1", coord2:"B2", "ref":"table=xxx&minDate=xxx&maxDate=xxx"}
 
    }
 
@@ -405,7 +405,7 @@ SocialCalc.Sheet.prototype.RecalcSheet = function() {return SocialCalc.RecalcShe
 //
 //    copiedfrom:upperleftcoord:bottomrightcoord - range from which this was copied
 //
-//    remote:coord1:coord2:url - data from remote server by url
+//    remote:coord1:coord2:ref - data from remote server by ref
 //
 
 // Functions:
@@ -571,12 +571,12 @@ SocialCalc.ParseSheetSave = function(savedsheet,sheetobj) {
          case "clipboard":
             break;
 
-         case "remote": // data from server remote:coord1:coord2:url
+         case "remote": // data from server remote:coord1:coord2:ref
              if (parts.length >= 4) {
                  var info = {
                      coord1: parts[1],
                      coord2: parts[2],
-                     url: parts[3],
+                     ref: parts[3],
                  }
                  sheetobj.remote.push(info);
              }
@@ -830,7 +830,7 @@ SocialCalc.CreateSheetSave = function(sheetobj, range, canonicalize) {
    if (sheetobj.remote && sheetobj.remote.length > 0) {
        for (i=0; i<sheetobj.remote.length; ++i) {
            var info = sheetobj.remote[i];
-           result.push("remote:"+info.coord1+":"+info.coord2+":"+info.url);
+           result.push("remote:"+info.coord1+":"+info.coord2+":"+info.ref);
           }
        }
 

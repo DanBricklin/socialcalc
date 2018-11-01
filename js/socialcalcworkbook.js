@@ -12,7 +12,16 @@ SocialCalc.Workbook = function() {
     this.currentSheetName = null;
     this.editor = null;
 
+    this.getCurrentSheet = function () {
+        return this.currentSheetName ? this.sheetInfoMap[this.currentSheetName].sheet : null;
+    }
+
     this.addNewSheet = function (name, str) {
+        var sheetInfo = this.sheetInfoMap[name];
+        if (sheetInfo) {
+            sheetInfo.sheet.ParseSheetSave(str);
+            return sheetInfo.sheet;
+        }
         var sheet = new SocialCalc.Sheet();
         SocialCalc.Formula.SheetCache.sheets[name] = {
             sheet: sheet,
@@ -30,7 +39,9 @@ SocialCalc.Workbook = function() {
             context: context,
         };
         this.sheetInfoMap[name] = sheetInfo;
+        return sheet;
     }
+
 
     this.selectSheet = function (name, parentId, formulaId) {
         var sheetInfo = this.sheetInfoMap[name];
@@ -66,25 +77,29 @@ SocialCalc.Workbook = function() {
         return JSON.stringify(json);
     }
 
-    this.addRemote = function (url, data) {
-        var sheetInfo = this.sheetInfoMap[this.currentSheetName];
-        var sheet = sheetInfo.sheet;
+    this.addRemoteInfo = function (sheet, ref) {
         var range = this.editor.range;
         var info = {
             coord1: SocialCalc.crToCoord(range.left, range.top),
             coord2: SocialCalc.crToCoord(range.right, range.bottom),
-            url: url,
+            ref: ref,
         }
         sheet.remote.push(info);
-        var rcount = range.bottom - range.top + 1;
+        return info;
+    }
+
+    this.updateRemoteData = function (sheet, info, data) {
+        var cr1 = SocialCalc.coordToCr(info.coord1);
+        var cr2 = SocialCalc.coordToCr(info.coord2);
+        var rcount = cr2.row - cr1.row + 1;
         if (rcount > data.length) {
             rcount = data.length;
         }
-        var ccount = range.right - range.left + 1;
+        var ccount = cr2.col - cr1.col + 1;
         for (var r = 0; r < rcount; ++r) {
             var row = data[r];
             for (var c = 0; c < row.length && c < ccount; ++c) {
-                var coord = SocialCalc.crToCoord(c + range.left, r + range.top);
+                var coord = SocialCalc.crToCoord(c + cr1.col, r + cr1.row);
                 var cell = sheet.GetAssuredCell(coord);
                 cell.datavalue = row[c];
                 if (!cell.datatype) {
@@ -96,9 +111,7 @@ SocialCalc.Workbook = function() {
                         cell.valuetype = "n";
                     }
                 }
-                // disable displayvalue? TODO
             }
         }
-        this.refresh();
     }
 }
