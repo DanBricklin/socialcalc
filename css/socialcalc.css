@@ -17,7 +17,7 @@
 // Initially coded by Dan Bricklin of Software Garden, Inc., for Socialtext, Inc.
 */
 
-.defaultComment {background-repeat:no-repeat;background-position:top right;background-image:url(images/sc-commentbg.gif);}
+.defaultComment {background-repeat:no-repeat;background-position:top right;background-image:url(../images/sc-commentbg.gif);}
 .defaultCommentNoGridStyle {}
 .defaultHighlightTypeCursor {color:#FFF;background-color:#A6A6A6;}
 .defaultHighlightTypeRange {color:#000;background-color:#E5E5E5;}
