@@ -41,18 +41,22 @@
     </div>
 
     <div class="btn-group btn-group-sm">
+        <img class="icon-btn" src="./images/save.png" title="保存至服务器" data-toggle="modal" data-target="#save-to-server">
         <label class="input-file">
             <input type="file" name="inputFile" id="inputFile" value="" multiple="multiple"/>
-            <img src="./images/input_file.png" title="选择文件" >
+            <img class="icon-btn" src="./images/input_file.png" title="选择文件" >
         </label>
+        <img class="icon-btn" src="./images/import.png" title="导入远程文档" data-toggle="modal" data-target="#myModal">
+        <img class="icon-btn" src="./images/share.png" title="分享链接" data-toggle="modal" data-target="#buttonVisitLink" id="show-share-link" >
+
         <div class="action-btns"></div>
         <a href="" download="a.txt" id="aSave">
             <img class="icon-btn" src="./images/download.png" title="下载excel文档">
         </a>
-        <img class="icon-btn" src="./images/import.png" title="导入远程文档" data-toggle="modal" data-target="#myModal">
+        
 
-        <button type="button" class="btn btn-primary" id="buttonSave">SaveToServer</button>
-        <button type="button" class="btn btn-primary" id="buttonVisitLink">VisitLink</button>
+        <!-- <button type="button" class="btn btn-primary" id="buttonSave">SaveToServer</button> -->
+        <!-- <button type="button" class="btn btn-primary" id="buttonVisitLink">VisitLink</button> -->
     </div>
 
     <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -75,6 +79,47 @@
                     <button type="button" class="btn btn-primary" id="buttonLoad">
                         加载
                     </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
+    <div class="modal fade" id="buttonVisitLink" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="modal-title" id="myModalLabel">
+                        分享链接
+                    </span>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
+    <div class="modal fade" id="save-to-server" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="modal-title" id="myModalLabel">
+                        填写生成文件的文件名
+                    </span>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input placeholder="填写文件名" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="buttonSave">保存</button>
                 </div>
             </div><!-- /.modal-content -->
         </div><!-- /.modal -->
@@ -195,9 +240,9 @@
         }
         workbook.refresh();
     }
-    $("#buttonVisitLink").click(function () {
+    $("#show-share-link").click(function () {
         var link = window.location.origin + window.location.pathname + "?fileName=first.ss&owner=mabaiming";
-        alert(link);
+        $("#buttonVisitLink .modal-body").html(link)
     });
     $("#buttonSave").click(function () {
         var content = workbook.generateFile();
