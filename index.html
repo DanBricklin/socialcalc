@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./dist/jquery.calendar.js"></script>
     <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
     <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/socialcalcconstants.js"></script>
@@ -46,25 +47,53 @@
         </label>
         <div class="action-btns"></div>
         <a href="" download="a.txt" id="aSave">
-            <img src="./images/download.png" title="下载excel文档">
+            <img class="icon-btn" src="./images/download.png" title="下载excel文档">
         </a>
+        <img class="icon-btn" src="./images/import.png" title="导入远程文档" data-toggle="modal" data-target="#myModal">
+
         <button type="button" class="btn btn-primary" id="buttonSave">SaveToServer</button>
         <button type="button" class="btn btn-primary" id="buttonVisitLink">VisitLink</button>
     </div>
-    <div class="btn-group btn-group-sm">
+
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="modal-title" id="myModalLabel">
+                        引用云端表格
+                    </span>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label>填写数据源: </label> <input type="text" id="inputRef" value="biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" id="buttonLoad">
+                        加载
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
+    <!-- <div class="btn-group btn-group-sm">
         <div class="input-group-prepend">
             <span class="input-group-text">Url</span>
         </div>
-        <input type="text" class="form-control" id="inputRef" value="biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031">
+        <input type="text" id="inputRef" value="biz=personalize&table=训练计划创建情况&minDate=20181030&maxDate=20181031">
         <button type="button" class="btn btn-primary" id="buttonLoad">load</button>
-    </div>
+    </div> -->
     <div>
         <form class="form-inline">
             <label for="formula"><img src="./images/fx.png"></label>
-            <input type="text" class="form-control" id="formula" placeholder="=A1+A2">
+            <input type="text" id="formula" placeholder="=A1+A2">
         </form>
     </div>
-    <hr/>
+
     <div>
         <div class="tab-content" id="sheet"></div>
         <ul class="nav nav-tabs" role="tablist">
@@ -203,6 +232,9 @@
             loadFileData(content);
         });
     });
+
+    $(".select-time").showCalendar();
+
 </script>
 </body>
 </html>

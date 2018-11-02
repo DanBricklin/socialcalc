@@ -3,13 +3,31 @@
     margin: 0;
 }
 
+input {
+    width: 100%;
+    padding: 3px;
+    outline: none;
+    border-radius: 3px;
+    border: 1px solid #d9d9d9;
+}
+
+input:focus, input:hover {
+    border-color: #49a9ee;
+    outline: none;
+    box-shadow: none;
+}
+
 .btn-group {
     width: 100%;
     background: #f7f7f7;
     padding: 10px;
     margin: 10px 0;
-    
     box-shadow: 3px 3px 3px #eee;
+}
+
+.btn-group img {
+    width: 24px;
+    height: 24px;
 }
 
 .btn-group label {
@@ -17,8 +35,28 @@
     cursor: pointer;
 }
 
+.icon-btn {
+    width: 24px;
+    padding: 3px;
+    margin: 0 2px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    border: 1px solid #999;
+}
+
 .btn-group .input-file input {
     display: none;
+}
+
+.modal-dialog {
+    max-width: 800px;
+}
+
+.modal-dialog input {
+    width: 90%;
 }
 
 .form-inline label {
@@ -42,17 +80,6 @@
     box-shadow: none;
 }
 
-.action-btns .icon-btn {
-    width: 24px;
-    padding: 3px;
-    margin: 0 2px;
-    border: 1px solid transparent;
-    cursor: pointer;
-}
-
-.action-btns .icon-btn:hover {
-    border: 1px solid #999;
-}
 
 .nav-tabs {
     margin: 2px 0 10px;

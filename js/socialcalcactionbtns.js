@@ -30,7 +30,9 @@ $(document).ready(function() {
     
     let btnHtml = ""
     $.each(btns, function(key, value) {
-        btnHtml += '<img class="icon-btn" id="'+ key +'" src="./images/'+ value.img +'.png" title="'+ value.tooltip +'">'
+        const isLine = /line/.test(value.img)
+        const className = isLine ? '' : 'icon-btn'
+        btnHtml += '<img class="'+ className +'" id="'+ key +'" src="./images/'+ value.img +'.png" title="'+ value.tooltip +'">'
     })
     $(".action-btns").html(btnHtml)
 })
